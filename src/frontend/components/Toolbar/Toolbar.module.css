@@ -1,0 +1,12 @@
+.toolbar {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.busy {
+  opacity: 0.6;
+}
+
+.hiddenInput {
+  display: none;
+}

@@ -1,0 +1,11 @@
+.fileBrowser {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+}
+
+.error {
+  color: var(--color-danger);
+  margin: 0;
+}
