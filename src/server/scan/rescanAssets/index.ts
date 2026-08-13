@@ -1,10 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { FastifyRequest } from "fastify";
 import type { Kysely } from "kysely";
-import { hashBuffer } from "../../core/hash.ts";
-import { computeRescanPlan, type RescanPlanOptions } from "../../core/rescanPlan.ts";
-import type { DB } from "../db-types.ts";
-import { walkAssetTree } from "./walkAssetTree.ts";
+import { hashBuffer } from "../../../core/hash.ts";
+import { computeRescanPlan, type RescanPlanOptions } from "../../../core/rescanPlan.ts";
+import { type DB, db } from "../../db/index.ts";
+import { walkAssetTree } from "../walkAssetTree.ts";
 
 export interface RescanSummary {
   hashed: number;
@@ -55,4 +56,14 @@ export const rescanAssets = async (
     unchanged: plan.unchanged.length,
     removed: plan.toRemove.length,
   };
+};
+
+interface RescanRequestBody {
+  forceRehash?: boolean;
+}
+
+export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
+  const body = request.body as RescanRequestBody | undefined;
+
+  return rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false });
 };

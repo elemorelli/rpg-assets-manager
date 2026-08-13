@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
-import { hashBuffer } from "../../core/hash.ts";
-import type { DB } from "../db-types.ts";
-import { walkAssetTree } from "./walkAssetTree.ts";
+import { hashBuffer } from "../../../core/hash.ts";
+import { type DB, db } from "../../db/index.ts";
+import { walkAssetTree } from "../walkAssetTree.ts";
 
 export interface BootstrapSummary {
   inserted: number;
@@ -51,3 +51,6 @@ export const bootstrapAssets = async (
 
   return { inserted, skipped };
 };
+
+export const bootstrapHandler = (assetTreeRoot: string) => async () =>
+  bootstrapAssets(db, assetTreeRoot);

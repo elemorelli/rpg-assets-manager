@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
-import { db } from "../../db.ts";
-import { rescanAssets } from "../rescanAssets.ts";
+import { db } from "../../../db/index.ts";
+import { rescanAssets } from "../index.ts";
 
 const PREFIX = "rescan-test/";
 

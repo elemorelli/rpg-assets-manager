@@ -17,16 +17,19 @@ describe("walkAssetTree", () => {
   it("lists every file with its size, using forward-slash relative paths", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "walk-asset-tree-"));
 
+    const forestPngContent = "fake-png-bytes";
+    const rootFileContent = "hello";
+
     await fs.mkdir(path.join(tempDir, "tiles"), { recursive: true });
-    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
-    await fs.writeFile(path.join(tempDir, "root-file.txt"), "hello");
+    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), forestPngContent);
+    await fs.writeFile(path.join(tempDir, "root-file.txt"), rootFileContent);
 
     const files = await walkAssetTree(tempDir);
     const byPath = new Map(files.map((file) => [file.relativePath, file]));
 
     expect(files).toHaveLength(2);
-    expect(byPath.get("tiles/forest.png")?.size).toBe(14);
-    expect(byPath.get("root-file.txt")?.size).toBe(5);
+    expect(byPath.get("tiles/forest.png")?.size).toBe(Buffer.byteLength(forestPngContent));
+    expect(byPath.get("root-file.txt")?.size).toBe(Buffer.byteLength(rootFileContent));
     expect(byPath.get("tiles/forest.png")?.mtimeMs).toBeGreaterThan(0);
   });
 

@@ -4,7 +4,7 @@ import {
   type OrphanCandidate,
   resolveRenames,
 } from "../../core/renameResolution.ts";
-import type { DB } from "../db-types.ts";
+import { type DB, db } from "../db/index.ts";
 
 interface PairedRow {
   local_path: string | null;
@@ -81,13 +81,9 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
     groupsByHash.set(candidate.hash, group);
   }
 
-  const resolution = resolveRenames([...groupsByHash.values()]);
+  const { added, deleted, renamed, ambiguousWarnings } = resolveRenames([...groupsByHash.values()]);
 
-  return {
-    added: resolution.added,
-    deleted: resolution.deleted,
-    modified,
-    renamed: resolution.renamed,
-    ambiguousWarnings: resolution.ambiguousWarnings,
-  };
+  return { added, deleted, modified, renamed, ambiguousWarnings };
 };
+
+export const diffHandler = async () => computeBatchDiff(db);
