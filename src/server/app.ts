@@ -3,10 +3,15 @@ import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "./db.ts";
 import { bootstrapAssets } from "./scan/bootstrapAssets.ts";
+import { rescanAssets } from "./scan/rescanAssets.ts";
 
 export interface AppOptions {
   frontendDistDir: string | null;
   assetTreeRoot: string;
+}
+
+interface RescanRequestBody {
+  forceRehash?: boolean;
 }
 
 export const buildApp = ({ frontendDistDir, assetTreeRoot }: AppOptions): FastifyInstance => {
@@ -15,6 +20,12 @@ export const buildApp = ({ frontendDistDir, assetTreeRoot }: AppOptions): Fastif
   app.get("/api/health", async () => ({ status: "ok" }));
 
   app.post("/api/bootstrap", async () => bootstrapAssets(db, assetTreeRoot));
+
+  app.post("/api/rescan", async (request) => {
+    const body = request.body as RescanRequestBody | undefined;
+
+    return rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false });
+  });
 
   if (frontendDistDir) {
     app.register(fastifyStatic, {

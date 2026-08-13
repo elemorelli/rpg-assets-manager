@@ -30,7 +30,8 @@ const walkDir = async (
     const stat = await fs.stat(entryPath);
     const relativePath = path.relative(rootDir, entryPath).split(path.sep).join("/");
 
-    results.push({ relativePath, size: stat.size, mtimeMs: stat.mtimeMs });
+    // Truncated to match Postgres's millisecond precision, or unchanged files never compare equal.
+    results.push({ relativePath, size: stat.size, mtimeMs: Math.trunc(stat.mtimeMs) });
   }
 };
 
