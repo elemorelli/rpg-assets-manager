@@ -2,6 +2,7 @@ import path from "node:path";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 import { db } from "./db.ts";
+import { computeBatchDiff } from "./diff/computeBatchDiff.ts";
 import { bootstrapAssets } from "./scan/bootstrapAssets.ts";
 import { rescanAssets } from "./scan/rescanAssets.ts";
 
@@ -26,6 +27,8 @@ export const buildApp = ({ frontendDistDir, assetTreeRoot }: AppOptions): Fastif
 
     return rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false });
   });
+
+  app.get("/api/diff", async () => computeBatchDiff(db));
 
   if (frontendDistDir) {
     app.register(fastifyStatic, {
