@@ -8,6 +8,7 @@ export default defineConfig({
       "src/**/__tests__/**/*.test.ts",
       "scripts/**/__tests__/**/*.test.ts",
       "src/frontend/**/*.test.tsx",
+      "src/frontend/**/*.test.ts",
     ],
     // Integration tests share one real Postgres instance; parallel files can race on it.
     fileParallelism: false,
