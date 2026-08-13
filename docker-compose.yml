@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: rpgassets
+      POSTGRES_PASSWORD: rpgassets_dev
+      POSTGRES_DB: rpgassets
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    # Host-side bind stays on loopback, same rule as the api service below.
+    ports:
+      - "127.0.0.1:5433:5432"
+
+  api:
+    build:
+      context: .
+      args:
+        UID: "1000"
+        GID: "1000"
+    environment:
+      DATABASE_URL: postgres://rpgassets:rpgassets_dev@postgres:5432/rpgassets
+      PORT: "3001"
+      # 0.0.0.0 here is the in-container bind, reachable only through the
+      # compose network. The host-facing bind below stays on loopback.
+      HOST: "0.0.0.0"
+      FRONTEND_DIST_DIR: /app/dist/frontend
+      ASSET_TREE_ROOT: /assets
+    volumes:
+      - ./fixtures/tree:/assets
+      - thumb-cache:/thumbnails
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      - postgres
+
+volumes:
+  pg-data:
+  thumb-cache:
