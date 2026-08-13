@@ -40,7 +40,7 @@ export const DirectoryTable = ({
                   <button
                     type="button"
                     className={styles.nameButton}
-                    onDoubleClick={() => onOpenDirectory(entry.name)}>
+                    onClick={() => onOpenDirectory(entry.name)}>
                     {entry.name}
                   </button>
                 ) : (
