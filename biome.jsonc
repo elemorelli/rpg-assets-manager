@@ -1,7 +1,9 @@
 {
   "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
   "vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
-  "files": { "includes": ["**", "!**/dist", "!**/node_modules", "!**/fixtures"] },
+  "files": {
+    "includes": ["**", "!**/dist", "!**/node_modules", "!**/fixtures", "!src/server/db-types.ts"]
+  },
   "formatter": {
     "enabled": true,
     "formatWithErrors": false,
