@@ -10,6 +10,7 @@ import { DirectoryTable } from "../DirectoryTable/DirectoryTable.tsx";
 import { JobProgress } from "../JobProgress/JobProgress.tsx";
 import { SearchBox } from "../SearchBox/SearchBox.tsx";
 import { SearchResults } from "../SearchResults/SearchResults.tsx";
+import { SyncPanel } from "../SyncPanel/SyncPanel.tsx";
 import { Toolbar } from "../Toolbar/Toolbar.tsx";
 import styles from "./FileBrowser.module.css";
 
@@ -189,6 +190,7 @@ export const FileBrowser = (): JSX.Element => {
       </div>
       <JobProgress />
       <ConversionPanel onConverted={() => refresh(currentPath)} />
+      <SyncPanel onApplied={() => refresh(currentPath)} />
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />

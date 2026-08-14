@@ -1,7 +1,9 @@
+export { applyBatch } from "./applyBatch.ts";
 export { convert } from "./convert.ts";
 export { fetchConversionPlan } from "./convertPlan.ts";
 export { createDirectory } from "./createDirectory.ts";
 export { deleteEntry } from "./deleteEntry.ts";
+export { fetchDiff } from "./fetchDiff.ts";
 export { listDirectory } from "./listDirectory.ts";
 export { moveEntry } from "./moveEntry.ts";
 export { renameEntry } from "./renameEntry.ts";

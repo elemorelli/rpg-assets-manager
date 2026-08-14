@@ -1,4 +1,5 @@
 import type { FastifyInstance } from "fastify";
+import { applyBatchHandler } from "./apply/index.ts";
 import { convertAssetsHandler } from "./convert/convertAssets/index.ts";
 import { convertPlanHandler } from "./convert/convertPlan/index.ts";
 import { diffHandler } from "./diff/index.ts";
@@ -15,4 +16,5 @@ export const registerCoreRoutes = (app: FastifyInstance, assetTreeRoot: string):
   app.get("/api/jobs/stream", jobsStreamHandler);
   app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));
   app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
+  app.post("/api/apply", applyBatchHandler(assetTreeRoot));
 };

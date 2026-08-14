@@ -181,4 +181,39 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
 
     expect(body.added).toContain(`${PREFIX}added.png`);
   });
+
+  it("applies a batch in dry run mode via POST /api/apply, leaving remote_assets untouched", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
+    await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "core-routes-test", "added.png"), "added-bytes");
+    await db
+      .insertInto("assets")
+      .values([
+        {
+          path: `${PREFIX}added.png`,
+          size: 11,
+          mtime: new Date(),
+          hash: "hash-added",
+        },
+      ])
+      .execute();
+
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+
+    const response = await app.inject({ method: "POST", url: "/api/apply" });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toMatchObject({ outcome: "dry_run", added: 1 });
+
+    const remoteRow = await db
+      .selectFrom("remote_assets")
+      .selectAll()
+      .where("path", "=", `${PREFIX}added.png`)
+      .executeTakeFirst();
+    expect(remoteRow).toBeUndefined();
+  });
 });
