@@ -42,4 +42,12 @@ describe("App", () => {
 
     expect(await screen.findByRole("button", { name: "Rescan" })).toBeInTheDocument();
   });
+
+  it("shows an error instead of a blank page when the session check itself fails", async () => {
+    checkSessionMock.mockRejectedValue(new Error("network down"));
+
+    render(<App />);
+
+    expect(await screen.findByText("network down")).toBeInTheDocument();
+  });
 });
