@@ -2,8 +2,7 @@ import path from "node:path";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
 import { HTTP_STATUS } from "./errors/index.ts";
-import { registerFileRoutes } from "./files/routes.ts";
-import { registerCoreRoutes } from "./routes.ts";
+import { registerRoutes } from "./routes/index.ts";
 
 export interface AppOptions {
   frontendDistDir: string | null;
@@ -18,8 +17,7 @@ export const buildApp = ({
 }: AppOptions): FastifyInstance => {
   const app = Fastify({ logger: true });
 
-  registerCoreRoutes(app, assetTreeRoot);
-  registerFileRoutes(app, assetTreeRoot, thumbnailCacheDir);
+  registerRoutes(app, assetTreeRoot, thumbnailCacheDir);
 
   if (frontendDistDir) {
     app.register(fastifyStatic, {
