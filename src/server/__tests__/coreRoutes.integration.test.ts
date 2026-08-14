@@ -29,7 +29,11 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({ method: "POST", url: "/api/bootstrap" });
 
@@ -49,7 +53,11 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const firstRun = await app.inject({ method: "POST", url: "/api/rescan" });
 
@@ -65,7 +73,11 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     await app.inject({ method: "POST", url: "/api/rescan" });
 
@@ -80,7 +92,11 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
 
   it("reports the batch diff via GET /api/diff", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     await db
       .insertInto("assets")

@@ -4,11 +4,17 @@ import { createDirectoryHandler } from "./createDirectory/index.ts";
 import { deleteEntryHandler } from "./deleteEntry/index.ts";
 import { listDirectoryHandler } from "./listDirectory/index.ts";
 import { moveEntryHandler } from "./moveEntry/index.ts";
+import { rawFileHandler } from "./rawFile/index.ts";
 import { renameEntryHandler } from "./renameEntry/index.ts";
 import { searchEntriesHandler } from "./searchEntries/index.ts";
+import { thumbnailHandler } from "./thumbnail/index.ts";
 import { uploadFileHandler } from "./uploadFile/index.ts";
 
-export const registerFileRoutes = (app: FastifyInstance, assetTreeRoot: string): void => {
+export const registerFileRoutes = (
+  app: FastifyInstance,
+  assetTreeRoot: string,
+  thumbnailCacheDir: string,
+): void => {
   app.register(fastifyMultipart);
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
@@ -18,4 +24,6 @@ export const registerFileRoutes = (app: FastifyInstance, assetTreeRoot: string):
   app.post("/api/files/move", moveEntryHandler(assetTreeRoot));
   app.post("/api/files/upload", uploadFileHandler(assetTreeRoot));
   app.get("/api/files/search", searchEntriesHandler(assetTreeRoot));
+  app.get("/api/files/raw", rawFileHandler(assetTreeRoot));
+  app.get("/api/files/thumbnail", thumbnailHandler(assetTreeRoot, thumbnailCacheDir));
 };

@@ -186,6 +186,7 @@ export const FileBrowser = (): JSX.Element => {
       ) : (
         <DirectoryTable
           entries={entries}
+          currentPath={currentPath}
           onOpenDirectory={handleOpenDirectory}
           onRename={handleRename}
           onDelete={handleDelete}

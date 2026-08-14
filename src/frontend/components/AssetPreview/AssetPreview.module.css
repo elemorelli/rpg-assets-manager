@@ -1,0 +1,17 @@
+.image {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+}
+
+.audio {
+  height: 24px;
+  max-width: 160px;
+}
+
+.placeholder {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  background: var(--color-border);
+}

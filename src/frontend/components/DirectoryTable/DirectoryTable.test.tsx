@@ -13,6 +13,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[directoryEntry, fileEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -33,6 +34,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[directoryEntry, fileEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -54,6 +56,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[directoryEntry]}
+        currentPath="tiles"
         onOpenDirectory={onOpenDirectory}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -78,6 +81,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[fileEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={onRename}
         onDelete={onDelete}
@@ -105,6 +109,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[fileEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -134,6 +139,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[directoryEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -162,6 +168,7 @@ describe("DirectoryTable", () => {
     render(
       <DirectoryTable
         entries={[directoryEntry]}
+        currentPath="tiles"
         onOpenDirectory={vi.fn()}
         onRename={vi.fn()}
         onDelete={vi.fn()}
@@ -182,5 +189,27 @@ describe("DirectoryTable", () => {
     fireEvent.drop(row);
 
     expect(onDropEntry).not.toHaveBeenCalled();
+  });
+
+  it("renders a preview using the entry's path joined with the current directory", () => {
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute(
+      "src",
+      "/api/files/raw?path=tiles%2Fmap.png",
+    );
   });
 });

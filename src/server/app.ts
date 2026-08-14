@@ -8,13 +8,18 @@ import { registerCoreRoutes } from "./routes.ts";
 export interface AppOptions {
   frontendDistDir: string | null;
   assetTreeRoot: string;
+  thumbnailCacheDir: string;
 }
 
-export const buildApp = ({ frontendDistDir, assetTreeRoot }: AppOptions): FastifyInstance => {
+export const buildApp = ({
+  frontendDistDir,
+  assetTreeRoot,
+  thumbnailCacheDir,
+}: AppOptions): FastifyInstance => {
   const app = Fastify({ logger: true });
 
   registerCoreRoutes(app, assetTreeRoot);
-  registerFileRoutes(app, assetTreeRoot);
+  registerFileRoutes(app, assetTreeRoot, thumbnailCacheDir);
 
   if (frontendDistDir) {
     app.register(fastifyStatic, {

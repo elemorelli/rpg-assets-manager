@@ -5,6 +5,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../app.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
 
+const WEBP_MAGIC_START = 8;
+const WEBP_MAGIC_END = 12;
+
 describe("file routes", () => {
   let tempDir = "";
 
@@ -18,7 +21,11 @@ describe("file routes", () => {
   it("lists a directory via GET /api/files", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({ method: "GET", url: "/api/files" });
 
@@ -30,7 +37,11 @@ describe("file routes", () => {
 
   it("rejects an unsafe path with 400", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({ method: "GET", url: "/api/files?path=../escaped" });
 
@@ -39,7 +50,11 @@ describe("file routes", () => {
 
   it("creates a directory via POST /api/files/mkdir", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({
       method: "POST",
@@ -54,7 +69,11 @@ describe("file routes", () => {
   it("deletes an entry via DELETE /api/files", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({
       method: "DELETE",
@@ -69,7 +88,11 @@ describe("file routes", () => {
   it("renames an entry via POST /api/files/rename", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({
       method: "POST",
@@ -84,7 +107,11 @@ describe("file routes", () => {
   it("moves an entry via POST /api/files/move", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({
       method: "POST",
@@ -98,7 +125,11 @@ describe("file routes", () => {
 
   it("uploads a file via POST /api/files/upload", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     await app.ready();
 
@@ -123,11 +154,54 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.mkdir(path.join(tempDir, "tiles"));
     await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
-    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
 
     const response = await app.inject({ method: "GET", url: "/api/files/search?q=forest" });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual([{ relativePath: "tiles/forest.png", type: "file" }]);
+  });
+
+  it("serves the raw file content via GET /api/files/raw", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
+    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+
+    const response = await app.inject({ method: "GET", url: "/api/files/raw?path=forest.png" });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.headers["content-type"]).toBe("image/png");
+    expect(response.body).toBe("fake-png-bytes");
+  });
+
+  it("generates a thumbnail via GET /api/files/thumbnail", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
+    const minimalPngBase64 =
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+    await fs.writeFile(path.join(tempDir, "forest.png"), Buffer.from(minimalPngBase64, "base64"));
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/files/thumbnail?path=forest.png",
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.headers["content-type"]).toBe("image/webp");
+    expect(
+      Buffer.from(response.rawPayload).subarray(WEBP_MAGIC_START, WEBP_MAGIC_END).toString("ascii"),
+    ).toBe("WEBP");
   });
 });

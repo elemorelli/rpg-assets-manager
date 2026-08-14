@@ -1,10 +1,13 @@
 import { type DragEvent, type JSX, useState } from "react";
 import type { DirectoryEntry } from "../../../core/directoryListing.ts";
 import { formatFileSize } from "../../../core/formatFileSize.ts";
+import { joinRelativePath } from "../../../core/paths.ts";
+import { AssetPreview } from "../AssetPreview/AssetPreview.tsx";
 import styles from "./DirectoryTable.module.css";
 
 export interface DirectoryTableProps {
   entries: DirectoryEntry[];
+  currentPath: string;
   onOpenDirectory: (name: string) => void;
   onRename: (entry: DirectoryEntry) => void;
   onDelete: (entry: DirectoryEntry) => void;
@@ -17,6 +20,7 @@ export interface DirectoryTableProps {
 
 export const DirectoryTable = ({
   entries,
+  currentPath,
   onOpenDirectory,
   onRename,
   onDelete,
@@ -32,6 +36,7 @@ export const DirectoryTable = ({
     <table className={styles.table}>
       <thead>
         <tr>
+          <th>Preview</th>
           <th>Name</th>
           <th>Type</th>
           <th>Size</th>
@@ -83,6 +88,12 @@ export const DirectoryTable = ({
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}>
+              <td>
+                <AssetPreview
+                  entry={entry}
+                  relativePath={joinRelativePath(currentPath, entry.name)}
+                />
+              </td>
               <td>
                 {entry.type === "directory" ? (
                   <button
