@@ -1,12 +1,12 @@
 import clsx from "clsx";
-import { type ChangeEvent, type JSX, useRef } from "react";
+import { type ChangeEvent, type JSX, useRef, useState } from "react";
 import styles from "./toolbar.module.css";
 
 export interface ToolbarProps {
   busy: boolean;
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
-  onRescan: () => void;
+  onRescan: (forceRehash: boolean) => void;
 }
 
 export const Toolbar = ({
@@ -16,6 +16,7 @@ export const Toolbar = ({
   onRescan,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [forceRehash, setForceRehash] = useState<boolean>(false);
 
   const handleCreateDirectoryClick = (): void => {
     const name = window.prompt("New folder name");
@@ -47,9 +48,18 @@ export const Toolbar = ({
       <button type="button" disabled={busy} onClick={handleUploadClick}>
         Upload file
       </button>
-      <button type="button" disabled={busy} onClick={onRescan}>
+      <button type="button" disabled={busy} onClick={() => onRescan(forceRehash)}>
         Rescan
       </button>
+      <label className={styles.rehashLabel}>
+        <input
+          type="checkbox"
+          checked={forceRehash}
+          disabled={busy}
+          onChange={(event) => setForceRehash(event.target.checked)}
+        />
+        Full rehash
+      </label>
       <input
         ref={fileInputRef}
         type="file"

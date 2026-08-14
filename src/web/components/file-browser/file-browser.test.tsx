@@ -127,7 +127,20 @@ describe("FileBrowser", () => {
     await user.click(screen.getByRole("button", { name: "Rescan" }));
 
     await waitFor(() => {
-      expect(rescanMock).toHaveBeenCalled();
+      expect(rescanMock).toHaveBeenCalledWith(false);
+    });
+  });
+
+  it("triggers a full rehash when the toolbar checkbox is checked", async () => {
+    const user = userEvent.setup();
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.click(screen.getByRole("checkbox", { name: "Full rehash" }));
+    await user.click(screen.getByRole("button", { name: "Rescan" }));
+
+    await waitFor(() => {
+      expect(rescanMock).toHaveBeenCalledWith(true);
     });
   });
 

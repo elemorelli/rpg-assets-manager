@@ -73,8 +73,8 @@ export const FileBrowser = (): JSX.Element => {
     runAction(() => api.uploadFile(currentPath, file));
   };
 
-  const handleRescan = (): void => {
-    runAction(() => api.rescan().then(() => undefined));
+  const handleRescan = (forceRehash: boolean): void => {
+    runAction(() => api.rescan(forceRehash).then(() => undefined));
   };
 
   const handleRename = (entry: DirectoryEntry): void => {
