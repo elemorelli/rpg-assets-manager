@@ -118,4 +118,16 @@ describe("file routes", () => {
       "fake-png-bytes",
     );
   });
+
+  it("searches for entries by name via GET /api/files/search", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
+    await fs.mkdir(path.join(tempDir, "tiles"));
+    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
+    const app = buildApp({ frontendDistDir: null, assetTreeRoot: tempDir });
+
+    const response = await app.inject({ method: "GET", url: "/api/files/search?q=forest" });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual([{ relativePath: "tiles/forest.png", type: "file" }]);
+  });
 });

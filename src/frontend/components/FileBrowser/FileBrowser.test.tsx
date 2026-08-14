@@ -12,6 +12,7 @@ const createDirectoryMock = vi.mocked(api.createDirectory);
 const deleteEntryMock = vi.mocked(api.deleteEntry);
 const renameEntryMock = vi.mocked(api.renameEntry);
 const moveEntryMock = vi.mocked(api.moveEntry);
+const searchEntriesMock = vi.mocked(api.searchEntries);
 
 describe("FileBrowser", () => {
   beforeEach(() => {
@@ -24,6 +25,7 @@ describe("FileBrowser", () => {
     deleteEntryMock.mockResolvedValue(undefined);
     renameEntryMock.mockResolvedValue(undefined);
     moveEntryMock.mockResolvedValue(undefined);
+    searchEntriesMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -105,5 +107,35 @@ describe("FileBrowser", () => {
 
     expect(deleteEntryMock).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
+  });
+
+  it("shows search results for a debounced query and hides the directory table", async () => {
+    const user = userEvent.setup();
+    searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
+
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.type(screen.getByRole("searchbox"), "forest");
+
+    await screen.findByRole("button", { name: "tiles/forest.png" });
+    expect(searchEntriesMock).toHaveBeenCalledWith("forest");
+    expect(screen.queryByRole("button", { name: "tiles" })).not.toBeInTheDocument();
+  });
+
+  it("navigates to a search result's containing directory and exits search mode", async () => {
+    const user = userEvent.setup();
+    searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
+
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.type(screen.getByRole("searchbox"), "forest");
+    await user.click(await screen.findByRole("button", { name: "tiles/forest.png" }));
+
+    await waitFor(() => {
+      expect(listDirectoryMock).toHaveBeenLastCalledWith("tiles");
+    });
+    expect(screen.queryByRole("button", { name: "tiles/forest.png" })).not.toBeInTheDocument();
   });
 });

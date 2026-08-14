@@ -5,6 +5,13 @@
   padding: var(--spacing-md);
 }
 
+.controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  justify-content: space-between;
+}
+
 .error {
   color: var(--color-danger);
   margin: 0;
