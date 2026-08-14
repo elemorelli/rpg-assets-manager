@@ -5,7 +5,7 @@ import { hashBuffer } from "../../../../core/hash.ts";
 import { classifyPreviewKind, thumbnailCacheFileName } from "../../../../core/preview.ts";
 import { resolveSafeRelativePath } from "../../../../core/safePath.ts";
 import { HTTP_STATUS, HttpError, respondToHttpError } from "../../../errors/index.ts";
-import { generateThumbnail } from "../../../preview/generateThumbnail.ts";
+import { generateThumbnail } from "./generateThumbnail.ts";
 
 const cacheFileExists = async (filePath: string): Promise<boolean> => {
   try {
