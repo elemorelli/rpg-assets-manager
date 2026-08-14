@@ -1,3 +1,5 @@
+export { convert } from "./convert.ts";
+export { fetchConversionPlan } from "./convertPlan.ts";
 export { createDirectory } from "./createDirectory.ts";
 export { deleteEntry } from "./deleteEntry.ts";
 export { listDirectory } from "./listDirectory.ts";

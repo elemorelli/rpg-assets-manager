@@ -111,6 +111,56 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     expect(getCurrentJob()).toBeNull();
   });
 
+  it("returns conversion candidates via GET /api/convert/plan", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
+    await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "core-routes-test", "forest.png"), "fake-bytes-forest");
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+
+    const response = await app.inject({ method: "GET", url: "/api/convert/plan" });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual({
+      candidates: [
+        {
+          relativePath: "core-routes-test/forest.png",
+          kind: "image",
+          destinationPath: "core-routes-test/forest.webp",
+        },
+      ],
+      conflicts: [],
+    });
+  });
+
+  it("converts eligible files and publishes progress via POST /api/convert", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
+    const minimalPng = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "core-routes-test", "forest.png"), minimalPng);
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+    const observedJobs: unknown[] = [];
+    const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
+
+    const response = await app.inject({ method: "POST", url: "/api/convert" });
+
+    unsubscribe();
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual({ converted: 1, conflicts: 0 });
+    expect(observedJobs[0]).toMatchObject({ type: "convert", done: 0 });
+    expect(getCurrentJob()).toBeNull();
+  });
+
   it("reports the batch diff via GET /api/diff", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     const app = buildApp({

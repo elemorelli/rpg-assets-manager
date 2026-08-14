@@ -5,6 +5,7 @@ import { joinRelativePath, parentDirectory } from "../../../core/paths.ts";
 import * as api from "../../requests/index.ts";
 import type { SearchResultEntry } from "../../requests/searchEntries.ts";
 import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs.tsx";
+import { ConversionPanel } from "../ConversionPanel/ConversionPanel.tsx";
 import { DirectoryTable } from "../DirectoryTable/DirectoryTable.tsx";
 import { JobProgress } from "../JobProgress/JobProgress.tsx";
 import { SearchBox } from "../SearchBox/SearchBox.tsx";
@@ -187,6 +188,7 @@ export const FileBrowser = (): JSX.Element => {
         <SearchBox onSearch={handleSearch} />
       </div>
       <JobProgress />
+      <ConversionPanel onConverted={() => refresh(currentPath)} />
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />

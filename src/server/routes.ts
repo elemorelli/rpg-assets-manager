@@ -1,4 +1,6 @@
 import type { FastifyInstance } from "fastify";
+import { convertAssetsHandler } from "./convert/convertAssets/index.ts";
+import { convertPlanHandler } from "./convert/convertPlan/index.ts";
 import { diffHandler } from "./diff/index.ts";
 import { healthHandler } from "./health/index.ts";
 import { jobsStreamHandler } from "./jobs/streamHandler.ts";
@@ -11,4 +13,6 @@ export const registerCoreRoutes = (app: FastifyInstance, assetTreeRoot: string):
   app.post("/api/rescan", rescanHandler(assetTreeRoot));
   app.get("/api/diff", diffHandler);
   app.get("/api/jobs/stream", jobsStreamHandler);
+  app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));
+  app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
 };
