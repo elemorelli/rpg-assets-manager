@@ -2,10 +2,10 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../../api.ts";
+import * as api from "../../requests/index.ts";
 import { FileBrowser } from "./FileBrowser.tsx";
 
-vi.mock("../../api.ts");
+vi.mock("../../requests/index.ts");
 
 const listDirectoryMock = vi.mocked(api.listDirectory);
 const createDirectoryMock = vi.mocked(api.createDirectory);

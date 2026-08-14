@@ -1,6 +1,6 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
 import type { DirectoryEntry } from "../../../core/directoryListing.ts";
-import * as api from "../../api.ts";
+import * as api from "../../requests/index.ts";
 import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs.tsx";
 import { DirectoryTable } from "../DirectoryTable/DirectoryTable.tsx";
 import { Toolbar } from "../Toolbar/Toolbar.tsx";
