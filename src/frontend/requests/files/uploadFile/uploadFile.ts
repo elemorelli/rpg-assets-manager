@@ -1,4 +1,4 @@
-import { requestJson } from "./httpClient.ts";
+import { requestJson } from "../../httpClient.ts";
 
 export const uploadFile = async (targetDirPath: string, file: File): Promise<void> => {
   const form = new FormData();

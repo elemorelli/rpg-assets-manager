@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "../httpClient.ts";
+import { ApiError } from "../../../httpClient.ts";
 import { listDirectory } from "../listDirectory.ts";
 
 describe("listDirectory", () => {

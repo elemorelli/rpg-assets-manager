@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ApiError } from "../httpClient.ts";
+import { ApiError } from "../../../httpClient.ts";
 import { searchEntries } from "../searchEntries.ts";
 
 describe("searchEntries", () => {

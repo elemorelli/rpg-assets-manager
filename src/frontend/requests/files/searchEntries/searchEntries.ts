@@ -1,4 +1,4 @@
-import { requestJson } from "./httpClient.ts";
+import { requestJson } from "../../httpClient.ts";
 
 export interface SearchResultEntry {
   relativePath: string;

@@ -1,8 +1,8 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
 import type { DirectoryEntry } from "../../../utils/directoryListing.ts";
 import { joinRelativePath, parentDirectory } from "../../../utils/paths.ts";
+import type { SearchResultEntry } from "../../requests/files/searchEntries/searchEntries.ts";
 import * as api from "../../requests/index.ts";
-import type { SearchResultEntry } from "../../requests/searchEntries.ts";
 import { isValidDropTarget } from "../../utils/dragDrop.ts";
 import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs.tsx";
 import { ConversionPanel } from "../ConversionPanel/ConversionPanel.tsx";

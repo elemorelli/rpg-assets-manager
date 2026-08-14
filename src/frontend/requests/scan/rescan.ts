@@ -1,4 +1,4 @@
-import { jsonInit, requestJson } from "./httpClient.ts";
+import { jsonInit, requestJson } from "../httpClient.ts";
 
 export interface RescanSummary {
   hashed: number;
