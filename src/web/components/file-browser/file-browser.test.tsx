@@ -16,6 +16,7 @@ const moveEntryMock = vi.mocked(api.moveEntry);
 const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
+const logoutMock = vi.mocked(api.logout);
 
 describe("FileBrowser", () => {
   beforeEach(() => {
@@ -31,6 +32,7 @@ describe("FileBrowser", () => {
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0 });
     fetchSyncRunsMock.mockResolvedValue([]);
+    logoutMock.mockResolvedValue(undefined);
     FakeEventSource.reset();
     // @ts-expect-error test double
     globalThis.EventSource = FakeEventSource;
@@ -43,7 +45,7 @@ describe("FileBrowser", () => {
   });
 
   it("lists the root directory on mount", async () => {
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
 
     await screen.findByRole("button", { name: "tiles" });
 
@@ -53,7 +55,7 @@ describe("FileBrowser", () => {
 
   it("navigates into a subdirectory and updates the breadcrumb", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     listDirectoryMock.mockResolvedValueOnce([{ name: "legacy-pack", type: "directory" }]);
@@ -70,7 +72,7 @@ describe("FileBrowser", () => {
     listDirectoryMock.mockReset();
     listDirectoryMock.mockRejectedValue(new Error("network down"));
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
 
     expect(await screen.findByText("network down")).toBeInTheDocument();
   });
@@ -79,7 +81,7 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("new-folder");
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -95,7 +97,7 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
@@ -110,7 +112,7 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
@@ -121,7 +123,7 @@ describe("FileBrowser", () => {
 
   it("triggers a rescan via the toolbar button", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -133,7 +135,7 @@ describe("FileBrowser", () => {
 
   it("triggers a full rehash when the toolbar checkbox is checked", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.click(screen.getByRole("checkbox", { name: "Full rehash" }));
@@ -148,7 +150,7 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.type(screen.getByRole("searchbox"), "forest");
@@ -162,7 +164,7 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
 
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     await user.type(screen.getByRole("searchbox"), "forest");
@@ -175,7 +177,7 @@ describe("FileBrowser", () => {
   });
 
   it("moves an entry when dropped onto a directory row", async () => {
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     const sourceRow = screen.getByText("map.png").closest("tr");
@@ -196,7 +198,7 @@ describe("FileBrowser", () => {
 
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     listDirectoryMock.mockResolvedValueOnce([{ name: "forest.png", type: "file", size: 512 }]);
@@ -220,7 +222,7 @@ describe("FileBrowser", () => {
   });
 
   it("does not move an entry dropped onto its own current directory crumb", async () => {
-    render(<FileBrowser />);
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
     await screen.findByRole("button", { name: "tiles" });
 
     const sourceRow = screen.getByText("map.png").closest("tr");
@@ -234,5 +236,18 @@ describe("FileBrowser", () => {
     fireEvent.drop(rootCrumb);
 
     expect(moveEntryMock).not.toHaveBeenCalled();
+  });
+
+  it("calls the logout request and reloads into the login form when Log out is clicked", async () => {
+    const user = userEvent.setup();
+
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.click(screen.getByRole("button", { name: "Log out" }));
+
+    await waitFor(() => {
+      expect(logoutMock).toHaveBeenCalled();
+    });
   });
 });

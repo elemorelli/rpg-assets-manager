@@ -26,6 +26,9 @@ services:
       WEB_DIST_DIR: /app/dist/web
       ASSET_TREE_ROOT: /assets
       THUMBNAIL_CACHE_DIR: /thumbnails
+      AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
+      AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     volumes:
       - ./fixtures/tree:/assets
       - thumb-cache:/thumbnails

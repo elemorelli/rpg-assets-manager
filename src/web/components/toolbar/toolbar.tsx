@@ -7,6 +7,7 @@ export interface ToolbarProps {
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
   onRescan: (forceRehash: boolean) => void;
+  onLogout: () => void;
 }
 
 export const Toolbar = ({
@@ -14,6 +15,7 @@ export const Toolbar = ({
   onCreateDirectory,
   onUploadFile,
   onRescan,
+  onLogout,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -66,6 +68,9 @@ export const Toolbar = ({
         className={styles.hiddenInput}
         onChange={handleFileSelected}
       />
+      <button type="button" disabled={busy} onClick={onLogout}>
+        Log out
+      </button>
     </div>
   );
 };

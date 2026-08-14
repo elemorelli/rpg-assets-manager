@@ -5,6 +5,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../app.ts";
 import { db } from "../../db/index.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
+import { loginTestSession } from "../../test-utils/login-test-session.ts";
 import { getCurrentJob, subscribeToJobChanges } from "../jobs/index.ts";
 
 const PREFIX = "core-routes-test/";
@@ -35,8 +36,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "POST", url: "/api/bootstrap" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/bootstrap",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual({ inserted: 1, skipped: 0 });
@@ -59,13 +65,22 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const firstRun = await app.inject({ method: "POST", url: "/api/rescan" });
+    const firstRun = await app.inject({
+      method: "POST",
+      url: "/api/rescan",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(firstRun.statusCode).toBe(HTTP_STATUS.ok);
     expect(firstRun.json()).toEqual({ hashed: 1, unchanged: 0, removed: 0 });
 
-    const secondRun = await app.inject({ method: "POST", url: "/api/rescan" });
+    const secondRun = await app.inject({
+      method: "POST",
+      url: "/api/rescan",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(secondRun.json()).toEqual({ hashed: 0, unchanged: 1, removed: 0 });
   });
@@ -79,13 +94,19 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    await app.inject({ method: "POST", url: "/api/rescan" });
+    await app.inject({
+      method: "POST",
+      url: "/api/rescan",
+      headers: { cookie: sessionCookie },
+    });
 
     const forced = await app.inject({
       method: "POST",
       url: "/api/rescan",
       payload: { forceRehash: true },
+      headers: { cookie: sessionCookie },
     });
 
     expect(forced.json()).toEqual({ hashed: 1, unchanged: 0, removed: 0 });
@@ -100,10 +121,15 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
 
-    const response = await app.inject({ method: "POST", url: "/api/rescan" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/rescan",
+      headers: { cookie: sessionCookie },
+    });
 
     unsubscribe();
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -120,10 +146,15 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
 
-    const response = await app.inject({ method: "POST", url: "/api/reconcile" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/reconcile",
+      headers: { cookie: sessionCookie },
+    });
 
     unsubscribe();
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -143,8 +174,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "GET", url: "/api/convert/plan" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/convert/plan",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual({
@@ -172,10 +208,15 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
 
-    const response = await app.inject({ method: "POST", url: "/api/convert" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/convert",
+      headers: { cookie: sessionCookie },
+    });
 
     unsubscribe();
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -191,13 +232,18 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     await db
       .insertInto("assets")
       .values({ path: `${PREFIX}added.png`, size: 1, mtime: new Date(), hash: "hash-added" })
       .execute();
 
-    const response = await app.inject({ method: "GET", url: "/api/diff" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/diff",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     const body = response.json();
@@ -226,8 +272,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "POST", url: "/api/apply" });
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/apply",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toMatchObject({ outcome: "dry_run", added: 1 });

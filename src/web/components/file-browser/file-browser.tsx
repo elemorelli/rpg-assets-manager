@@ -19,7 +19,11 @@ import styles from "./file-browser.module.css";
 const describeError = (caught: unknown): string =>
   caught instanceof Error ? caught.message : "Something went wrong";
 
-export const FileBrowser = (): JSX.Element => {
+export interface FileBrowserProps {
+  onLoggedOut: () => void;
+}
+
+export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
   const [currentPath, setCurrentPath] = useState<string>("");
   const [entries, setEntries] = useState<DirectoryEntry[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResultEntry[] | null>(null);
@@ -75,6 +79,10 @@ export const FileBrowser = (): JSX.Element => {
 
   const handleRescan = (forceRehash: boolean): void => {
     runAction(() => api.rescan(forceRehash).then(() => undefined));
+  };
+
+  const handleLogout = (): void => {
+    api.logout().then(onLoggedOut);
   };
 
   const handleRename = (entry: DirectoryEntry): void => {
@@ -188,6 +196,7 @@ export const FileBrowser = (): JSX.Element => {
           onCreateDirectory={handleCreateDirectory}
           onUploadFile={handleUploadFile}
           onRescan={handleRescan}
+          onLogout={handleLogout}
         />
         <SearchBox onSearch={handleSearch} />
       </div>

@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../../app.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
+import { loginTestSession } from "../../test-utils/login-test-session.ts";
 
 const WEBP_MAGIC_START = 8;
 const WEBP_MAGIC_END = 12;
@@ -26,8 +27,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "GET", url: "/api/files" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/files",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual([
@@ -42,8 +48,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "GET", url: "/api/files?path=../escaped" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/files?path=../escaped",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.badRequest);
   });
@@ -55,11 +66,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/files/mkdir",
       payload: { path: "tiles" },
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -74,11 +87,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "DELETE",
       url: "/api/files",
       payload: { path: "forest.png" },
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -93,11 +108,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/files/rename",
       payload: { path: "forest.png", newName: "forest-renamed.png" },
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -112,11 +129,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
       url: "/api/files/move",
       payload: { fromPath: "forest.png", toPath: "tiles/forest.png" },
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -133,6 +152,7 @@ describe("file routes", () => {
 
     await app.ready();
 
+    const sessionCookie = await loginTestSession(app);
     const form = new FormData();
     form.set("path", "tiles");
     form.set("file", new Blob([Buffer.from("fake-png-bytes")]), "forest.png");
@@ -141,6 +161,7 @@ describe("file routes", () => {
       method: "POST",
       url: "/api/files/upload",
       payload: form,
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
@@ -159,8 +180,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "GET", url: "/api/files/search?q=forest" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/files/search?q=forest",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual([{ relativePath: "tiles/forest.png", type: "file" }]);
@@ -174,8 +200,13 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
-    const response = await app.inject({ method: "GET", url: "/api/files/raw?path=forest.png" });
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/files/raw?path=forest.png",
+      headers: { cookie: sessionCookie },
+    });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.headers["content-type"]).toBe("image/png");
@@ -192,10 +223,12 @@ describe("file routes", () => {
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
+    const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "GET",
       url: "/api/files/thumbnail?path=forest.png",
+      headers: { cookie: sessionCookie },
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);

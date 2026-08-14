@@ -1,6 +1,7 @@
 import fastifyMultipart from "@fastify/multipart";
 import type { FastifyInstance } from "fastify";
 import { applyBatchHandler } from "./apply/index.ts";
+import { loginHandler, logoutHandler, sessionHandler } from "./auth/index.ts";
 import { convertAssetsHandler, convertPlanHandler } from "./convert/index.ts";
 import { diffHandler } from "./diff/index.ts";
 import {
@@ -28,6 +29,9 @@ export const registerRoutes = (
   app.register(fastifyMultipart);
 
   app.get("/api/health", healthHandler);
+  app.post("/api/login", loginHandler);
+  app.post("/api/logout", logoutHandler);
+  app.get("/api/session", sessionHandler);
   app.post("/api/bootstrap", bootstrapHandler(assetTreeRoot));
   app.post("/api/rescan", rescanHandler(assetTreeRoot));
   app.post("/api/reconcile", reconcileHandler(assetTreeRoot));

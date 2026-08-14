@@ -1,4 +1,7 @@
 export { applyBatch } from "./apply/batch.ts";
+export { login } from "./auth/login.ts";
+export { logout } from "./auth/logout.ts";
+export { checkSession } from "./auth/session.ts";
 export { convert } from "./convert/assets.ts";
 export { fetchConversionPlan } from "./convert/plan/conversion.ts";
 export { fetchDiff } from "./diff/fetch.ts";
