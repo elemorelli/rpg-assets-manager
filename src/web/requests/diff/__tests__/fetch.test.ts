@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchDiff } from "../fetch-diff.ts";
+import { fetchDiff } from "../fetch.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();

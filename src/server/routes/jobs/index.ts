@@ -1,2 +1,2 @@
-export { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "./job-store.ts";
+export { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "./store.ts";
 export { jobsStreamHandler } from "./stream-handler.ts";

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "../job-store.ts";
+import { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "../store.ts";
 
 describe("jobStore", () => {
   beforeEach(() => {

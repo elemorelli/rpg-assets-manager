@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { convert } from "../convert.ts";
+import { convert } from "../assets.ts";
 
 describe("convert", () => {
   afterEach(() => {

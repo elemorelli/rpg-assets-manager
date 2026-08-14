@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { formatJobEvent } from "#utils/job.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
-import { getCurrentJob, subscribeToJobChanges } from "./job-store.ts";
+import { getCurrentJob, subscribeToJobChanges } from "./store.ts";
 
 export const jobsStreamHandler = (request: FastifyRequest, reply: FastifyReply): void => {
   reply.hijack();

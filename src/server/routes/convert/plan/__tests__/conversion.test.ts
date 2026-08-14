@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeConversionPlan } from "../conversion-plan.ts";
+import { computeConversionPlan } from "../conversion.ts";
 
 describe("computeConversionPlan", () => {
   it("plans image and audio candidates with their destination paths", () => {

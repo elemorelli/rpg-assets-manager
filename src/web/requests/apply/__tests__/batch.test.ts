@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { applyBatch } from "../apply-batch.ts";
+import { applyBatch } from "../batch.ts";
 
 afterEach(() => {
   vi.unstubAllGlobals();

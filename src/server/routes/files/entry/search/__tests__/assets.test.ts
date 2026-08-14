@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_SEARCH_RESULTS, type SearchableEntry, searchEntriesByName } from "../search-assets.ts";
+import { MAX_SEARCH_RESULTS, type SearchableEntry, searchEntriesByName } from "../assets.ts";
 
 describe("searchEntriesByName", () => {
   it("returns an empty array for a blank query", () => {

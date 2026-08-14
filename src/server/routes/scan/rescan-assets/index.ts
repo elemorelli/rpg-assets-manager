@@ -7,7 +7,7 @@ import { hashBuffer } from "#server/utils/hash.ts";
 import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../../jobs/index.ts";
 import { walkAssetTree } from "../walk-asset-tree.ts";
-import { computeRescanPlan, type RescanPlanOptions } from "./rescan-plan.ts";
+import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
 
 export interface RescanSummary {
   hashed: number;

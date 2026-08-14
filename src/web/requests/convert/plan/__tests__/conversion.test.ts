@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchConversionPlan } from "../convert-plan.ts";
+import { fetchConversionPlan } from "../conversion.ts";
 
 describe("fetchConversionPlan", () => {
   afterEach(() => {

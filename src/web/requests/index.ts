@@ -1,7 +1,7 @@
-export { applyBatch } from "./apply/apply-batch.ts";
-export { convert } from "./convert/convert.ts";
-export { fetchConversionPlan } from "./convert/plan/convert-plan.ts";
-export { fetchDiff } from "./diff/fetch-diff.ts";
+export { applyBatch } from "./apply/batch.ts";
+export { convert } from "./convert/assets.ts";
+export { fetchConversionPlan } from "./convert/plan/conversion.ts";
+export { fetchDiff } from "./diff/fetch.ts";
 export { uploadFile } from "./files/content/upload.ts";
 export { createDirectory } from "./files/directory/create.ts";
 export { listDirectory } from "./files/directory/list.ts";

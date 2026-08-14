@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { db } from "#server/db/index.ts";
-import { applyBatch } from "../apply-batch.ts";
+import { applyBatch } from "../batch.ts";
 
 const PREFIX = "apply-batch-test/";
 

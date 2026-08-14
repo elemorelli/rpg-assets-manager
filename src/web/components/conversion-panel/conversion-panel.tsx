@@ -1,5 +1,5 @@
 import { type JSX, useState } from "react";
-import type { ConversionPlan } from "#web/requests/convert/plan/convert-plan.ts";
+import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
 import styles from "./conversion-panel.module.css";
 

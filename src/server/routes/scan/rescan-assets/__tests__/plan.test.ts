@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeRescanPlan } from "../rescan-plan.ts";
+import { computeRescanPlan } from "../plan.ts";
 
 describe("computeRescanPlan", () => {
   it("puts a brand new file in toHash", () => {
