@@ -32,6 +32,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       baseUrl: "https://assets.example.com",
       dryRun: true,
       purge,
+      foundryWorldNames: [],
     });
 
     expect(summary.outcome).toBe("dry_run");
@@ -78,7 +79,14 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
 
     const summary = await applyBatch(
       db,
-      { rootDir, destinationRoot, baseUrl: "https://assets.example.com", dryRun: false, purge },
+      {
+        rootDir,
+        destinationRoot,
+        baseUrl: "https://assets.example.com",
+        dryRun: false,
+        purge,
+        foundryWorldNames: [],
+      },
       onProgress,
     );
 
@@ -109,6 +117,48 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       ]),
     );
     expect(onProgress).toHaveBeenCalledWith({ done: 2, total: 2 });
+
+    await fs.rm(rootDir, { recursive: true, force: true });
+    await fs.rm(destinationRoot, { recursive: true, force: true });
+  });
+
+  it("on a real apply with renames, stores a macro and initial world acknowledgements", async () => {
+    const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
+    const destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-dest-"));
+
+    await fs.mkdir(path.join(destinationRoot, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(destinationRoot, `${PREFIX}old.png`), "renamed-bytes");
+
+    await db
+      .insertInto("assets")
+      .values([{ path: `${PREFIX}new.png`, size: 13, mtime: new Date(), hash: "hash-rename" }])
+      .execute();
+    await db
+      .insertInto("remote_assets")
+      .values([{ path: `${PREFIX}old.png`, size: 13, hash: "hash-rename" }])
+      .execute();
+
+    const summary = await applyBatch(db, {
+      rootDir,
+      destinationRoot,
+      baseUrl: "https://assets.example.com",
+      dryRun: false,
+      purge: vi.fn().mockResolvedValue(undefined),
+      foundryWorldNames: ["kingmaker", "stolen-fate"],
+    });
+
+    expect(summary.renamed).toBe(1);
+
+    const syncRun = await db
+      .selectFrom("sync_runs")
+      .selectAll()
+      .where("id", "=", String(summary.syncRunId))
+      .executeTakeFirstOrThrow();
+
+    expect(syncRun.generated_macro).toContain(
+      '["https://assets.example.com/apply-batch-test/old.png", "https://assets.example.com/apply-batch-test/new.png"]',
+    );
+    expect(syncRun.world_acknowledgements).toEqual({ kingmaker: false, "stolen-fate": false });
 
     await fs.rm(rootDir, { recursive: true, force: true });
     await fs.rm(destinationRoot, { recursive: true, force: true });

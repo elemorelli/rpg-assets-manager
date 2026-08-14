@@ -1,6 +1,7 @@
 import type { Kysely } from "kysely";
 import type { DB } from "#server/db/index.ts";
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
+import { generateMacro } from "./macro/generate-macro.ts";
 import { mirrorRemoteAssets } from "./mirror-remote-assets.ts";
 import { buildPurgeUrls } from "./purge-urls.ts";
 import { countRcloneSteps, runRcloneOperations } from "./run-rclone-operations.ts";
@@ -28,7 +29,11 @@ export interface ApplyBatchDependencies {
   baseUrl: string;
   dryRun: boolean;
   purge: (urls: string[]) => Promise<void>;
+  foundryWorldNames: string[];
 }
+
+const buildInitialWorldAcknowledgements = (worldNames: string[]): Record<string, boolean> =>
+  Object.fromEntries(worldNames.map((worldName) => [worldName, false]));
 
 const summaryFor = (
   diff: BatchDiffResult,
@@ -57,7 +62,7 @@ export const applyBatch = async (
   onProgress?.({ done: 0, total });
 
   if (deps.dryRun) {
-    await finishSyncRun(db, syncRunId, "dry_run", diff, purgeUrls);
+    await finishSyncRun(db, syncRunId, "dry_run", diff, purgeUrls, null, {});
 
     return summaryFor(diff, "dry_run", syncRunId);
   }
@@ -66,7 +71,21 @@ export const applyBatch = async (
     await runRcloneOperations(deps.rootDir, deps.destinationRoot, diff, onProgress);
     await db.transaction().execute((trx) => mirrorRemoteAssets(trx, diff));
     await deps.purge(purgeUrls);
-    await finishSyncRun(db, syncRunId, "applied", diff, purgeUrls);
+
+    const generatedMacro = generateMacro(diff.renamed, deps.baseUrl, deps.foundryWorldNames);
+    const worldAcknowledgements = generatedMacro
+      ? buildInitialWorldAcknowledgements(deps.foundryWorldNames)
+      : {};
+
+    await finishSyncRun(
+      db,
+      syncRunId,
+      "applied",
+      diff,
+      purgeUrls,
+      generatedMacro,
+      worldAcknowledgements,
+    );
 
     return summaryFor(diff, "applied", syncRunId);
   } catch (error) {

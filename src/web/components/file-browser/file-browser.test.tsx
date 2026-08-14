@@ -15,6 +15,7 @@ const renameEntryMock = vi.mocked(api.renameEntry);
 const moveEntryMock = vi.mocked(api.moveEntry);
 const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
+const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
 
 describe("FileBrowser", () => {
   beforeEach(() => {
@@ -29,6 +30,7 @@ describe("FileBrowser", () => {
     moveEntryMock.mockResolvedValue(undefined);
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0 });
+    fetchSyncRunsMock.mockResolvedValue([]);
     FakeEventSource.reset();
     // @ts-expect-error test double
     globalThis.EventSource = FakeEventSource;

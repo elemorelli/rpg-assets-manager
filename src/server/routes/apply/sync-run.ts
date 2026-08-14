@@ -18,6 +18,8 @@ export const finishSyncRun = async (
   outcome: "applied" | "dry_run",
   diff: BatchDiffResult,
   purgeUrls: string[],
+  generatedMacro: string | null,
+  worldAcknowledgements: Record<string, boolean>,
 ): Promise<void> => {
   await db
     .updateTable("sync_runs")
@@ -29,6 +31,8 @@ export const finishSyncRun = async (
       renamed_count: diff.renamed.length,
       outcome,
       purged_urls: JSON.stringify(purgeUrls),
+      generated_macro: generatedMacro,
+      world_acknowledgements: JSON.stringify(worldAcknowledgements),
     })
     .where("id", "=", String(syncRunId))
     .execute();

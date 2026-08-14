@@ -9,6 +9,7 @@ import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../jobs/index.ts";
 import { applyBatch } from "./batch.ts";
 import { dryRun } from "./config.ts";
+import { foundryWorldNames } from "./macro/config.ts";
 
 export const applyBatchHandler = (assetTreeRoot: string) => async () => {
   let job = startJob("apply", "applying", 0);
@@ -31,6 +32,7 @@ export const applyBatchHandler = (assetTreeRoot: string) => async () => {
         baseUrl: assetsPublicBaseUrl,
         dryRun,
         purge,
+        foundryWorldNames,
       },
       (progress) => {
         job = { ...job, total: progress.total, done: progress.done };

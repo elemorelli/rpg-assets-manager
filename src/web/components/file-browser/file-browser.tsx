@@ -5,6 +5,7 @@ import { DirectoryTable } from "#components/directory-table/directory-table.tsx"
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
+import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
 import { SyncPanel } from "#components/sync-panel/sync-panel.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
@@ -24,6 +25,7 @@ export const FileBrowser = (): JSX.Element => {
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [draggedEntry, setDraggedEntry] = useState<DirectoryEntry | null>(null);
+  const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
 
   const refresh = useCallback(async (path: string): Promise<void> => {
     setBusy(true);
@@ -190,7 +192,13 @@ export const FileBrowser = (): JSX.Element => {
       </div>
       <JobProgress />
       <ConversionPanel onConverted={() => refresh(currentPath)} />
-      <SyncPanel onApplied={() => refresh(currentPath)} />
+      <SyncPanel
+        onApplied={() => {
+          refresh(currentPath);
+          setSyncHistoryRefreshToken((token) => token + 1);
+        }}
+      />
+      <SyncHistoryPanel refreshToken={syncHistoryRefreshToken} />
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />
