@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../../requests/index.ts";
@@ -137,5 +137,67 @@ describe("FileBrowser", () => {
       expect(listDirectoryMock).toHaveBeenLastCalledWith("tiles");
     });
     expect(screen.queryByRole("button", { name: "tiles/forest.png" })).not.toBeInTheDocument();
+  });
+
+  it("moves an entry when dropped onto a directory row", async () => {
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    const sourceRow = screen.getByText("map.png").closest("tr");
+    const targetRow = screen.getByRole("button", { name: "tiles" }).closest("tr");
+
+    if (!sourceRow || !targetRow) {
+      throw new Error("rows not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragOver(targetRow);
+    fireEvent.drop(targetRow);
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("map.png", "tiles/map.png");
+    });
+  });
+
+  it("moves an entry when dropped onto a breadcrumb", async () => {
+    const user = userEvent.setup();
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    listDirectoryMock.mockResolvedValueOnce([{ name: "forest.png", type: "file", size: 512 }]);
+    await user.click(screen.getByRole("button", { name: "tiles" }));
+    await screen.findByText("forest.png");
+
+    const sourceRow = screen.getByText("forest.png").closest("tr");
+    const rootCrumb = screen.getByRole("button", { name: "root" });
+
+    if (!sourceRow) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragOver(rootCrumb);
+    fireEvent.drop(rootCrumb);
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("tiles/forest.png", "forest.png");
+    });
+  });
+
+  it("does not move an entry dropped onto its own current directory crumb", async () => {
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    const sourceRow = screen.getByText("map.png").closest("tr");
+    const rootCrumb = screen.getByRole("button", { name: "root" });
+
+    if (!sourceRow) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.drop(rootCrumb);
+
+    expect(moveEntryMock).not.toHaveBeenCalled();
   });
 });

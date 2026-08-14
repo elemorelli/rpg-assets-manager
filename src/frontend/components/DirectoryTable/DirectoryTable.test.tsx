@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { DirectoryEntry } from "../../../core/directoryListing.ts";
@@ -17,6 +17,10 @@ describe("DirectoryTable", () => {
         onRename={vi.fn()}
         onDelete={vi.fn()}
         onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
       />,
     );
 
@@ -33,6 +37,10 @@ describe("DirectoryTable", () => {
         onRename={vi.fn()}
         onDelete={vi.fn()}
         onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
       />,
     );
 
@@ -50,6 +58,10 @@ describe("DirectoryTable", () => {
         onRename={vi.fn()}
         onDelete={vi.fn()}
         onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "tiles" }));
@@ -70,6 +82,10 @@ describe("DirectoryTable", () => {
         onRename={onRename}
         onDelete={onDelete}
         onMove={onMove}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
       />,
     );
 
@@ -80,5 +96,91 @@ describe("DirectoryTable", () => {
     expect(onRename).toHaveBeenCalledWith(fileEntry);
     expect(onMove).toHaveBeenCalledWith(fileEntry);
     expect(onDelete).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("calls onDragStart with the source entry, and onDragEnd when the drag ends", () => {
+    const onDragStart = vi.fn();
+    const onDragEnd = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+      />,
+    );
+    const row = screen.getByText("map.png").closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragStart(row);
+    expect(onDragStart).toHaveBeenCalledWith(fileEntry);
+
+    fireEvent.dragEnd(row);
+    expect(onDragEnd).toHaveBeenCalled();
+  });
+
+  it("calls onDropEntry when a row canDropEntry approves receives a drop", () => {
+    const onDropEntry = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[directoryEntry]}
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => true}
+        onDropEntry={onDropEntry}
+      />,
+    );
+    const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragOver(row);
+    fireEvent.drop(row);
+
+    expect(onDropEntry).toHaveBeenCalledWith(directoryEntry);
+  });
+
+  it("does not call onDropEntry when canDropEntry rejects the target", () => {
+    const onDropEntry = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[directoryEntry]}
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={onDropEntry}
+      />,
+    );
+    const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragOver(row);
+    fireEvent.drop(row);
+
+    expect(onDropEntry).not.toHaveBeenCalled();
   });
 });

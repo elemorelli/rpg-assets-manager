@@ -1,5 +1,6 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
 import type { DirectoryEntry } from "../../../core/directoryListing.ts";
+import { isValidDropTarget } from "../../../core/dragDrop.ts";
 import { joinRelativePath, parentDirectory } from "../../../core/paths.ts";
 import * as api from "../../requests/index.ts";
 import type { SearchResultEntry } from "../../requests/searchEntries.ts";
@@ -19,6 +20,7 @@ export const FileBrowser = (): JSX.Element => {
   const [searchResults, setSearchResults] = useState<SearchResultEntry[] | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [draggedEntry, setDraggedEntry] = useState<DirectoryEntry | null>(null);
 
   const refresh = useCallback(async (path: string): Promise<void> => {
     setBusy(true);
@@ -119,9 +121,57 @@ export const FileBrowser = (): JSX.Element => {
     refresh(targetDirectory);
   };
 
+  const handleDragStart = (entry: DirectoryEntry): void => {
+    setDraggedEntry(entry);
+  };
+
+  const handleDragEnd = (): void => {
+    setDraggedEntry(null);
+  };
+
+  const canDropOnDirectory = (targetDirectoryPath: string): boolean => {
+    if (!draggedEntry) {
+      return false;
+    }
+
+    const sourceRelativePath = joinRelativePath(currentPath, draggedEntry.name);
+
+    return isValidDropTarget(
+      { relativePath: sourceRelativePath, type: draggedEntry.type },
+      targetDirectoryPath,
+    );
+  };
+
+  const handleDropOnDirectory = (targetDirectoryPath: string): void => {
+    if (!draggedEntry || !canDropOnDirectory(targetDirectoryPath)) {
+      setDraggedEntry(null);
+
+      return;
+    }
+
+    const sourceRelativePath = joinRelativePath(currentPath, draggedEntry.name);
+    const destination = joinRelativePath(targetDirectoryPath, draggedEntry.name);
+
+    setDraggedEntry(null);
+    runAction(() => api.moveEntry(sourceRelativePath, destination));
+  };
+
+  const canDropOnEntry = (targetEntry: DirectoryEntry): boolean =>
+    targetEntry.type === "directory" &&
+    canDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
+
+  const handleDropOnEntry = (targetEntry: DirectoryEntry): void => {
+    handleDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
+  };
+
   return (
     <div className={styles.fileBrowser}>
-      <Breadcrumbs currentPath={currentPath} onNavigate={(path) => refresh(path)} />
+      <Breadcrumbs
+        currentPath={currentPath}
+        onNavigate={(path) => refresh(path)}
+        canDropOnPath={canDropOnDirectory}
+        onDropEntry={handleDropOnDirectory}
+      />
       <div className={styles.controls}>
         <Toolbar
           busy={busy}
@@ -140,6 +190,10 @@ export const FileBrowser = (): JSX.Element => {
           onRename={handleRename}
           onDelete={handleDelete}
           onMove={handleMove}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          canDropEntry={canDropOnEntry}
+          onDropEntry={handleDropOnEntry}
         />
       )}
     </div>

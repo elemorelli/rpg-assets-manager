@@ -23,3 +23,8 @@
   display: flex;
   gap: var(--spacing-xs);
 }
+
+.dragOver {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -2px;
+}
