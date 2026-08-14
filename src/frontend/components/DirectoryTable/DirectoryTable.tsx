@@ -1,7 +1,7 @@
 import { type DragEvent, type JSX, useState } from "react";
-import type { DirectoryEntry } from "../../../core/directoryListing.ts";
-import { formatFileSize } from "../../../core/formatFileSize.ts";
-import { joinRelativePath } from "../../../core/paths.ts";
+import type { DirectoryEntry } from "../../../utils/directoryListing.ts";
+import { joinRelativePath } from "../../../utils/paths.ts";
+import { formatFileSize } from "../../utils/formatFileSize.ts";
 import { AssetPreview } from "../AssetPreview/AssetPreview.tsx";
 import styles from "./DirectoryTable.module.css";
 

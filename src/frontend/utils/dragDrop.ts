@@ -1,4 +1,4 @@
-import { parentDirectory } from "./paths.ts";
+import { parentDirectory } from "../../utils/paths.ts";
 
 export interface DraggedEntry {
   relativePath: string;

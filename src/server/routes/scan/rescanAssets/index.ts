@@ -2,12 +2,12 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyRequest } from "fastify";
 import type { Kysely } from "kysely";
-import { hashBuffer } from "../../../../core/hash.ts";
-import { failJob, startJob } from "../../../../core/job.ts";
-import { computeRescanPlan, type RescanPlanOptions } from "../../../../core/rescanPlan.ts";
+import { failJob, startJob } from "../../../../utils/job.ts";
 import { type DB, db } from "../../../db/index.ts";
+import { hashBuffer } from "../../../utils/hash.ts";
 import { setCurrentJob } from "../../jobs/index.ts";
 import { walkAssetTree } from "../walkAssetTree.ts";
+import { computeRescanPlan, type RescanPlanOptions } from "./rescanPlan.ts";
 
 export interface RescanSummary {
   hashed: number;

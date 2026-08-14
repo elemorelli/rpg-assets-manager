@@ -1,4 +1,4 @@
-import { failJob, startJob } from "../../../core/job.ts";
+import { failJob, startJob } from "../../../utils/job.ts";
 import {
   assetsPublicBaseUrl,
   cloudflareConfig,

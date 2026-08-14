@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { mimeTypeForFile } from "../../../../core/preview.ts";
-import { resolveSafeRelativePath } from "../../../../core/safePath.ts";
+import { mimeTypeForFile } from "../../../../utils/preview.ts";
 import { HTTP_STATUS, HttpError, respondToHttpError } from "../../../errors/index.ts";
+import { resolveSafeRelativePath } from "../../../utils/safePath.ts";
 
 export const readRawFile = async (
   rootDir: string,

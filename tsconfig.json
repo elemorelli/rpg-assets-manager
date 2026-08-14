@@ -14,5 +14,5 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["src/server/**/*.ts", "src/core/**/*.ts", "scripts/**/*.ts"]
+  "include": ["src/server/**/*.ts", "src/utils/**/*.ts", "scripts/**/*.ts"]
 }

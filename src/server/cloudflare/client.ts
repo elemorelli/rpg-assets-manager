@@ -1,4 +1,4 @@
-import { chunkArray } from "../../core/chunkArray.ts";
+import { chunkArray } from "./chunkArray.ts";
 
 const CLOUDFLARE_PURGE_BATCH_SIZE = 30;
 

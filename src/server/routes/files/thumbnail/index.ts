@@ -1,10 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { hashBuffer } from "../../../../core/hash.ts";
-import { classifyPreviewKind, thumbnailCacheFileName } from "../../../../core/preview.ts";
-import { resolveSafeRelativePath } from "../../../../core/safePath.ts";
+import { classifyPreviewKind, thumbnailCacheFileName } from "../../../../utils/preview.ts";
 import { HTTP_STATUS, HttpError, respondToHttpError } from "../../../errors/index.ts";
+import { hashBuffer } from "../../../utils/hash.ts";
+import { resolveSafeRelativePath } from "../../../utils/safePath.ts";
 import { generateThumbnail } from "./generateThumbnail.ts";
 
 const cacheFileExists = async (filePath: string): Promise<boolean> => {

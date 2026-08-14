@@ -1,5 +1,5 @@
 import type { FastifyReply } from "fastify";
-import { UnsafePathError } from "../../core/safePath.ts";
+import { UnsafePathError } from "../utils/safePath.ts";
 import { HttpError } from "./httpError.ts";
 import { HTTP_STATUS } from "./httpStatus.ts";
 

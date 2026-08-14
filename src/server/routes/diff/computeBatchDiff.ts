@@ -1,10 +1,6 @@
 import { type Kysely, sql } from "kysely";
-import {
-  type HashGroup,
-  type OrphanCandidate,
-  resolveRenames,
-} from "../../../core/renameResolution.ts";
 import type { DB } from "../../db/index.ts";
+import { type HashGroup, type OrphanCandidate, resolveRenames } from "./renameResolution.ts";
 
 interface PairedRow {
   local_path: string | null;
