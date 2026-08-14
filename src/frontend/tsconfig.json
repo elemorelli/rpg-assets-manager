@@ -13,5 +13,5 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true
   },
-  "include": ["src/frontend/**/*.ts", "src/frontend/**/*.tsx", "vite.config.ts"]
+  "include": ["**/*.ts", "**/*.tsx", "../../vite.config.ts"]
 }

@@ -3,4 +3,5 @@ dist
 fixtures
 .env
 *.log
+*.tsbuildinfo
 docs/
