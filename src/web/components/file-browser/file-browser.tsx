@@ -3,6 +3,7 @@ import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { ConversionPanel } from "#components/conversion-panel/conversion-panel.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
+import { ReconciliationPanel } from "#components/reconciliation-panel/reconciliation-panel.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
 import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
@@ -199,6 +200,7 @@ export const FileBrowser = (): JSX.Element => {
         }}
       />
       <SyncHistoryPanel refreshToken={syncHistoryRefreshToken} />
+      <ReconciliationPanel />
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />

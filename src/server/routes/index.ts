@@ -16,6 +16,7 @@ import {
 } from "./files/index.ts";
 import { healthHandler } from "./health/index.ts";
 import { jobsStreamHandler } from "./jobs/index.ts";
+import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
 import { acknowledgeWorldHandler, listSyncRunsHandler } from "./sync-runs/index.ts";
 
@@ -29,6 +30,7 @@ export const registerRoutes = (
   app.get("/api/health", healthHandler);
   app.post("/api/bootstrap", bootstrapHandler(assetTreeRoot));
   app.post("/api/rescan", rescanHandler(assetTreeRoot));
+  app.post("/api/reconcile", reconcileHandler(assetTreeRoot));
   app.get("/api/diff", diffHandler);
   app.get("/api/jobs/stream", jobsStreamHandler);
   app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));

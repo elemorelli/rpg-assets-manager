@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { parseCombinedReport, type RcloneCheckResult } from "./combined-report.ts";
 
 const execFileAsync = promisify(execFile);
 
@@ -50,4 +51,36 @@ export const rcloneMoveTo = async (
     `${destinationRoot}/${oldRelativePath}`,
     `${destinationRoot}/${newRelativePath}`,
   ]);
+};
+
+const RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE = 1;
+
+export const rcloneCheck = async (
+  sourceRoot: string,
+  destinationRoot: string,
+): Promise<RcloneCheckResult> => {
+  const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-check-"));
+  const reportFilePath = path.join(reportDir, "combined.txt");
+
+  try {
+    await execFileAsync("rclone", [
+      "check",
+      sourceRoot,
+      destinationRoot,
+      "--combined",
+      reportFilePath,
+    ]);
+  } catch (error) {
+    const exitCode = (error as { code?: number }).code;
+
+    if (exitCode !== RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE) {
+      throw error;
+    }
+  }
+
+  const reportContent = await fs.readFile(reportFilePath, "utf8");
+
+  await fs.rm(reportDir, { recursive: true, force: true });
+
+  return parseCombinedReport(reportContent);
 };

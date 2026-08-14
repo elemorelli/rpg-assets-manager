@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { rcloneCopy, rcloneDelete, rcloneMoveTo } from "../client.ts";
+import { rcloneCheck, rcloneCopy, rcloneDelete, rcloneMoveTo } from "../client.ts";
 
 let sourceDir: string;
 let destinationDir: string;
@@ -49,5 +49,38 @@ describe("rclone client (requires the real rclone binary)", () => {
       "moved-bytes",
     );
     await expect(fs.access(path.join(destinationDir, "old.png"))).rejects.toThrow();
+  });
+
+  it("reports matches, one-sided files and content differences between source and destination", async () => {
+    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
+    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
+    await fs.writeFile(path.join(sourceDir, "matching.png"), "same-bytes");
+    await fs.writeFile(path.join(destinationDir, "matching.png"), "same-bytes");
+    await fs.writeFile(path.join(sourceDir, "only-on-source.png"), "source-only-bytes");
+    await fs.writeFile(path.join(destinationDir, "only-on-destination.png"), "dest-only-bytes");
+    await fs.writeFile(path.join(sourceDir, "changed.png"), "new-bytes");
+    await fs.writeFile(path.join(destinationDir, "changed.png"), "old-bytes");
+
+    const result = await rcloneCheck(sourceDir, destinationDir);
+
+    expect(result.matchCount).toBe(1);
+    expect(result.missingOnDestination).toEqual(["only-on-source.png"]);
+    expect(result.missingOnSource).toEqual(["only-on-destination.png"]);
+    expect(result.differs).toEqual(["changed.png"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("reports no differences when source and destination match exactly", async () => {
+    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
+    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
+    await fs.writeFile(path.join(sourceDir, "matching.png"), "same-bytes");
+    await fs.writeFile(path.join(destinationDir, "matching.png"), "same-bytes");
+
+    const result = await rcloneCheck(sourceDir, destinationDir);
+
+    expect(result.matchCount).toBe(1);
+    expect(result.missingOnDestination).toEqual([]);
+    expect(result.missingOnSource).toEqual([]);
+    expect(result.differs).toEqual([]);
   });
 });

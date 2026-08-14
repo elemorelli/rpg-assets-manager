@@ -111,6 +111,29 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     expect(getCurrentJob()).toBeNull();
   });
 
+  it("reports files missing from the (unconfigured) destination via POST /api/reconcile", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
+    await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
+    const app = buildApp({
+      webDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+    const observedJobs: unknown[] = [];
+    const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
+
+    const response = await app.inject({ method: "POST", url: "/api/reconcile" });
+
+    unsubscribe();
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toMatchObject({
+      missingOnDestination: ["core-routes-test/a.png"],
+    });
+    expect(observedJobs[0]).toMatchObject({ type: "reconcile", done: 0 });
+    expect(getCurrentJob()).toBeNull();
+  });
+
   it("returns conversion candidates via GET /api/convert/plan", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });

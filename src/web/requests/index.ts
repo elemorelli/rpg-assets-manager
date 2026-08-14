@@ -9,6 +9,7 @@ export { deleteEntry } from "./files/entry/delete.ts";
 export { moveEntry } from "./files/entry/move.ts";
 export { renameEntry } from "./files/entry/rename.ts";
 export { searchEntries } from "./files/entry/search.ts";
+export { type RcloneCheckResult, reconcile } from "./reconcile/check.ts";
 export { rescan } from "./scan/rescan.ts";
 export { acknowledgeWorld } from "./sync-runs/acknowledge-world.ts";
 export { fetchSyncRuns, type SyncRun } from "./sync-runs/list.ts";
