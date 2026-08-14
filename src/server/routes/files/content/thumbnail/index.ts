@@ -3,9 +3,9 @@ import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { HTTP_STATUS, HttpError, respondToHttpError } from "#server/errors/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
-import { resolveSafeRelativePath } from "#server/utils/safePath.ts";
+import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { classifyPreviewKind, thumbnailCacheFileName } from "#utils/preview.ts";
-import { generateThumbnail } from "./generateThumbnail.ts";
+import { generateThumbnail } from "./generate-thumbnail.ts";
 
 const cacheFileExists = async (filePath: string): Promise<boolean> => {
   try {

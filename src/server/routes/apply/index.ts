@@ -4,5 +4,5 @@ export {
   type ApplyOutcome,
   type ApplyProgress,
   applyBatch,
-} from "./applyBatch.ts";
+} from "./apply-batch.ts";
 export { applyBatchHandler } from "./handler.ts";

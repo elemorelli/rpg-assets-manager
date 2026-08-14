@@ -1,7 +1,7 @@
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { respondToHttpError } from "#server/errors/index.ts";
-import { resolveSafeRelativePath } from "#server/utils/safePath.ts";
+import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { moveEntry } from "../move/index.ts";
 
 export const renameEntry = async (

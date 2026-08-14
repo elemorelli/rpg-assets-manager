@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { buildFixtureTreeManifest } from "./fixtureTree.ts";
+import { buildFixtureTreeManifest } from "./fixture-tree.ts";
 
 const REAL_TREE_MARKERS = ["tiles", "maps", "audio", "characters"];
 

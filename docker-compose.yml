@@ -23,7 +23,7 @@ services:
       # 0.0.0.0 here is the in-container bind, reachable only through the
       # compose network. The host-facing bind below stays on loopback.
       HOST: "0.0.0.0"
-      FRONTEND_DIST_DIR: /app/dist/frontend
+      WEB_DIST_DIR: /app/dist/web
       ASSET_TREE_ROOT: /assets
       THUMBNAIL_CACHE_DIR: /thumbnails
     volumes:

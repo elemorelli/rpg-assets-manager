@@ -8,7 +8,7 @@
       "!**/node_modules",
       "!**/fixtures",
       "!src/server/db-types.ts",
-      "!src/frontend/public"
+      "!src/web/public"
     ]
   },
   "formatter": {

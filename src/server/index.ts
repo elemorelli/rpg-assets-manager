@@ -6,7 +6,7 @@ const DEFAULT_PORT = 3001;
 
 const HOST = process.env.HOST ?? DEFAULT_HOST;
 const PORT = Number(process.env.PORT ?? DEFAULT_PORT);
-const FRONTEND_DIST_DIR = process.env.FRONTEND_DIST_DIR ?? null;
+const WEB_DIST_DIR = process.env.WEB_DIST_DIR ?? null;
 const DATABASE_URL = process.env.DATABASE_URL;
 const ASSET_TREE_ROOT = process.env.ASSET_TREE_ROOT;
 const THUMBNAIL_CACHE_DIR = process.env.THUMBNAIL_CACHE_DIR;
@@ -32,7 +32,7 @@ const start = async (): Promise<void> => {
   });
 
   const app = buildApp({
-    frontendDistDir: FRONTEND_DIST_DIR,
+    webDistDir: WEB_DIST_DIR,
     assetTreeRoot: ASSET_TREE_ROOT,
     thumbnailCacheDir: THUMBNAIL_CACHE_DIR,
   });

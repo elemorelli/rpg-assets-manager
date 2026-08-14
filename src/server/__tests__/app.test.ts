@@ -5,7 +5,7 @@ import { HTTP_STATUS } from "../errors/index.ts";
 describe("buildApp", () => {
   it("responds ok on /api/health", async () => {
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: "/tmp/unused-in-this-test",
       thumbnailCacheDir: "/tmp/unused-in-this-test",
     });

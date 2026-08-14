@@ -5,13 +5,13 @@ import { HTTP_STATUS } from "./errors/index.ts";
 import { registerRoutes } from "./routes/index.ts";
 
 export interface AppOptions {
-  frontendDistDir: string | null;
+  webDistDir: string | null;
   assetTreeRoot: string;
   thumbnailCacheDir: string;
 }
 
 export const buildApp = ({
-  frontendDistDir,
+  webDistDir,
   assetTreeRoot,
   thumbnailCacheDir,
 }: AppOptions): FastifyInstance => {
@@ -19,9 +19,9 @@ export const buildApp = ({
 
   registerRoutes(app, assetTreeRoot, thumbnailCacheDir);
 
-  if (frontendDistDir) {
+  if (webDistDir) {
     app.register(fastifyStatic, {
-      root: path.resolve(frontendDistDir),
+      root: path.resolve(webDistDir),
       wildcard: false,
     });
 

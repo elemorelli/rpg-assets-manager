@@ -7,7 +7,7 @@ import { db } from "#server/db/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
 import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../jobs/index.ts";
-import { applyBatch } from "./applyBatch.ts";
+import { applyBatch } from "./apply-batch.ts";
 import { dryRun } from "./config.ts";
 
 export const applyBatchHandler = (assetTreeRoot: string) => async () => {

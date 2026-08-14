@@ -3,8 +3,8 @@ import path from "node:path";
 import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../../jobs/index.ts";
 import { getConversionPlan } from "../plan/index.ts";
-import { convertToOgg } from "./toOgg.ts";
-import { convertToWebp } from "./toWebp.ts";
+import { convertToOgg } from "./to-ogg.ts";
+import { convertToWebp } from "./to-webp.ts";
 
 export interface ConversionSummary {
   converted: number;

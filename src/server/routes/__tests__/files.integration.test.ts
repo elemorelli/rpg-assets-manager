@@ -22,7 +22,7 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -38,7 +38,7 @@ describe("file routes", () => {
   it("rejects an unsafe path with 400", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -51,7 +51,7 @@ describe("file routes", () => {
   it("creates a directory via POST /api/files/mkdir", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -70,7 +70,7 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -89,7 +89,7 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -108,7 +108,7 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -126,7 +126,7 @@ describe("file routes", () => {
   it("uploads a file via POST /api/files/upload", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -155,7 +155,7 @@ describe("file routes", () => {
     await fs.mkdir(path.join(tempDir, "tiles"));
     await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -170,7 +170,7 @@ describe("file routes", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -188,7 +188,7 @@ describe("file routes", () => {
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
     await fs.writeFile(path.join(tempDir, "forest.png"), Buffer.from(minimalPngBase64, "base64"));
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });

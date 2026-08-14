@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { respondToHttpError } from "#server/errors/index.ts";
-import { resolveSafeRelativePath } from "#server/utils/safePath.ts";
+import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 
 export const createDirectory = async (rootDir: string, requestedPath: string): Promise<void> => {
   const relativePath = resolveSafeRelativePath(requestedPath);

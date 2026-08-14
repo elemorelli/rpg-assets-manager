@@ -31,7 +31,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -55,7 +55,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -75,7 +75,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -96,7 +96,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -116,7 +116,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "forest.png"), "fake-bytes-forest");
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -145,7 +145,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "core-routes-test", "forest.png"), minimalPng);
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -164,7 +164,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("reports the batch diff via GET /api/diff", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });
@@ -199,7 +199,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       .execute();
 
     const app = buildApp({
-      frontendDistDir: null,
+      webDistDir: null,
       assetTreeRoot: tempDir,
       thumbnailCacheDir: path.join(tempDir, "thumbnails"),
     });

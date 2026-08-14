@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyRequest } from "fastify";
-import { type SearchableEntry, searchEntriesByName } from "./searchAssets.ts";
+import { type SearchableEntry, searchEntriesByName } from "./search-assets.ts";
 
 const walkAllEntries = async (
   rootDir: string,

@@ -1,5 +1,5 @@
 import { walkAssetTree } from "../../scan/index.ts";
-import { type ConversionPlan, computeConversionPlan } from "./conversionPlan.ts";
+import { type ConversionPlan, computeConversionPlan } from "./conversion-plan.ts";
 
 export const getConversionPlan = async (rootDir: string): Promise<ConversionPlan> => {
   const files = await walkAssetTree(rootDir);
