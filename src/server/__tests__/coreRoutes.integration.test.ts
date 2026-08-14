@@ -5,6 +5,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { buildApp } from "../app.ts";
 import { db } from "../db/index.ts";
 import { HTTP_STATUS } from "../errors/index.ts";
+import { getCurrentJob, subscribeToJobChanges } from "../jobs/jobStore.ts";
 
 const PREFIX = "core-routes-test/";
 
@@ -88,6 +89,26 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
 
     expect(forced.json()).toEqual({ hashed: 1, unchanged: 0, removed: 0 });
+  });
+
+  it("publishes rescan progress to the job store and clears it on completion via POST /api/rescan", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
+    await fs.mkdir(path.join(tempDir, "core-routes-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "core-routes-test", "a.png"), "fake-bytes-a");
+    const app = buildApp({
+      frontendDistDir: null,
+      assetTreeRoot: tempDir,
+      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+    });
+    const observedJobs: unknown[] = [];
+    const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
+
+    const response = await app.inject({ method: "POST", url: "/api/rescan" });
+
+    unsubscribe();
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(observedJobs[0]).toMatchObject({ type: "rescan", done: 0 });
+    expect(getCurrentJob()).toBeNull();
   });
 
   it("reports the batch diff via GET /api/diff", async () => {

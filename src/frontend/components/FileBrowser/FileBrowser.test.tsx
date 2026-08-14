@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "../../requests/index.ts";
+import { FakeEventSource } from "../../testUtils/FakeEventSource.ts";
 import { FileBrowser } from "./FileBrowser.tsx";
 
 vi.mock("../../requests/index.ts");
@@ -13,6 +14,7 @@ const deleteEntryMock = vi.mocked(api.deleteEntry);
 const renameEntryMock = vi.mocked(api.renameEntry);
 const moveEntryMock = vi.mocked(api.moveEntry);
 const searchEntriesMock = vi.mocked(api.searchEntries);
+const rescanMock = vi.mocked(api.rescan);
 
 describe("FileBrowser", () => {
   beforeEach(() => {
@@ -26,10 +28,16 @@ describe("FileBrowser", () => {
     renameEntryMock.mockResolvedValue(undefined);
     moveEntryMock.mockResolvedValue(undefined);
     searchEntriesMock.mockResolvedValue([]);
+    rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0 });
+    FakeEventSource.reset();
+    // @ts-expect-error test double
+    globalThis.EventSource = FakeEventSource;
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    // @ts-expect-error test double
+    delete globalThis.EventSource;
   });
 
   it("lists the root directory on mount", async () => {
@@ -107,6 +115,18 @@ describe("FileBrowser", () => {
 
     expect(deleteEntryMock).not.toHaveBeenCalled();
     confirmSpy.mockRestore();
+  });
+
+  it("triggers a rescan via the toolbar button", async () => {
+    const user = userEvent.setup();
+    render(<FileBrowser />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.click(screen.getByRole("button", { name: "Rescan" }));
+
+    await waitFor(() => {
+      expect(rescanMock).toHaveBeenCalled();
+    });
   });
 
   it("shows search results for a debounced query and hides the directory table", async () => {

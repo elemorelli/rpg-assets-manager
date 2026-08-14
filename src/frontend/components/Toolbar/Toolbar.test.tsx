@@ -20,7 +20,14 @@ describe("Toolbar", () => {
     const onCreateDirectory = vi.fn();
     promptSpy.mockReturnValue("legacy-pack");
 
-    render(<Toolbar busy={false} onCreateDirectory={onCreateDirectory} onUploadFile={vi.fn()} />);
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={onCreateDirectory}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+      />,
+    );
     await user.click(screen.getByRole("button", { name: "New folder" }));
 
     expect(onCreateDirectory).toHaveBeenCalledWith("legacy-pack");
@@ -31,7 +38,14 @@ describe("Toolbar", () => {
     const onCreateDirectory = vi.fn();
     promptSpy.mockReturnValue(null);
 
-    render(<Toolbar busy={false} onCreateDirectory={onCreateDirectory} onUploadFile={vi.fn()} />);
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={onCreateDirectory}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+      />,
+    );
     await user.click(screen.getByRole("button", { name: "New folder" }));
 
     expect(onCreateDirectory).not.toHaveBeenCalled();
@@ -42,7 +56,14 @@ describe("Toolbar", () => {
     const onUploadFile = vi.fn();
     const file = new File(["content"], "map.png", { type: "image/png" });
 
-    render(<Toolbar busy={false} onCreateDirectory={vi.fn()} onUploadFile={onUploadFile} />);
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={onUploadFile}
+        onRescan={vi.fn()}
+      />,
+    );
     const hiddenInput = document.querySelector('input[type="file"]');
 
     if (!hiddenInput) {
@@ -54,10 +75,30 @@ describe("Toolbar", () => {
     expect(onUploadFile).toHaveBeenCalledWith(file);
   });
 
+  it("triggers a rescan when the Rescan button is clicked", async () => {
+    const user = userEvent.setup();
+    const onRescan = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={onRescan}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Rescan" }));
+
+    expect(onRescan).toHaveBeenCalled();
+  });
+
   it("disables its buttons while busy", () => {
-    render(<Toolbar busy={true} onCreateDirectory={vi.fn()} onUploadFile={vi.fn()} />);
+    render(
+      <Toolbar busy={true} onCreateDirectory={vi.fn()} onUploadFile={vi.fn()} onRescan={vi.fn()} />,
+    );
 
     expect(screen.getByRole("button", { name: "New folder" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Rescan" })).toBeDisabled();
   });
 });

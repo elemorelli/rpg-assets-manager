@@ -64,4 +64,18 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
 
     expect(forced).toEqual({ hashed: 1, unchanged: 0, removed: 0 });
   });
+
+  it("reports progress via the onProgress callback", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
+    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
+    await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");
+
+    const progressUpdates: { done: number; total: number }[] = [];
+
+    await rescanAssets(db, tempDir, {}, (progress) => progressUpdates.push(progress));
+
+    expect(progressUpdates[0]).toEqual({ done: 0, total: 2 });
+    expect(progressUpdates.at(-1)).toEqual({ done: 2, total: 2 });
+  });
 });

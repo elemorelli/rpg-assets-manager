@@ -6,9 +6,15 @@ export interface ToolbarProps {
   busy: boolean;
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
+  onRescan: () => void;
 }
 
-export const Toolbar = ({ busy, onCreateDirectory, onUploadFile }: ToolbarProps): JSX.Element => {
+export const Toolbar = ({
+  busy,
+  onCreateDirectory,
+  onUploadFile,
+  onRescan,
+}: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateDirectoryClick = (): void => {
@@ -40,6 +46,9 @@ export const Toolbar = ({ busy, onCreateDirectory, onUploadFile }: ToolbarProps)
       </button>
       <button type="button" disabled={busy} onClick={handleUploadClick}>
         Upload file
+      </button>
+      <button type="button" disabled={busy} onClick={onRescan}>
+        Rescan
       </button>
       <input
         ref={fileInputRef}

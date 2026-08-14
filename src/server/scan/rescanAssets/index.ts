@@ -3,8 +3,10 @@ import path from "node:path";
 import type { FastifyRequest } from "fastify";
 import type { Kysely } from "kysely";
 import { hashBuffer } from "../../../core/hash.ts";
+import { failJob, startJob } from "../../../core/job.ts";
 import { computeRescanPlan, type RescanPlanOptions } from "../../../core/rescanPlan.ts";
 import { type DB, db } from "../../db/index.ts";
+import { setCurrentJob } from "../../jobs/jobStore.ts";
 import { walkAssetTree } from "../walkAssetTree.ts";
 
 export interface RescanSummary {
@@ -13,10 +15,16 @@ export interface RescanSummary {
   removed: number;
 }
 
+export interface RescanProgress {
+  done: number;
+  total: number;
+}
+
 export const rescanAssets = async (
   db: Kysely<DB>,
   rootDir: string,
   options: RescanPlanOptions = {},
+  onProgress?: (progress: RescanProgress) => void,
 ): Promise<RescanSummary> => {
   const previousRows = await db
     .selectFrom("assets")
@@ -31,8 +39,11 @@ export const rescanAssets = async (
 
   const current = await walkAssetTree(rootDir);
   const plan = computeRescanPlan(previous, current, options);
+  const total = plan.toHash.length;
 
-  for (const file of plan.toHash) {
+  onProgress?.({ done: 0, total });
+
+  for (const [index, file] of plan.toHash.entries()) {
     const absolutePath = path.join(rootDir, file.relativePath);
     const content = await fs.readFile(absolutePath);
     const hash = await hashBuffer(content);
@@ -45,6 +56,8 @@ export const rescanAssets = async (
         oc.column("path").doUpdateSet({ size: file.size, mtime, hash, scanned_at: new Date() }),
       )
       .execute();
+
+    onProgress?.({ done: index + 1, total });
   }
 
   for (const removedPath of plan.toRemove) {
@@ -65,5 +78,27 @@ interface RescanRequestBody {
 export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
   const body = request.body as RescanRequestBody | undefined;
 
-  return rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false });
+  let job = startJob("rescan", "hashing", 0);
+  setCurrentJob(job);
+
+  try {
+    const summary = await rescanAssets(
+      db,
+      assetTreeRoot,
+      { forceRehash: body?.forceRehash ?? false },
+      (progress) => {
+        job = { ...job, total: progress.total, done: progress.done };
+        setCurrentJob(job);
+      },
+    );
+
+    setCurrentJob(null);
+
+    return summary;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "rescan failed";
+
+    setCurrentJob(failJob(job, message));
+    throw error;
+  }
 };

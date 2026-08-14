@@ -6,6 +6,7 @@ import * as api from "../../requests/index.ts";
 import type { SearchResultEntry } from "../../requests/searchEntries.ts";
 import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs.tsx";
 import { DirectoryTable } from "../DirectoryTable/DirectoryTable.tsx";
+import { JobProgress } from "../JobProgress/JobProgress.tsx";
 import { SearchBox } from "../SearchBox/SearchBox.tsx";
 import { SearchResults } from "../SearchResults/SearchResults.tsx";
 import { Toolbar } from "../Toolbar/Toolbar.tsx";
@@ -65,6 +66,10 @@ export const FileBrowser = (): JSX.Element => {
 
   const handleUploadFile = (file: File): void => {
     runAction(() => api.uploadFile(currentPath, file));
+  };
+
+  const handleRescan = (): void => {
+    runAction(() => api.rescan().then(() => undefined));
   };
 
   const handleRename = (entry: DirectoryEntry): void => {
@@ -177,9 +182,11 @@ export const FileBrowser = (): JSX.Element => {
           busy={busy}
           onCreateDirectory={handleCreateDirectory}
           onUploadFile={handleUploadFile}
+          onRescan={handleRescan}
         />
         <SearchBox onSearch={handleSearch} />
       </div>
+      <JobProgress />
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />
