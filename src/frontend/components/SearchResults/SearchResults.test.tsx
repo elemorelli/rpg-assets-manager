@@ -2,7 +2,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import type { SearchResultEntry } from "../../requests/files/searchEntries/searchEntries.ts";
+import type { SearchResultEntry } from "../../requests/files/entry/search.ts";
 import { SearchResults } from "./SearchResults.tsx";
 
 describe("SearchResults", () => {
