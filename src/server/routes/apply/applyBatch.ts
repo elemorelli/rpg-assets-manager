@@ -1,5 +1,5 @@
 import type { Kysely } from "kysely";
-import type { DB } from "../../db/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
 import { mirrorRemoteAssets } from "./mirrorRemoteAssets.ts";
 import { buildPurgeUrls } from "./purgeUrls.ts";

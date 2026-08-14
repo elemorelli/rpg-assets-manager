@@ -1,7 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { type JSX, useMemo, useRef, useState } from "react";
-import type { BatchDiff } from "../../requests/diff/fetchDiff.ts";
-import * as api from "../../requests/index.ts";
+import type { BatchDiff } from "#frontend/requests/diff/fetchDiff.ts";
+import * as api from "#frontend/requests/index.ts";
 import styles from "./SyncPanel.module.css";
 
 export interface SyncPanelProps {

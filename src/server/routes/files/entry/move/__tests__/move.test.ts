@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { HttpError } from "../../../../../errors/index.ts";
-import { UnsafePathError } from "../../../../../utils/safePath.ts";
+import { HttpError } from "#server/errors/index.ts";
+import { UnsafePathError } from "#server/utils/safePath.ts";
 import { moveEntry } from "../index.ts";
 
 describe("moveEntry", () => {

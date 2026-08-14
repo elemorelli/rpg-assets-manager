@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import type { CurrentJob } from "../../../utils/job.ts";
+import type { CurrentJob } from "#utils/job.ts";
 
 const JOB_CHANGED_EVENT = "job-changed";
 

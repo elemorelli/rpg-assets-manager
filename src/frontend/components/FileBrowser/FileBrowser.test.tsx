@@ -2,8 +2,8 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../../requests/index.ts";
-import { FakeEventSource } from "../../testUtils/FakeEventSource.ts";
+import * as api from "#frontend/requests/index.ts";
+import { FakeEventSource } from "#frontend/testUtils/FakeEventSource.ts";
 import { FileBrowser } from "./FileBrowser.tsx";
 
 vi.mock("../../requests/index.ts");

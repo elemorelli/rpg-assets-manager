@@ -1,12 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import {
-  type DirectoryEntry,
-  sortDirectoryEntries,
-} from "../../../../../utils/directoryListing.ts";
-import { respondToHttpError } from "../../../../errors/index.ts";
-import { resolveSafeRelativePath } from "../../../../utils/safePath.ts";
+import { respondToHttpError } from "#server/errors/index.ts";
+import { resolveSafeRelativePath } from "#server/utils/safePath.ts";
+import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directoryListing.ts";
 
 export const listDirectory = async (
   rootDir: string,

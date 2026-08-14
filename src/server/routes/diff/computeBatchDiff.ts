@@ -1,5 +1,5 @@
 import { type Kysely, sql } from "kysely";
-import type { DB } from "../../db/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { type HashGroup, type OrphanCandidate, resolveRenames } from "./renameResolution.ts";
 
 interface PairedRow {

@@ -2,7 +2,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import * as api from "../../requests/index.ts";
+import * as api from "#frontend/requests/index.ts";
 import { ConversionPanel } from "./ConversionPanel.tsx";
 
 vi.mock("../../requests/index.ts");

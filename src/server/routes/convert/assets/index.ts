@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { failJob, startJob } from "../../../../utils/job.ts";
+import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../../jobs/index.ts";
 import { getConversionPlan } from "../plan/index.ts";
 import { convertToOgg } from "./toOgg.ts";

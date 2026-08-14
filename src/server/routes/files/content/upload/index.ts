@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { HTTP_STATUS, respondToHttpError } from "../../../../errors/index.ts";
-import { resolveSafeRelativePath } from "../../../../utils/safePath.ts";
+import { HTTP_STATUS, respondToHttpError } from "#server/errors/index.ts";
+import { resolveSafeRelativePath } from "#server/utils/safePath.ts";
 
 export const uploadFile = async (
   rootDir: string,

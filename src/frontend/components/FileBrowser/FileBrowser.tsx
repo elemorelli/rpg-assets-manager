@@ -1,17 +1,17 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
-import type { DirectoryEntry } from "../../../utils/directoryListing.ts";
-import { joinRelativePath, parentDirectory } from "../../../utils/paths.ts";
-import type { SearchResultEntry } from "../../requests/files/entry/search.ts";
-import * as api from "../../requests/index.ts";
-import { isValidDropTarget } from "../../utils/dragDrop.ts";
-import { Breadcrumbs } from "../Breadcrumbs/Breadcrumbs.tsx";
-import { ConversionPanel } from "../ConversionPanel/ConversionPanel.tsx";
-import { DirectoryTable } from "../DirectoryTable/DirectoryTable.tsx";
-import { JobProgress } from "../JobProgress/JobProgress.tsx";
-import { SearchBox } from "../SearchBox/SearchBox.tsx";
-import { SearchResults } from "../SearchResults/SearchResults.tsx";
-import { SyncPanel } from "../SyncPanel/SyncPanel.tsx";
-import { Toolbar } from "../Toolbar/Toolbar.tsx";
+import { Breadcrumbs } from "#components/Breadcrumbs/Breadcrumbs.tsx";
+import { ConversionPanel } from "#components/ConversionPanel/ConversionPanel.tsx";
+import { DirectoryTable } from "#components/DirectoryTable/DirectoryTable.tsx";
+import { JobProgress } from "#components/JobProgress/JobProgress.tsx";
+import { SearchBox } from "#components/SearchBox/SearchBox.tsx";
+import { SearchResults } from "#components/SearchResults/SearchResults.tsx";
+import { SyncPanel } from "#components/SyncPanel/SyncPanel.tsx";
+import { Toolbar } from "#components/Toolbar/Toolbar.tsx";
+import type { SearchResultEntry } from "#frontend/requests/files/entry/search.ts";
+import * as api from "#frontend/requests/index.ts";
+import { isValidDropTarget } from "#frontend/utils/dragDrop.ts";
+import type { DirectoryEntry } from "#utils/directoryListing.ts";
+import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
 import styles from "./FileBrowser.module.css";
 
 const describeError = (caught: unknown): string =>

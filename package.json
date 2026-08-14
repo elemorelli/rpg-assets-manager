@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "imports": {
+    "#utils/*": "./src/utils/*",
+    "#server/*": "./src/server/*",
+    "#frontend/*": "./src/frontend/*",
+    "#components/*": "./src/frontend/components/*"
+  },
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "tsc -b src/frontend/tsconfig.json && vite build",

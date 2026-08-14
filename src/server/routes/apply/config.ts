@@ -1,4 +1,4 @@
-import { cloudflareConfig } from "../../cloudflare/index.ts";
+import { cloudflareConfig } from "#server/cloudflare/index.ts";
 
 export const validateDryRunGuard = (dryRun: boolean, hasCloudflareConfig: boolean): void => {
   if (!dryRun && !hasCloudflareConfig) {

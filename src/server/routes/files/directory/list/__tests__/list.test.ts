@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { UnsafePathError } from "../../../../../utils/safePath.ts";
+import { UnsafePathError } from "#server/utils/safePath.ts";
 import { listDirectory } from "../index.ts";
 
 describe("listDirectory", () => {

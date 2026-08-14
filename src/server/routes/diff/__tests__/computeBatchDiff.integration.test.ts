@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
-import { db } from "../../../db/index.ts";
+import { db } from "#server/db/index.ts";
 import { computeBatchDiff } from "../computeBatchDiff.ts";
 
 const PREFIX = "diff-test/";

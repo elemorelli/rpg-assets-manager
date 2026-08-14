@@ -1,8 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
-import { type DB, db } from "../../../db/index.ts";
-import { hashBuffer } from "../../../utils/hash.ts";
+import { type DB, db } from "#server/db/index.ts";
+import { hashBuffer } from "#server/utils/hash.ts";
 import { walkAssetTree } from "../walkAssetTree.ts";
 
 export interface BootstrapSummary {

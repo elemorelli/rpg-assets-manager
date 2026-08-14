@@ -1,5 +1,5 @@
 import type { Kysely } from "kysely";
-import type { DB } from "../../db/index.ts";
+import type { DB } from "#server/db/index.ts";
 import type { BatchDiffResult } from "../diff/index.ts";
 
 export const mirrorRemoteAssets = async (trx: Kysely<DB>, diff: BatchDiffResult): Promise<void> => {

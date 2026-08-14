@@ -1,4 +1,4 @@
-import { parentDirectory } from "../../../../utils/paths.ts";
+import { parentDirectory } from "#utils/paths.ts";
 
 export type ConversionKind = "image" | "audio";
 

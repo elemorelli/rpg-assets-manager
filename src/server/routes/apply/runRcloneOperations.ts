@@ -1,4 +1,4 @@
-import { rcloneCopy, rcloneDelete, rcloneMoveTo } from "../../rclone/index.ts";
+import { rcloneCopy, rcloneDelete, rcloneMoveTo } from "#server/rclone/index.ts";
 import type { BatchDiffResult } from "../diff/index.ts";
 
 export interface RcloneOperationsProgress {

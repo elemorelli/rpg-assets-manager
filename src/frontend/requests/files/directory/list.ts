@@ -1,4 +1,4 @@
-import type { DirectoryEntry } from "../../../../utils/directoryListing.ts";
+import type { DirectoryEntry } from "#utils/directoryListing.ts";
 import { requestJson } from "../../httpClient.ts";
 
 export const listDirectory = (path: string): Promise<DirectoryEntry[]> =>
