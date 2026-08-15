@@ -1,4 +1,5 @@
 import { type JSX, useEffect, useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router";
 
 import { FileBrowser } from "./components/file-browser/file-browser.tsx";
 import { LoginForm } from "./components/login-form/login-form.tsx";
@@ -32,13 +33,20 @@ export const App = (): JSX.Element | null => {
   }
 
   return (
-    <main>
-      <h1>rpg-assets-manager</h1>
-      {authenticated ? (
-        <FileBrowser onLoggedOut={() => setAuthenticated(false)} />
-      ) : (
-        <LoginForm onLoggedIn={() => setAuthenticated(true)} />
-      )}
-    </main>
+    <BrowserRouter>
+      <main>
+        <h1>rpg-assets-manager</h1>
+        {authenticated ? (
+          <Routes>
+            <Route
+              path="/*"
+              element={<FileBrowser onLoggedOut={() => setAuthenticated(false)} />}
+            />
+          </Routes>
+        ) : (
+          <LoginForm onLoggedIn={() => setAuthenticated(true)} />
+        )}
+      </main>
+    </BrowserRouter>
   );
 };

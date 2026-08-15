@@ -1,10 +1,12 @@
-import { type DragEvent, type JSX, useState } from "react";
+import clsx from "clsx";
+import { type DragEvent, type JSX, type MouseEvent, useState } from "react";
 
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
+import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
 
 import styles from "./directory-table.module.css";
 
@@ -21,6 +23,8 @@ export interface DirectoryTableProps {
   onDropEntry: (entry: DirectoryEntry) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  selectedNames: Set<string>;
+  onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
 }
 
 export const DirectoryTable = ({
@@ -36,6 +40,8 @@ export const DirectoryTable = ({
   onDropEntry,
   availableTags,
   onTagsChange,
+  selectedNames,
+  onSelectRow,
 }: DirectoryTableProps): JSX.Element => {
   const [dragOverName, setDragOverName] = useState<string | null>(null);
 
@@ -57,6 +63,7 @@ export const DirectoryTable = ({
             entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
           const isDropTarget = canDropEntry(entry);
           const isDragOver = isDropTarget && dragOverName === entry.name;
+          const isSelected = selectedNames.has(entry.name);
 
           const handleDragOver = (event: DragEvent<HTMLTableRowElement>): void => {
             if (!isDropTarget) {
@@ -86,11 +93,25 @@ export const DirectoryTable = ({
             onDragStart(entry);
           };
 
+          const handleRowClick = (event: MouseEvent<HTMLTableRowElement>): void => {
+            const modifier: SelectionClickModifier =
+              event.ctrlKey || event.metaKey ? "toggle" : event.shiftKey ? "range" : "replace";
+
+            onSelectRow(entry, modifier);
+          };
+
+          const handleNameClick = (event: MouseEvent<HTMLButtonElement>): void => {
+            event.stopPropagation();
+            onOpenDirectory(entry.name);
+          };
+
           return (
             <tr
               key={entry.name}
               draggable
-              className={isDragOver ? styles.dragOver : undefined}
+              aria-selected={isSelected}
+              className={clsx(isDragOver && styles.dragOver, isSelected && styles.selected)}
+              onClick={handleRowClick}
               onDragStart={handleDragStart}
               onDragEnd={onDragEnd}
               onDragOver={handleDragOver}
@@ -104,10 +125,7 @@ export const DirectoryTable = ({
               </td>
               <td>
                 {entry.type === "directory" ? (
-                  <button
-                    type="button"
-                    className={styles.nameButton}
-                    onClick={() => onOpenDirectory(entry.name)}>
+                  <button type="button" className={styles.nameButton} onClick={handleNameClick}>
                     {entry.name}
                   </button>
                 ) : (

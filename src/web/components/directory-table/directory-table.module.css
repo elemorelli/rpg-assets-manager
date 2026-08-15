@@ -28,3 +28,7 @@
   outline: 2px dashed var(--color-accent);
   outline-offset: -2px;
 }
+
+.selected {
+  background: var(--color-surface);
+}

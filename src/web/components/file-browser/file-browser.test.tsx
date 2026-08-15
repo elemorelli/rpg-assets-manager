@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "#web/requests/index.ts";
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
 
-import { FileBrowser } from "./file-browser.tsx";
+import { FileBrowser, type FileBrowserProps } from "./file-browser.tsx";
 
 vi.mock("../../requests/index.ts");
 
@@ -23,13 +24,37 @@ const fetchTagsMock = vi.mocked(api.fetchTags);
 const setAssetTagsMock = vi.mocked(api.setAssetTags);
 const fetchFilesByTagMock = vi.mocked(api.fetchFilesByTag);
 
+const renderFileBrowser = (
+  props: FileBrowserProps = { onLoggedOut: vi.fn() },
+  initialPath = "/",
+): ReturnType<typeof render> =>
+  render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <Routes>
+        <Route path="/*" element={<FileBrowser {...props} />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+
 describe("FileBrowser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    listDirectoryMock.mockResolvedValue([
-      { name: "tiles", type: "directory" },
-      { name: "map.png", type: "file", size: 1024 },
-    ]);
+    // Path-conditional, not a blanket mockResolvedValue: FileBrowser now
+    // mounts TreeView alongside the table, and TreeView prefetches one level
+    // ahead of whatever it loads. A blanket "tiles" result would make the
+    // prefetch of "tiles" itself return another "tiles" directory, and so on
+    // forever. Only "" (root) has content here; every other path a test
+    // doesn't override resolves to empty.
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "tiles", type: "directory" },
+              { name: "map.png", type: "file", size: 1024 },
+            ]
+          : [],
+      ),
+    );
     createDirectoryMock.mockResolvedValue(undefined);
     deleteEntryMock.mockResolvedValue(undefined);
     renameEntryMock.mockResolvedValue(undefined);
@@ -53,23 +78,59 @@ describe("FileBrowser", () => {
   });
 
   it("lists the root directory on mount", async () => {
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
+    renderFileBrowser();
 
-    await screen.findByRole("button", { name: "tiles" });
+    // "tiles" now renders twice (once in the tree, once in the table), so
+    // this waits on both appearing rather than a role query that would throw
+    // on finding more than one match.
+    await screen.findAllByText("tiles");
 
     expect(listDirectoryMock).toHaveBeenCalledWith("");
     expect(screen.getByText("map.png")).toBeInTheDocument();
   });
 
+  it("deep-links directly into a subdirectory from the URL", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      path === "icons"
+        ? Promise.resolve([{ name: "npc.png", type: "file", size: 10 }])
+        : Promise.resolve([{ name: "icons", type: "directory" }]),
+    );
+
+    renderFileBrowser({ onLoggedOut: vi.fn() }, "/icons");
+
+    await screen.findByText("npc.png");
+    expect(listDirectoryMock).toHaveBeenCalledWith("icons");
+  });
+
+  it("shows an inline error with a link back to root for an unresolvable deep link", async () => {
+    // Path-conditional rather than mockRejectedValueOnce: TreeView's own
+    // mount-time load of "" races with FileBrowser's load of "missing", and
+    // a plain "reject the next call" would be applied to whichever of those
+    // two happens to run first instead of specifically to "missing".
+    listDirectoryMock.mockImplementation((path: string) =>
+      path === "missing" ? Promise.reject(new Error("not found")) : Promise.resolve([]),
+    );
+
+    renderFileBrowser({ onLoggedOut: vi.fn() }, "/missing");
+
+    expect(await screen.findByText("not found")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to root" })).toBeInTheDocument();
+  });
+
   it("navigates into a subdirectory and updates the breadcrumb", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     listDirectoryMock.mockResolvedValueOnce([{ name: "legacy-pack", type: "directory" }]);
-    await user.click(screen.getByRole("button", { name: "tiles" }));
+    const nameCell = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
 
-    await screen.findByRole("button", { name: "legacy-pack" });
+    if (!nameCell) {
+      throw new Error("tiles name button not found");
+    }
+    await user.click(nameCell);
+
+    await screen.findAllByText("legacy-pack");
     expect(listDirectoryMock).toHaveBeenLastCalledWith("tiles");
 
     const breadcrumbNav = screen.getByRole("navigation");
@@ -80,7 +141,7 @@ describe("FileBrowser", () => {
     listDirectoryMock.mockReset();
     listDirectoryMock.mockRejectedValue(new Error("network down"));
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
+    renderFileBrowser();
 
     expect(await screen.findByText("network down")).toBeInTheDocument();
   });
@@ -89,15 +150,23 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("new-folder");
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "New folder" }));
 
     await waitFor(() => {
       expect(createDirectoryMock).toHaveBeenCalledWith("new-folder");
     });
-    expect(listDirectoryMock).toHaveBeenCalledTimes(2);
+    // TreeView independently loads path "" once on mount too, so the total
+    // call count for listDirectoryMock isn't just FileBrowser's own 1 (mount)
+    // + 1 (post-action refresh); assert the refresh happened by requiring at
+    // least a second call for that path, rather than an exact global count.
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+    });
     promptSpy.mockRestore();
   });
 
@@ -105,8 +174,8 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
 
@@ -120,8 +189,8 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
 
@@ -131,8 +200,8 @@ describe("FileBrowser", () => {
 
   it("triggers a rescan via the toolbar button", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "Rescan" }));
 
@@ -143,8 +212,8 @@ describe("FileBrowser", () => {
 
   it("triggers a full rehash when the toolbar checkbox is checked", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("checkbox", { name: "Full rehash" }));
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -158,22 +227,22 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.type(screen.getByRole("searchbox"), "forest");
 
     await screen.findByRole("button", { name: "tiles/forest.png" });
     expect(searchEntriesMock).toHaveBeenCalledWith("forest");
-    expect(screen.queryByRole("button", { name: "tiles" })).not.toBeInTheDocument();
+    expect(screen.queryByText("map.png")).not.toBeInTheDocument();
   });
 
   it("navigates to a search result's containing directory and exits search mode", async () => {
     const user = userEvent.setup();
     searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.type(screen.getByRole("searchbox"), "forest");
     await user.click(await screen.findByRole("button", { name: "tiles/forest.png" }));
@@ -185,19 +254,19 @@ describe("FileBrowser", () => {
   });
 
   it("moves an entry when dropped onto a directory row", async () => {
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     const sourceRow = screen.getByText("map.png").closest("tr");
-    const targetRow = screen.getByRole("button", { name: "tiles" }).closest("tr");
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
 
-    if (!sourceRow || !targetRow) {
+    if (!sourceRow || !targetRow?.closest("tr")) {
       throw new Error("rows not found");
     }
 
     fireEvent.dragStart(sourceRow);
-    fireEvent.dragOver(targetRow);
-    fireEvent.drop(targetRow);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
 
     await waitFor(() => {
       expect(moveEntryMock).toHaveBeenCalledWith("map.png", "tiles/map.png");
@@ -206,15 +275,22 @@ describe("FileBrowser", () => {
 
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     listDirectoryMock.mockResolvedValueOnce([{ name: "forest.png", type: "file", size: 512 }]);
-    await user.click(screen.getByRole("button", { name: "tiles" }));
+    const nameCell = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!nameCell) {
+      throw new Error("tiles name button not found");
+    }
+    await user.click(nameCell);
     await screen.findByText("forest.png");
 
     const sourceRow = screen.getByText("forest.png").closest("tr");
-    const rootCrumb = screen.getByRole("button", { name: "root" });
+    // Scoped to the breadcrumb nav: the tree's root node is also named
+    // "root", so an unscoped query would match both.
+    const rootCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "root" });
 
     if (!sourceRow) {
       throw new Error("row not found");
@@ -230,11 +306,13 @@ describe("FileBrowser", () => {
   });
 
   it("does not move an entry dropped onto its own current directory crumb", async () => {
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     const sourceRow = screen.getByText("map.png").closest("tr");
-    const rootCrumb = screen.getByRole("button", { name: "root" });
+    // Scoped to the breadcrumb nav: the tree's root node is also named
+    // "root", so an unscoped query would match both.
+    const rootCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "root" });
 
     if (!sourceRow) {
       throw new Error("row not found");
@@ -249,8 +327,8 @@ describe("FileBrowser", () => {
   it("calls the logout request and reloads into the login form when Log out is clicked", async () => {
     const user = userEvent.setup();
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "Log out" }));
 
@@ -260,8 +338,8 @@ describe("FileBrowser", () => {
   });
 
   it("fetches the tag list on mount and renders it as filter chips", async () => {
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     expect(fetchTagsMock).toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "npc" })).toBeInTheDocument();
@@ -272,13 +350,117 @@ describe("FileBrowser", () => {
     const user = userEvent.setup();
     fetchFilesByTagMock.mockResolvedValue([{ relativePath: "tiles/goblin.png", type: "file" }]);
 
-    render(<FileBrowser onLoggedOut={vi.fn()} />);
-    await screen.findByRole("button", { name: "tiles" });
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "npc" }));
 
     expect(fetchFilesByTagMock).toHaveBeenCalledWith(["npc"]);
     expect(await screen.findByText("tiles/goblin.png")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "tiles" })).not.toBeInTheDocument();
+    expect(screen.queryByText("map.png")).not.toBeInTheDocument();
+  });
+
+  it("drags the whole multi-selection when starting a drag from a selected row", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+              { name: "tiles", type: "directory" },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    fireEvent.click(screen.getByText("a.png"));
+    fireEvent.click(screen.getByText("b.png"), { ctrlKey: true });
+
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!targetRow?.closest("tr")) {
+      throw new Error("target row not found");
+    }
+
+    fireEvent.dragStart(screen.getByText("b.png").closest("tr") as HTMLElement);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("a.png", "tiles/a.png");
+      expect(moveEntryMock).toHaveBeenCalledWith("b.png", "tiles/b.png");
+    });
+  });
+
+  it("drags only the clicked row when it is outside the current selection", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+              { name: "tiles", type: "directory" },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    fireEvent.click(screen.getByText("a.png"));
+
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!targetRow?.closest("tr")) {
+      throw new Error("target row not found");
+    }
+
+    fireEvent.dragStart(screen.getByText("b.png").closest("tr") as HTMLElement);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("b.png", "tiles/b.png");
+    });
+    expect(moveEntryMock).not.toHaveBeenCalledWith("a.png", "tiles/a.png");
+  });
+
+  it("stops a batch move on the first failure and reports it, without retrying the rest", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+              { name: "tiles", type: "directory" },
+            ]
+          : [],
+      ),
+    );
+    moveEntryMock.mockImplementation((from: string) =>
+      from === "a.png" ? Promise.reject(new Error("locked")) : Promise.resolve(undefined),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    fireEvent.click(screen.getByText("a.png"));
+    fireEvent.click(screen.getByText("b.png"), { ctrlKey: true });
+
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!targetRow?.closest("tr")) {
+      throw new Error("target row not found");
+    }
+
+    fireEvent.dragStart(screen.getByText("a.png").closest("tr") as HTMLElement);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    expect(await screen.findByText(/locked/)).toBeInTheDocument();
   });
 });

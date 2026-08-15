@@ -1,0 +1,42 @@
+.shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) 1fr;
+  grid-template-rows: 1fr auto;
+  grid-template-areas:
+    "sidebar main"
+    "sidebar drawer";
+  height: 100vh;
+}
+
+.sidebar {
+  grid-area: sidebar;
+  position: relative;
+  overflow-y: auto;
+  border-right: 1px solid var(--color-border);
+}
+
+.main {
+  grid-area: main;
+  overflow-y: auto;
+  padding: var(--spacing-md);
+}
+
+.drawerRegion {
+  grid-area: drawer;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.resizeHandle:hover {
+  background: var(--color-accent);
+}

@@ -26,6 +26,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
@@ -49,6 +51,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
@@ -73,6 +77,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "tiles" }));
@@ -100,6 +106,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
@@ -130,6 +138,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
     const row = screen.getByText("map.png").closest("tr");
@@ -162,6 +172,8 @@ describe("DirectoryTable", () => {
         onDropEntry={onDropEntry}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
     const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
@@ -193,6 +205,8 @@ describe("DirectoryTable", () => {
         onDropEntry={onDropEntry}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
     const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
@@ -222,6 +236,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
@@ -250,6 +266,8 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={["npc", "loot"]}
         onTagsChange={onTagsChange}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
@@ -275,9 +293,142 @@ describe("DirectoryTable", () => {
         onDropEntry={vi.fn()}
         availableTags={[]}
         onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={vi.fn()}
       />,
     );
 
     expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("highlights a row that is in the selected set", () => {
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+        selectedNames={new Set(["map.png"])}
+        onSelectRow={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText("map.png").closest("tr")).toHaveAttribute("aria-selected", "true");
+  });
+
+  it("calls onSelectRow with a replace modifier on a plain click", async () => {
+    const user = userEvent.setup();
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={onSelectRow}
+      />,
+    );
+    await user.click(screen.getByText("map.png"));
+
+    expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "replace");
+  });
+
+  it("calls onSelectRow with a toggle modifier on ctrl+click", () => {
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={onSelectRow}
+      />,
+    );
+    fireEvent.click(screen.getByText("map.png"), { ctrlKey: true });
+
+    expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "toggle");
+  });
+
+  it("calls onSelectRow with a range modifier on shift+click", () => {
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[fileEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={onSelectRow}
+      />,
+    );
+    fireEvent.click(screen.getByText("map.png"), { shiftKey: true });
+
+    expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "range");
+  });
+
+  it("opens the directory on a name click without also calling onSelectRow", async () => {
+    const user = userEvent.setup();
+    const onOpenDirectory = vi.fn();
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        entries={[directoryEntry]}
+        currentPath="tiles"
+        onOpenDirectory={onOpenDirectory}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+        selectedNames={new Set()}
+        onSelectRow={onSelectRow}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "tiles" }));
+
+    expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
+    expect(onSelectRow).not.toHaveBeenCalled();
   });
 });

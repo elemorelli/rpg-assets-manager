@@ -1,0 +1,65 @@
+.tree {
+  list-style: none;
+  margin: 0;
+  padding: var(--spacing-sm) 0;
+}
+
+.children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: 2px var(--spacing-sm);
+  cursor: default;
+}
+
+.row.dragOver {
+  outline: 2px dashed var(--color-accent);
+  outline-offset: -2px;
+}
+
+.toggle {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+}
+
+.chevron {
+  transition: transform 0.1s ease;
+}
+
+.chevronExpanded {
+  transform: rotate(90deg);
+}
+
+.nameButton {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.active {
+  font-weight: bold;
+  color: var(--color-accent);
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  padding-left: calc(var(--spacing-sm) + 14px);
+}
