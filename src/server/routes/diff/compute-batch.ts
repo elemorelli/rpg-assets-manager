@@ -1,6 +1,6 @@
 import { type Kysely, sql } from "kysely";
 import type { DB } from "#server/db/index.ts";
-import { type HashGroup, type OrphanCandidate, resolveRenames } from "./rename-resolution.ts";
+import { buildHashGroups, type OrphanCandidate, resolveRenames } from "./rename-resolution.ts";
 
 interface PairedRow {
   local_path: string | null;
@@ -53,31 +53,9 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
     }
   }
 
-  const groupsByHash = new Map<string, HashGroup>();
-
-  for (const candidate of orphanLocal) {
-    const group = groupsByHash.get(candidate.hash) ?? {
-      hash: candidate.hash,
-      local: [],
-      remote: [],
-    };
-
-    group.local.push(candidate);
-    groupsByHash.set(candidate.hash, group);
-  }
-
-  for (const candidate of orphanRemote) {
-    const group = groupsByHash.get(candidate.hash) ?? {
-      hash: candidate.hash,
-      local: [],
-      remote: [],
-    };
-
-    group.remote.push(candidate);
-    groupsByHash.set(candidate.hash, group);
-  }
-
-  const { added, deleted, renamed, ambiguousWarnings } = resolveRenames([...groupsByHash.values()]);
+  const { added, deleted, renamed, ambiguousWarnings } = resolveRenames(
+    buildHashGroups(orphanLocal, orphanRemote),
+  );
 
   return { added, deleted, modified, renamed, ambiguousWarnings };
 };

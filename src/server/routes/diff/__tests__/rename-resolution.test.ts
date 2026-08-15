@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { resolveRenames } from "../rename-resolution.ts";
+import { buildHashGroups, resolveRenames } from "../rename-resolution.ts";
+
+describe("buildHashGroups", () => {
+  it("groups local and remote candidates that share a hash", () => {
+    const local = [{ path: "a.png", hash: "h1" }];
+    const remote = [
+      { path: "b.png", hash: "h1" },
+      { path: "c.png", hash: "h2" },
+    ];
+
+    const groups = buildHashGroups(local, remote);
+
+    expect(groups).toEqual([
+      {
+        hash: "h1",
+        local: [{ path: "a.png", hash: "h1" }],
+        remote: [{ path: "b.png", hash: "h1" }],
+      },
+      { hash: "h2", local: [], remote: [{ path: "c.png", hash: "h2" }] },
+    ]);
+  });
+
+  it("returns an empty array when both sides are empty", () => {
+    expect(buildHashGroups([], [])).toEqual([]);
+  });
+});
 
 describe("resolveRenames", () => {
   it("resolves an unambiguous rename when exactly one candidate exists on each side", () => {

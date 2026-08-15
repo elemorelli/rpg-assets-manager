@@ -29,6 +29,37 @@ export interface RenameResolution {
 
 const basename = (filePath: string): string => filePath.split("/").pop() ?? filePath;
 
+export const buildHashGroups = (
+  local: OrphanCandidate[],
+  remote: OrphanCandidate[],
+): HashGroup[] => {
+  const groupsByHash = new Map<string, HashGroup>();
+
+  for (const candidate of local) {
+    const group = groupsByHash.get(candidate.hash) ?? {
+      hash: candidate.hash,
+      local: [],
+      remote: [],
+    };
+
+    group.local.push(candidate);
+    groupsByHash.set(candidate.hash, group);
+  }
+
+  for (const candidate of remote) {
+    const group = groupsByHash.get(candidate.hash) ?? {
+      hash: candidate.hash,
+      local: [],
+      remote: [],
+    };
+
+    group.remote.push(candidate);
+    groupsByHash.set(candidate.hash, group);
+  }
+
+  return [...groupsByHash.values()];
+};
+
 const resolveGroup = (group: HashGroup, resolution: RenameResolution): void => {
   if (group.local.length === 0) {
     for (const candidate of group.remote) {

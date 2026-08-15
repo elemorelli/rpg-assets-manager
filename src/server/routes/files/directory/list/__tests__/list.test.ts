@@ -2,13 +2,16 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
+import { db } from "#server/db/index.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 import { listDirectory } from "../index.ts";
 
-describe("listDirectory", () => {
+describe("listDirectory (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
 
   afterEach(async () => {
+    await db.deleteFrom("assets").where("path", "in", ["tagged.png", "untagged.png"]).execute();
+
     if (tempDir) {
       await fs.rm(tempDir, { recursive: true, force: true });
       tempDir = "";
@@ -54,5 +57,24 @@ describe("listDirectory", () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-"));
 
     await expect(listDirectory(tempDir, "../../etc")).rejects.toThrow(UnsafePathError);
+  });
+
+  it("includes tags for files that have them, and omits the field otherwise", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-tags-test-"));
+
+    await fs.writeFile(path.join(tempDir, "tagged.png"), "x");
+    await fs.writeFile(path.join(tempDir, "untagged.png"), "x");
+
+    await db
+      .insertInto("assets")
+      .values({ path: "tagged.png", size: 1, mtime: new Date(), hash: "h1", tags: ["npc"] })
+      .execute();
+
+    const entries = await listDirectory(tempDir, "");
+    const tagged = entries.find((entry) => entry.name === "tagged.png");
+    const untagged = entries.find((entry) => entry.name === "untagged.png");
+
+    expect(tagged?.tags).toEqual(["npc"]);
+    expect(untagged?.tags).toBeUndefined();
   });
 });

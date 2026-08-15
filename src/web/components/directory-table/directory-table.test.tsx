@@ -22,6 +22,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
 
@@ -43,6 +45,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
 
@@ -65,6 +69,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "tiles" }));
@@ -90,6 +96,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
 
@@ -118,6 +126,8 @@ describe("DirectoryTable", () => {
         onDragEnd={onDragEnd}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
     const row = screen.getByText("map.png").closest("tr");
@@ -148,6 +158,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => true}
         onDropEntry={onDropEntry}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
     const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
@@ -177,6 +189,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={onDropEntry}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
     const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
@@ -204,6 +218,8 @@ describe("DirectoryTable", () => {
         onDragEnd={vi.fn()}
         canDropEntry={() => false}
         onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
       />,
     );
 
@@ -211,5 +227,55 @@ describe("DirectoryTable", () => {
       "src",
       "/api/files/raw?path=tiles%2Fmap.png",
     );
+  });
+
+  it("renders a tag editor for file rows and calls onTagsChange when a tag is added", async () => {
+    const user = userEvent.setup();
+    const onTagsChange = vi.fn();
+    const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
+
+    render(
+      <DirectoryTable
+        entries={[taggedFile]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={["npc", "loot"]}
+        onTagsChange={onTagsChange}
+      />,
+    );
+
+    expect(screen.getByText("npc")).toBeInTheDocument();
+
+    await user.type(screen.getByLabelText("Add tag"), "loot{Enter}");
+
+    expect(onTagsChange).toHaveBeenCalledWith(taggedFile, ["npc", "loot"]);
+  });
+
+  it("does not render a tag editor for directory rows", () => {
+    render(
+      <DirectoryTable
+        entries={[directoryEntry]}
+        currentPath="tiles"
+        onOpenDirectory={vi.fn()}
+        onRename={vi.fn()}
+        onDelete={vi.fn()}
+        onMove={vi.fn()}
+        onDragStart={vi.fn()}
+        onDragEnd={vi.fn()}
+        canDropEntry={() => false}
+        onDropEntry={vi.fn()}
+        availableTags={[]}
+        onTagsChange={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
   });
 });

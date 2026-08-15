@@ -7,12 +7,14 @@ import { hashBuffer } from "#server/utils/hash.ts";
 import { failJob, startJob } from "#utils/job.ts";
 import { setCurrentJob } from "../../jobs/index.ts";
 import { walkAssetTree } from "../walk-asset-tree.ts";
+import { classifyHashedCandidates, type HashedCandidate } from "./classify.ts";
 import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
 
 export interface RescanSummary {
   hashed: number;
   unchanged: number;
   removed: number;
+  renamed: number;
 }
 
 export interface RescanProgress {
@@ -43,31 +45,69 @@ export const rescanAssets = async (
 
   onProgress?.({ done: 0, total });
 
+  const hashedCandidates: HashedCandidate[] = [];
+
   for (const [index, file] of plan.toHash.entries()) {
     const absolutePath = path.join(rootDir, file.relativePath);
     const content = await fs.readFile(absolutePath);
     const hash = await hashBuffer(content);
-    const mtime = new Date(file.mtimeMs);
 
-    await db
-      .insertInto("assets")
-      .values({ path: file.relativePath, size: file.size, mtime, hash })
-      .onConflict((oc) =>
-        oc.column("path").doUpdateSet({ size: file.size, mtime, hash, scanned_at: new Date() }),
-      )
-      .execute();
+    hashedCandidates.push({
+      relativePath: file.relativePath,
+      size: file.size,
+      mtimeMs: file.mtimeMs,
+      hash,
+    });
 
     onProgress?.({ done: index + 1, total });
   }
 
-  for (const removedPath of plan.toRemove) {
+  const { modified, renamePairs, added, removedPaths } = classifyHashedCandidates(
+    previous,
+    plan.toRemove,
+    hashedCandidates,
+  );
+
+  for (const candidate of [...modified, ...added]) {
+    const mtime = new Date(candidate.mtimeMs);
+
+    await db
+      .insertInto("assets")
+      .values({ path: candidate.relativePath, size: candidate.size, mtime, hash: candidate.hash })
+      .onConflict((oc) =>
+        oc.column("path").doUpdateSet({
+          size: candidate.size,
+          mtime,
+          hash: candidate.hash,
+          scanned_at: new Date(),
+        }),
+      )
+      .execute();
+  }
+
+  for (const pair of renamePairs) {
+    await db
+      .updateTable("assets")
+      .set({
+        path: pair.newPath,
+        size: pair.size,
+        mtime: new Date(pair.mtimeMs),
+        hash: pair.hash,
+        scanned_at: new Date(),
+      })
+      .where("path", "=", pair.oldPath)
+      .execute();
+  }
+
+  for (const removedPath of removedPaths) {
     await db.deleteFrom("assets").where("path", "=", removedPath).execute();
   }
 
   return {
     hashed: plan.toHash.length,
     unchanged: plan.unchanged.length,
-    removed: plan.toRemove.length,
+    removed: removedPaths.length,
+    renamed: renamePairs.length,
   };
 };
 

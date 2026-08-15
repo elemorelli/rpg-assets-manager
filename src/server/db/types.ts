@@ -33,6 +33,7 @@ export interface Assets {
   path: string;
   scanned_at: Generated<Timestamp>;
   size: Int8;
+  tags: Generated<string[]>;
 }
 
 export interface Pgmigrations {

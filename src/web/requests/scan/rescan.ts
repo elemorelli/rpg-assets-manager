@@ -4,6 +4,7 @@ export interface RescanSummary {
   hashed: number;
   unchanged: number;
   removed: number;
+  renamed: number;
 }
 
 export const rescan = (forceRehash = false): Promise<RescanSummary> =>

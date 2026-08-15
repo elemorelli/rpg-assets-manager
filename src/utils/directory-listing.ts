@@ -3,6 +3,7 @@ export interface DirectoryEntry {
   type: "file" | "directory";
   size?: number;
   mtimeMs?: number;
+  tags?: string[];
 }
 
 const byNameCaseInsensitive = (a: DirectoryEntry, b: DirectoryEntry): number =>

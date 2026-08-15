@@ -8,6 +8,7 @@ import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
 import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
 import { SyncPanel } from "#components/sync-panel/sync-panel.tsx";
+import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
@@ -31,6 +32,9 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [draggedEntry, setDraggedEntry] = useState<DirectoryEntry | null>(null);
   const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
+  const [availableTags, setAvailableTags] = useState<string[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagFilterResults, setTagFilterResults] = useState<SearchResultEntry[] | null>(null);
 
   const refresh = useCallback(async (path: string): Promise<void> => {
     setBusy(true);
@@ -49,9 +53,16 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
     }
   }, []);
 
+  const refreshTags = useCallback(async (): Promise<void> => {
+    const tags = await api.fetchTags();
+
+    setAvailableTags(tags);
+  }, []);
+
   useEffect(() => {
     refresh("");
-  }, [refresh]);
+    refreshTags();
+  }, [refresh, refreshTags]);
 
   const runAction = (action: () => Promise<void>): void => {
     setBusy(true);
@@ -132,6 +143,31 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
       .catch((caught: unknown) => setError(describeError(caught)));
   };
 
+  const handleTagsChange = (entry: DirectoryEntry, tags: string[]): void => {
+    const entryPath = joinRelativePath(currentPath, entry.name);
+
+    runAction(() => api.setAssetTags(entryPath, tags).then(() => refreshTags()));
+  };
+
+  const handleToggleTag = (tag: string): void => {
+    const nextSelectedTags = selectedTags.includes(tag)
+      ? selectedTags.filter((selected) => selected !== tag)
+      : [...selectedTags, tag];
+
+    setSelectedTags(nextSelectedTags);
+
+    if (nextSelectedTags.length === 0) {
+      setTagFilterResults(null);
+
+      return;
+    }
+
+    api
+      .fetchFilesByTag(nextSelectedTags)
+      .then(setTagFilterResults)
+      .catch((caught: unknown) => setError(describeError(caught)));
+  };
+
   const handleOpenSearchResult = (entry: SearchResultEntry): void => {
     const targetDirectory =
       entry.type === "directory" ? entry.relativePath : parentDirectory(entry.relativePath);
@@ -199,6 +235,11 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
           onLogout={handleLogout}
         />
         <SearchBox onSearch={handleSearch} />
+        <TagFilter
+          availableTags={availableTags}
+          selectedTags={selectedTags}
+          onToggleTag={handleToggleTag}
+        />
       </div>
       <JobProgress />
       <ConversionPanel onConverted={() => refresh(currentPath)} />
@@ -213,6 +254,8 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
       {error && <p className={styles.error}>{error}</p>}
       {searchResults !== null ? (
         <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />
+      ) : tagFilterResults !== null ? (
+        <SearchResults results={tagFilterResults} onOpenResult={handleOpenSearchResult} />
       ) : (
         <DirectoryTable
           entries={entries}
@@ -225,6 +268,8 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
           onDragEnd={handleDragEnd}
           canDropEntry={canDropOnEntry}
           onDropEntry={handleDropOnEntry}
+          availableTags={availableTags}
+          onTagsChange={handleTagsChange}
         />
       )}
     </div>

@@ -17,6 +17,9 @@ const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
 const logoutMock = vi.mocked(api.logout);
+const fetchTagsMock = vi.mocked(api.fetchTags);
+const setAssetTagsMock = vi.mocked(api.setAssetTags);
+const fetchFilesByTagMock = vi.mocked(api.fetchFilesByTag);
 
 describe("FileBrowser", () => {
   beforeEach(() => {
@@ -30,9 +33,12 @@ describe("FileBrowser", () => {
     renameEntryMock.mockResolvedValue(undefined);
     moveEntryMock.mockResolvedValue(undefined);
     searchEntriesMock.mockResolvedValue([]);
-    rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0 });
+    rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
     fetchSyncRunsMock.mockResolvedValue([]);
     logoutMock.mockResolvedValue(undefined);
+    fetchTagsMock.mockResolvedValue(["npc", "loot"]);
+    setAssetTagsMock.mockResolvedValue([]);
+    fetchFilesByTagMock.mockResolvedValue([]);
     FakeEventSource.reset();
     // @ts-expect-error test double
     globalThis.EventSource = FakeEventSource;
@@ -249,5 +255,28 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(logoutMock).toHaveBeenCalled();
     });
+  });
+
+  it("fetches the tag list on mount and renders it as filter chips", async () => {
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    expect(fetchTagsMock).toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "npc" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "loot" })).toBeInTheDocument();
+  });
+
+  it("shows tag filter results instead of the directory table when a tag chip is clicked", async () => {
+    const user = userEvent.setup();
+    fetchFilesByTagMock.mockResolvedValue([{ relativePath: "tiles/goblin.png", type: "file" }]);
+
+    render(<FileBrowser onLoggedOut={vi.fn()} />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await user.click(screen.getByRole("button", { name: "npc" }));
+
+    expect(fetchFilesByTagMock).toHaveBeenCalledWith(["npc"]);
+    expect(await screen.findByText("tiles/goblin.png")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "tiles" })).not.toBeInTheDocument();
   });
 });

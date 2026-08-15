@@ -7,3 +7,5 @@ export { deleteEntryHandler } from "./entry/delete/index.ts";
 export { moveEntryHandler } from "./entry/move/index.ts";
 export { renameEntryHandler } from "./entry/rename/index.ts";
 export { searchEntriesHandler } from "./entry/search/index.ts";
+export { filesByTagHandler } from "./tags/by-tag/index.ts";
+export { setAssetTagsHandler } from "./tags/set/index.ts";

@@ -7,11 +7,13 @@ import { diffHandler } from "./diff/index.ts";
 import {
   createDirectoryHandler,
   deleteEntryHandler,
+  filesByTagHandler,
   listDirectoryHandler,
   moveEntryHandler,
   rawFileHandler,
   renameEntryHandler,
   searchEntriesHandler,
+  setAssetTagsHandler,
   thumbnailHandler,
   uploadFileHandler,
 } from "./files/index.ts";
@@ -20,6 +22,7 @@ import { jobsStreamHandler } from "./jobs/index.ts";
 import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
 import { acknowledgeWorldHandler, listSyncRunsHandler } from "./sync-runs/index.ts";
+import { listTagsHandler } from "./tags/index.ts";
 
 export const registerRoutes = (
   app: FastifyInstance,
@@ -52,4 +55,7 @@ export const registerRoutes = (
   app.get("/api/files/search", searchEntriesHandler(assetTreeRoot));
   app.get("/api/files/raw", rawFileHandler(assetTreeRoot));
   app.get("/api/files/thumbnail", thumbnailHandler(assetTreeRoot, thumbnailCacheDir));
+  app.put("/api/files/tags", setAssetTagsHandler(assetTreeRoot));
+  app.get("/api/files/by-tag", filesByTagHandler);
+  app.get("/api/tags", listTagsHandler);
 };

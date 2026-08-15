@@ -1,5 +1,6 @@
 import { type DragEvent, type JSX, useState } from "react";
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
+import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
@@ -16,6 +17,8 @@ export interface DirectoryTableProps {
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
   onDropEntry: (entry: DirectoryEntry) => void;
+  availableTags: string[];
+  onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
 }
 
 export const DirectoryTable = ({
@@ -29,6 +32,8 @@ export const DirectoryTable = ({
   onDragEnd,
   canDropEntry,
   onDropEntry,
+  availableTags,
+  onTagsChange,
 }: DirectoryTableProps): JSX.Element => {
   const [dragOverName, setDragOverName] = useState<string | null>(null);
 
@@ -40,6 +45,7 @@ export const DirectoryTable = ({
           <th>Name</th>
           <th>Type</th>
           <th>Size</th>
+          <th>Tags</th>
           <th aria-label="Actions" />
         </tr>
       </thead>
@@ -108,6 +114,16 @@ export const DirectoryTable = ({
               </td>
               <td>{entry.type}</td>
               <td>{sizeLabel}</td>
+              <td>
+                {entry.type === "file" && (
+                  <TagEditor
+                    entryKey={joinRelativePath(currentPath, entry.name)}
+                    tags={entry.tags ?? []}
+                    availableTags={availableTags}
+                    onChange={(tags) => onTagsChange(entry, tags)}
+                  />
+                )}
+              </td>
               <td className={styles.actions}>
                 <button type="button" onClick={() => onRename(entry)}>
                   Rename
