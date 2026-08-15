@@ -1,59 +1,59 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
-import { finishSyncRun, startSyncRun } from "../../../apply/sync-run.ts";
 import { listSyncRuns } from "../list-sync-runs.ts";
 
-const emptyDiff = { added: [], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] };
-
-let createdIds: number[] = [];
-
-afterEach(async () => {
-  for (const id of createdIds) {
-    await db.deleteFrom("sync_runs").where("id", "=", String(id)).execute();
-  }
-  createdIds = [];
-});
-
-afterAll(async () => {
-  await db.destroy();
-});
-
 describe("listSyncRuns", () => {
-  it("returns runs newest first, with counts and macro state", async () => {
-    const firstId = await startSyncRun(db);
-    createdIds.push(firstId);
-    await finishSyncRun(db, firstId, "dry_run", emptyDiff, [], null, {});
+  it("returns runs newest first, mapping db columns to camelCase fields", async () => {
+    const db = createFakeDb();
 
-    const secondId = await startSyncRun(db);
-    createdIds.push(secondId);
-    await finishSyncRun(
-      db,
-      secondId,
-      "applied",
-      { added: ["a.png"], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] },
-      ["https://assets.example.com/a.png"],
-      "// generated macro",
-      { kingmaker: false },
-    );
+    db.seed("sync_runs", [
+      {
+        id: "1",
+        started_at: new Date("2026-01-01T00:00:00Z"),
+        finished_at: new Date("2026-01-01T00:01:00Z"),
+        added_count: 0,
+        modified_count: 0,
+        deleted_count: 0,
+        renamed_count: 0,
+        outcome: "dry_run",
+        generated_macro: null,
+        world_acknowledgements: {},
+      },
+      {
+        id: "2",
+        started_at: new Date("2026-01-02T00:00:00Z"),
+        finished_at: new Date("2026-01-02T00:01:00Z"),
+        added_count: 1,
+        modified_count: 0,
+        deleted_count: 0,
+        renamed_count: 0,
+        outcome: "applied",
+        generated_macro: "// generated macro",
+        world_acknowledgements: { kingmaker: false },
+      },
+    ]);
 
     const runs = await listSyncRuns(db);
-    const secondIndex = runs.findIndex((run) => run.id === secondId);
-    const firstIndex = runs.findIndex((run) => run.id === firstId);
 
-    expect(secondIndex).toBeGreaterThanOrEqual(0);
-    expect(firstIndex).toBeGreaterThan(secondIndex);
-    expect(runs[secondIndex]).toMatchObject({
+    expect(runs.map((run) => run.id)).toEqual([2, 1]);
+    expect(runs[0]).toMatchObject({
       outcome: "applied",
       addedCount: 1,
       generatedMacro: "// generated macro",
       worldAcknowledgements: { kingmaker: false },
     });
-    expect(runs[firstIndex]).toMatchObject({
+    expect(runs[1]).toMatchObject({
       outcome: "dry_run",
       generatedMacro: null,
       worldAcknowledgements: {},
     });
+  });
+
+  it("returns an empty list when there are no sync runs", async () => {
+    const db = createFakeDb();
+
+    expect(await listSyncRuns(db)).toEqual([]);
   });
 });

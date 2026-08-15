@@ -1,13 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Kysely } from "kysely";
 
-import { db } from "#server/db/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { normalizeTags } from "#server/utils/tags.ts";
 
 export const setAssetTags = async (
+  db: Kysely<DB>,
   rootDir: string,
   requestedPath: string,
   rawTags: string[],

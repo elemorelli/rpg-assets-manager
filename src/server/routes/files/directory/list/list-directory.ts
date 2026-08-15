@@ -1,11 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Kysely } from "kysely";
 
-import { db } from "#server/db/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
 
-const fetchTagsForPaths = async (paths: string[]): Promise<Map<string, string[]>> => {
+const fetchTagsForPaths = async (
+  db: Kysely<DB>,
+  paths: string[],
+): Promise<Map<string, string[]>> => {
   if (paths.length === 0) {
     return new Map();
   }
@@ -20,6 +24,7 @@ const fetchTagsForPaths = async (paths: string[]): Promise<Map<string, string[]>
 };
 
 export const listDirectory = async (
+  db: Kysely<DB>,
   rootDir: string,
   requestedPath: string,
 ): Promise<DirectoryEntry[]> => {
@@ -54,7 +59,10 @@ export const listDirectory = async (
     });
   }
 
-  const tagsByPath = await fetchTagsForPaths(fileEntries.map((file) => file.relativePath));
+  const tagsByPath = await fetchTagsForPaths(
+    db,
+    fileEntries.map((file) => file.relativePath),
+  );
 
   for (const file of fileEntries) {
     const tags = tagsByPath.get(file.relativePath);

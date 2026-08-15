@@ -3,17 +3,15 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
 import { setAssetTags } from "../set-asset-tags.ts";
 
-describe("setAssetTags (requires DATABASE_URL pointing at a running Postgres)", () => {
+describe("setAssetTags", () => {
   let tempDir = "";
 
   afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", "tags-test/%").execute();
-
     if (tempDir) {
       await fs.rm(tempDir, { recursive: true, force: true });
       tempDir = "";
@@ -21,38 +19,45 @@ describe("setAssetTags (requires DATABASE_URL pointing at a running Postgres)", 
   });
 
   it("creates an assets row on the fly when tagging a file that was never rescanned", async () => {
+    const db = createFakeDb();
+
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tags-test-"));
     await fs.mkdir(path.join(tempDir, "tags-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "tags-test", "npc.png"), "npc-bytes");
 
-    const tags = await setAssetTags(tempDir, "tags-test/npc.png", [" NPC ", "npc"]);
+    const tags = await setAssetTags(db, tempDir, "tags-test/npc.png", [" NPC ", "npc"]);
 
     expect(tags).toEqual(["npc"]);
-
-    const row = await db
-      .selectFrom("assets")
-      .select("tags")
-      .where("path", "=", "tags-test/npc.png")
-      .executeTakeFirstOrThrow();
-
-    expect(row.tags).toEqual(["npc"]);
+    expect(db.rows("assets")).toMatchObject([{ path: "tags-test/npc.png", tags: ["npc"] }]);
   });
 
   it("replaces the tag set on an existing row without touching size/hash", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tags-test-"));
-    await fs.mkdir(path.join(tempDir, "tags-test"), { recursive: true });
-    await fs.writeFile(path.join(tempDir, "tags-test", "loot.png"), "loot-bytes");
+    const db = createFakeDb();
 
-    await setAssetTags(tempDir, "tags-test/loot.png", ["loot"]);
-    const tags = await setAssetTags(tempDir, "tags-test/loot.png", ["loot", "container"]);
+    db.seed("assets", [
+      { id: "1", path: "tags-test/loot.png", size: 5, hash: "loot-hash", tags: ["loot"] },
+    ]);
+
+    const tags = await setAssetTags(db, "/unused", "tags-test/loot.png", ["loot", "container"]);
 
     expect(tags).toEqual(["loot", "container"]);
+    expect(db.rows("assets")).toMatchObject([
+      { path: "tags-test/loot.png", size: 5, hash: "loot-hash", tags: ["loot", "container"] },
+    ]);
   });
 
   it("rejects tagging a directory", async () => {
+    const db = createFakeDb();
+
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "tags-test-"));
     await fs.mkdir(path.join(tempDir, "tags-test", "subdir"), { recursive: true });
 
-    await expect(setAssetTags(tempDir, "tags-test/subdir", ["x"])).rejects.toThrow(HttpError);
+    await expect(setAssetTags(db, tempDir, "tags-test/subdir", ["x"])).rejects.toThrow(HttpError);
+  });
+
+  it("rejects tagging the asset tree root itself", async () => {
+    const db = createFakeDb();
+
+    await expect(setAssetTags(db, "/unused", "", ["x"])).rejects.toThrow(HttpError);
   });
 });

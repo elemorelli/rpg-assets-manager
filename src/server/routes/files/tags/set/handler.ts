@@ -1,3 +1,4 @@
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 
 import { setAssetTags } from "./set-asset-tags.ts";
@@ -10,7 +11,7 @@ interface SetTagsBody {
 export const setAssetTagsHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const body = request.body as SetTagsBody | undefined;
-    const tags = await setAssetTags(assetTreeRoot, body?.path ?? "", body?.tags ?? []);
+    const tags = await setAssetTags(db, assetTreeRoot, body?.path ?? "", body?.tags ?? []);
 
     return { tags };
   });

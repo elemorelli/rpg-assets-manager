@@ -12,12 +12,14 @@ vi.mock("./requests/index.ts");
 const checkSessionMock = vi.mocked(api.checkSession);
 const listDirectoryMock = vi.mocked(api.listDirectory);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
+const fetchTagsMock = vi.mocked(api.fetchTags);
 
 describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     listDirectoryMock.mockResolvedValue([]);
     fetchSyncRunsMock.mockResolvedValue([]);
+    fetchTagsMock.mockResolvedValue([]);
     FakeEventSource.reset();
     // @ts-expect-error test double
     globalThis.EventSource = FakeEventSource;
