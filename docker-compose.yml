@@ -12,6 +12,7 @@ services:
       - "127.0.0.1:5433:5432"
 
   api:
+    image: ghcr.io/elemorelli/rpg-assets-manager:latest
     build:
       context: .
       args:
