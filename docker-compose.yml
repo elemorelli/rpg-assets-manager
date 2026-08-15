@@ -3,7 +3,7 @@ services:
     image: postgres:17-alpine
     environment:
       POSTGRES_USER: rpgassets
-      POSTGRES_PASSWORD: rpgassets_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rpgassets_dev}
       POSTGRES_DB: rpgassets
     volumes:
       - pg-data:/var/lib/postgresql/data
@@ -18,7 +18,7 @@ services:
         UID: "1000"
         GID: "1000"
     environment:
-      DATABASE_URL: postgres://rpgassets:rpgassets_dev@postgres:5432/rpgassets
+      DATABASE_URL: postgres://rpgassets:${POSTGRES_PASSWORD:-rpgassets_dev}@postgres:5432/rpgassets
       PORT: "3001"
       # 0.0.0.0 here is the in-container bind, reachable only through the
       # compose network. The host-facing bind below stays on loopback.
@@ -29,8 +29,22 @@ services:
       AUTH_PASSWORD_HASH: ${AUTH_PASSWORD_HASH}
       AUTH_SESSION_SECRET: ${AUTH_SESSION_SECRET}
       AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
+      # Unset or "true" keeps apply in log-only mode; only an explicit
+      # "false" lets it run rclone and Cloudflare purges for real.
+      DRY_RUN: ${DRY_RUN:-true}
+      RCLONE_REMOTE: ${RCLONE_REMOTE}
+      RCLONE_CONFIG_R2_TYPE: s3
+      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+      RCLONE_CONFIG_R2_REGION: auto
+      RCLONE_CONFIG_R2_ENDPOINT: ${RCLONE_CONFIG_R2_ENDPOINT}
+      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${RCLONE_CONFIG_R2_ACCESS_KEY_ID}
+      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_R2_SECRET_ACCESS_KEY}
+      CF_ZONE_ID: ${CF_ZONE_ID}
+      CF_API_TOKEN: ${CF_API_TOKEN}
+      ASSETS_PUBLIC_BASE_URL: ${ASSETS_PUBLIC_BASE_URL}
+      FOUNDRY_WORLD_NAMES: ${FOUNDRY_WORLD_NAMES}
     volumes:
-      - ./fixtures/tree:/assets
+      - ${ASSET_TREE_HOST_PATH:-./fixtures/tree}:/assets
       - thumb-cache:/thumbnails
     ports:
       - "127.0.0.1:3001:3001"
