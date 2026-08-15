@@ -15,7 +15,6 @@ export interface TreeViewProps {
 }
 
 const ROOT_PATH = "";
-const ROOT_LABEL = "root";
 
 export const TreeView = ({
   activePath,
@@ -123,21 +122,35 @@ export const TreeView = ({
     onDropEntry(ROOT_PATH);
   };
 
+  const rootState = childrenByPath[ROOT_PATH];
+
   return (
     <ul className={styles.tree} onDragOver={handleRootDragOver} onDrop={handleRootDrop}>
-      <TreeNode
-        path={ROOT_PATH}
-        name={ROOT_LABEL}
-        depth={0}
-        activePath={activePath}
-        expandedPaths={expandedPaths}
-        childrenByPath={childrenByPath}
-        onToggle={handleToggle}
-        onRetry={handleRetry}
-        onNavigate={onNavigate}
-        canDropOnPath={canDropOnPath}
-        onDropEntry={onDropEntry}
-      />
+      {rootState === "error" && (
+        <li className={styles.error}>
+          Failed to load.{" "}
+          <button type="button" onClick={() => handleRetry(ROOT_PATH)}>
+            Retry
+          </button>
+        </li>
+      )}
+      {Array.isArray(rootState) &&
+        rootState.map((child) => (
+          <TreeNode
+            key={child.name}
+            path={joinRelativePath(ROOT_PATH, child.name)}
+            name={child.name}
+            depth={0}
+            activePath={activePath}
+            expandedPaths={expandedPaths}
+            childrenByPath={childrenByPath}
+            onToggle={handleToggle}
+            onRetry={handleRetry}
+            onNavigate={onNavigate}
+            canDropOnPath={canDropOnPath}
+            onDropEntry={onDropEntry}
+          />
+        ))}
     </ul>
   );
 };
