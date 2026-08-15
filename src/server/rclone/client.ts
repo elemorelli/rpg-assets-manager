@@ -63,24 +63,26 @@ export const rcloneCheck = async (
   const reportFilePath = path.join(reportDir, "combined.txt");
 
   try {
-    await execFileAsync("rclone", [
-      "check",
-      sourceRoot,
-      destinationRoot,
-      "--combined",
-      reportFilePath,
-    ]);
-  } catch (error) {
-    const exitCode = (error as { code?: number }).code;
+    try {
+      await execFileAsync("rclone", [
+        "check",
+        sourceRoot,
+        destinationRoot,
+        "--combined",
+        reportFilePath,
+      ]);
+    } catch (error) {
+      const exitCode = (error as { code?: number }).code;
 
-    if (exitCode !== RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE) {
-      throw error;
+      if (exitCode !== RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE) {
+        throw error;
+      }
     }
+
+    const reportContent = await fs.readFile(reportFilePath, "utf8");
+
+    return parseCombinedReport(reportContent);
+  } finally {
+    await fs.rm(reportDir, { recursive: true, force: true });
   }
-
-  const reportContent = await fs.readFile(reportFilePath, "utf8");
-
-  await fs.rm(reportDir, { recursive: true, force: true });
-
-  return parseCombinedReport(reportContent);
 };

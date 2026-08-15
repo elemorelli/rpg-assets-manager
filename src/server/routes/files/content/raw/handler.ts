@@ -1,24 +1,16 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { respondToHttpError } from "#server/errors/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { readRawFile } from "./read-raw-file.ts";
 
 interface FilesPathQuery {
   path?: string;
 }
 
-export const rawFileHandler =
-  (assetTreeRoot: string) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const rawFileHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request, reply) => {
     const query = request.query as FilesPathQuery;
+    const { mimeType, content } = await readRawFile(assetTreeRoot, query.path ?? "");
 
-    try {
-      const { mimeType, content } = await readRawFile(assetTreeRoot, query.path ?? "");
+    reply.type(mimeType);
 
-      reply.type(mimeType);
-
-      return content;
-    } catch (error) {
-      respondToHttpError(error, reply);
-
-      return undefined;
-    }
-  };
+    return content;
+  });

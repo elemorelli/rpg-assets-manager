@@ -1,5 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { respondToHttpError } from "#server/errors/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { moveEntry } from "./move-entry.ts";
 
 interface MoveBody {
@@ -7,17 +6,11 @@ interface MoveBody {
   toPath?: string;
 }
 
-export const moveEntryHandler =
-  (assetTreeRoot: string) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const moveEntryHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request) => {
     const body = request.body as MoveBody | undefined;
 
-    try {
-      await moveEntry(assetTreeRoot, body?.fromPath ?? "", body?.toPath ?? "");
+    await moveEntry(assetTreeRoot, body?.fromPath ?? "", body?.toPath ?? "");
 
-      return { moved: true };
-    } catch (error) {
-      respondToHttpError(error, reply);
-
-      return undefined;
-    }
-  };
+    return { moved: true };
+  });

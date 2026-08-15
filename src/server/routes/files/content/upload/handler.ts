@@ -1,5 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { HTTP_STATUS, respondToHttpError } from "#server/errors/index.ts";
+import { HTTP_STATUS, withHttpErrorHandling } from "#server/errors/index.ts";
 import { uploadFile } from "./upload-file.ts";
 
 interface UploadField {
@@ -17,26 +16,20 @@ const extractTargetDir = (fields: Record<string, unknown>): string => {
   return field.value;
 };
 
-export const uploadFileHandler =
-  (assetTreeRoot: string) => async (request: FastifyRequest, reply: FastifyReply) => {
-    try {
-      const uploadedFile = await request.file();
+export const uploadFileHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request, reply) => {
+    const uploadedFile = await request.file();
 
-      if (!uploadedFile) {
-        reply.code(HTTP_STATUS.badRequest).send({ error: "No file uploaded" });
-
-        return undefined;
-      }
-
-      const targetDir = extractTargetDir(uploadedFile.fields);
-      const content = await uploadedFile.toBuffer();
-
-      await uploadFile(assetTreeRoot, targetDir, uploadedFile.filename, content);
-
-      return { uploaded: uploadedFile.filename };
-    } catch (error) {
-      respondToHttpError(error, reply);
+    if (!uploadedFile) {
+      reply.code(HTTP_STATUS.badRequest).send({ error: "No file uploaded" });
 
       return undefined;
     }
-  };
+
+    const targetDir = extractTargetDir(uploadedFile.fields);
+    const content = await uploadedFile.toBuffer();
+
+    await uploadFile(assetTreeRoot, targetDir, uploadedFile.filename, content);
+
+    return { uploaded: uploadedFile.filename };
+  });

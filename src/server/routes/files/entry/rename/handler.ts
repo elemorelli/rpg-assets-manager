@@ -1,5 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { respondToHttpError } from "#server/errors/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { renameEntry } from "./rename-entry.ts";
 
 interface RenameBody {
@@ -7,17 +6,11 @@ interface RenameBody {
   newName?: string;
 }
 
-export const renameEntryHandler =
-  (assetTreeRoot: string) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const renameEntryHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request) => {
     const body = request.body as RenameBody | undefined;
 
-    try {
-      await renameEntry(assetTreeRoot, body?.path ?? "", body?.newName ?? "");
+    await renameEntry(assetTreeRoot, body?.path ?? "", body?.newName ?? "");
 
-      return { renamed: true };
-    } catch (error) {
-      respondToHttpError(error, reply);
-
-      return undefined;
-    }
-  };
+    return { renamed: true };
+  });

@@ -1,5 +1,4 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { respondToHttpError } from "#server/errors/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { setAssetTags } from "./set-asset-tags.ts";
 
 interface SetTagsBody {
@@ -7,17 +6,10 @@ interface SetTagsBody {
   tags?: string[];
 }
 
-export const setAssetTagsHandler =
-  (assetTreeRoot: string) => async (request: FastifyRequest, reply: FastifyReply) => {
+export const setAssetTagsHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request) => {
     const body = request.body as SetTagsBody | undefined;
+    const tags = await setAssetTags(assetTreeRoot, body?.path ?? "", body?.tags ?? []);
 
-    try {
-      const tags = await setAssetTags(assetTreeRoot, body?.path ?? "", body?.tags ?? []);
-
-      return { tags };
-    } catch (error) {
-      respondToHttpError(error, reply);
-
-      return undefined;
-    }
-  };
+    return { tags };
+  });

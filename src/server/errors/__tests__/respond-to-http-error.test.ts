@@ -1,6 +1,6 @@
 import type { FastifyReply } from "fastify";
 import { describe, expect, it, vi } from "vitest";
-import { UnsafePathError } from "../../utils/safe-path.ts";
+import { UnsafePathError } from "#server/utils/safe-path.ts";
 import { HttpError } from "../http-error.ts";
 import { HTTP_STATUS } from "../http-status.ts";
 import { respondToHttpError } from "../respond-to-http-error.ts";

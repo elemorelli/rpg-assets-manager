@@ -83,4 +83,21 @@ describe("rclone client (requires the real rclone binary)", () => {
     expect(result.missingOnSource).toEqual([]);
     expect(result.differs).toEqual([]);
   });
+
+  it("cleans up its temp report directory even when rclone check fails unexpectedly", async () => {
+    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
+    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
+    const missingSourceDir = path.join(sourceDir, "does-not-exist");
+
+    const tempDirsBefore = await fs.readdir(os.tmpdir());
+
+    await expect(rcloneCheck(missingSourceDir, destinationDir)).rejects.toThrow();
+
+    const tempDirsAfter = await fs.readdir(os.tmpdir());
+    const leakedReportDirs = tempDirsAfter.filter(
+      (name) => name.startsWith("rclone-check-") && !tempDirsBefore.includes(name),
+    );
+
+    expect(leakedReportDirs).toEqual([]);
+  });
 });

@@ -1,27 +1,18 @@
 import fs from "node:fs/promises";
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { respondToHttpError } from "#server/errors/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { resolveThumbnail } from "./resolve-thumbnail.ts";
 
 interface FilesPathQuery {
   path?: string;
 }
 
-export const thumbnailHandler =
-  (assetTreeRoot: string, thumbnailCacheDir: string) =>
-  async (request: FastifyRequest, reply: FastifyReply) => {
+export const thumbnailHandler = (assetTreeRoot: string, thumbnailCacheDir: string) =>
+  withHttpErrorHandling(async (request, reply) => {
     const query = request.query as FilesPathQuery;
+    const cachePath = await resolveThumbnail(assetTreeRoot, thumbnailCacheDir, query.path ?? "");
+    const content = await fs.readFile(cachePath);
 
-    try {
-      const cachePath = await resolveThumbnail(assetTreeRoot, thumbnailCacheDir, query.path ?? "");
-      const content = await fs.readFile(cachePath);
+    reply.type("image/webp");
 
-      reply.type("image/webp");
-
-      return content;
-    } catch (error) {
-      respondToHttpError(error, reply);
-
-      return undefined;
-    }
-  };
+    return content;
+  });
