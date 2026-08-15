@@ -1,4 +1,4 @@
-export interface AuthConfig {
+interface AuthConfig {
   passwordHash: string;
   sessionSecret: string;
   cookieSecure: boolean;

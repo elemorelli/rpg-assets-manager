@@ -5,7 +5,7 @@ const SECONDS_PER_DAY = 60 * 60 * 24;
 const SESSION_COOKIE_MAX_AGE_DAYS = 30;
 const SESSION_COOKIE_MAX_AGE_SECONDS = SECONDS_PER_DAY * SESSION_COOKIE_MAX_AGE_DAYS;
 
-export interface SessionCookieOptions {
+interface SessionCookieOptions {
   path: string;
   httpOnly: boolean;
   signed: boolean;

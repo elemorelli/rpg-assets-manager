@@ -1,7 +1,7 @@
 import { rcloneCopy, rcloneDelete, rcloneMoveTo } from "#server/rclone/index.ts";
 import type { BatchDiffResult } from "../diff/index.ts";
 
-export interface RcloneOperationsProgress {
+interface RcloneOperationsProgress {
   done: number;
   total: number;
 }

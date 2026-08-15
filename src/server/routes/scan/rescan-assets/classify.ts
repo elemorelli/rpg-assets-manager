@@ -8,7 +8,7 @@ export interface HashedCandidate {
   hash: string;
 }
 
-export interface RenamePairWithMetadata {
+interface RenamePairWithMetadata {
   oldPath: string;
   newPath: string;
   size: number;
@@ -16,7 +16,7 @@ export interface RenamePairWithMetadata {
   hash: string;
 }
 
-export interface ClassifiedCandidates {
+interface ClassifiedCandidates {
   modified: HashedCandidate[];
   renamePairs: RenamePairWithMetadata[];
   added: HashedCandidate[];

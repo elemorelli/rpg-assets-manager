@@ -26,6 +26,9 @@ export const failJob = (job: JobState, error: string): JobState => ({
   error,
 });
 
+export const toErrorMessage = (error: unknown, fallback: string): string =>
+  error instanceof Error ? error.message : fallback;
+
 export const formatJobEvent = (job: CurrentJob): string => `data: ${JSON.stringify(job)}\n\n`;
 
 export const parseJobEvent = (data: string): CurrentJob => JSON.parse(data) as CurrentJob;

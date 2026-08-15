@@ -1,6 +1,6 @@
 import { joinUrl } from "#server/utils/url.ts";
 
-export interface BatchChangeSet {
+interface BatchChangeSet {
   added: string[];
   deleted: string[];
   modified: string[];

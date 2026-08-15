@@ -5,7 +5,7 @@ import {
 } from "#server/cloudflare/index.ts";
 import { db } from "#server/db/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
-import { failJob, startJob } from "#utils/job.ts";
+import { failJob, startJob, toErrorMessage } from "#utils/job.ts";
 import { setCurrentJob } from "../jobs/index.ts";
 import { applyBatch } from "./batch.ts";
 import { dryRun } from "./config.ts";
@@ -44,7 +44,7 @@ export const applyBatchHandler = (assetTreeRoot: string) => async () => {
 
     return summary;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "apply failed";
+    const message = toErrorMessage(error, "apply failed");
 
     setCurrentJob(failJob(job, message));
     throw error;

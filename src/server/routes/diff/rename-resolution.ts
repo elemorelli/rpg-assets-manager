@@ -3,7 +3,7 @@ export interface OrphanCandidate {
   hash: string;
 }
 
-export interface HashGroup {
+interface HashGroup {
   hash: string;
   local: OrphanCandidate[];
   remote: OrphanCandidate[];
@@ -14,13 +14,13 @@ export interface RenamePair {
   newPath: string;
 }
 
-export interface AmbiguousRenameWarning {
+interface AmbiguousRenameWarning {
   hash: string;
   localPaths: string[];
   remotePaths: string[];
 }
 
-export interface RenameResolution {
+interface RenameResolution {
   renamed: RenamePair[];
   added: string[];
   deleted: string[];

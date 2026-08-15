@@ -1,5 +1,5 @@
 import { type RcloneCheckResult, rcloneCheck, rcloneDestination } from "#server/rclone/index.ts";
-import { failJob, startJob } from "#utils/job.ts";
+import { failJob, startJob, toErrorMessage } from "#utils/job.ts";
 import { setCurrentJob } from "../jobs/index.ts";
 
 export const reconcileHandler = (assetTreeRoot: string) => async (): Promise<RcloneCheckResult> => {
@@ -13,7 +13,7 @@ export const reconcileHandler = (assetTreeRoot: string) => async (): Promise<Rcl
 
     return result;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "reconciliation failed";
+    const message = toErrorMessage(error, "reconciliation failed");
 
     setCurrentJob(failJob(job, message));
     throw error;

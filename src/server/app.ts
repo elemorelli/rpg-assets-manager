@@ -6,7 +6,7 @@ import { authConfig, requireAuthHook } from "#server/auth/index.ts";
 import { HTTP_STATUS } from "./errors/index.ts";
 import { registerRoutes } from "./routes/index.ts";
 
-export interface AppOptions {
+interface AppOptions {
   webDistDir: string | null;
   assetTreeRoot: string;
   thumbnailCacheDir: string;

@@ -5,7 +5,7 @@ export interface PreviousAssetSnapshot {
   hash: string;
 }
 
-export interface WalkedFileInput {
+interface WalkedFileInput {
   relativePath: string;
   size: number;
   mtimeMs: number;
@@ -15,7 +15,7 @@ export interface RescanPlanOptions {
   forceRehash?: boolean;
 }
 
-export interface RescanPlan {
+interface RescanPlan {
   toHash: WalkedFileInput[];
   unchanged: PreviousAssetSnapshot[];
   toRemove: string[];
