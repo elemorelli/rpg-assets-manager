@@ -3,6 +3,7 @@ import type { Kysely } from "kysely";
 import type { DB } from "#server/db/index.ts";
 
 import type { BatchDiffResult } from "../diff/index.ts";
+import { buildFinishSyncRunUpdate } from "./build-finish-sync-run-update.ts";
 
 export const startSyncRun = async (db: Kysely<DB>): Promise<number> => {
   const syncRun = await db
@@ -23,21 +24,16 @@ export const finishSyncRun = async (
   generatedMacro: string | null,
   worldAcknowledgements: Record<string, boolean>,
 ): Promise<void> => {
-  await db
-    .updateTable("sync_runs")
-    .set({
-      finished_at: new Date(),
-      added_count: diff.added.length,
-      modified_count: diff.modified.length,
-      deleted_count: diff.deleted.length,
-      renamed_count: diff.renamed.length,
-      outcome,
-      purged_urls: JSON.stringify(purgeUrls),
-      generated_macro: generatedMacro,
-      world_acknowledgements: JSON.stringify(worldAcknowledgements),
-    })
-    .where("id", "=", String(syncRunId))
-    .execute();
+  const update = buildFinishSyncRunUpdate(
+    outcome,
+    diff,
+    purgeUrls,
+    generatedMacro,
+    worldAcknowledgements,
+    new Date(),
+  );
+
+  await db.updateTable("sync_runs").set(update).where("id", "=", String(syncRunId)).execute();
 };
 
 export const failSyncRun = async (db: Kysely<DB>, syncRunId: number): Promise<void> => {

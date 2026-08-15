@@ -5,6 +5,10 @@ import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import type { BatchDiffResult } from "../../diff/index.ts";
 import { failSyncRun, finishSyncRun, startSyncRun } from "../sync-run.ts";
 
+// The update payload's content (counts, JSON encoding) is covered, without any DB
+// involved, by build-finish-sync-run-update.test.ts. These tests only exercise the
+// wiring: does each function write to the right row via the right Kysely call.
+
 const emptyDiff: BatchDiffResult = {
   added: [],
   modified: [],
@@ -27,54 +31,16 @@ describe("startSyncRun", () => {
 });
 
 describe("finishSyncRun", () => {
-  it("records the diff counts and outcome, JSON-encoding purge urls and world acknowledgements", async () => {
+  it("updates the sync_runs row for the given id", async () => {
     const db = createFakeDb();
     const syncRunId = await startSyncRun(db);
 
-    const diff: BatchDiffResult = {
-      added: ["a.png", "b.png"],
-      modified: ["c.png"],
-      deleted: [],
-      renamed: [{ oldPath: "old.png", newPath: "new.png" }],
-      ambiguousWarnings: [],
-    };
-
-    await finishSyncRun(
-      db,
-      syncRunId,
-      "applied",
-      diff,
-      ["https://assets.example.com/a.png"],
-      "// macro",
-      { kingmaker: false },
-    );
+    await finishSyncRun(db, syncRunId, "applied", emptyDiff, [], null, {});
 
     const [row] = db.rows("sync_runs");
 
-    expect(row).toMatchObject({
-      outcome: "applied",
-      added_count: 2,
-      modified_count: 1,
-      deleted_count: 0,
-      renamed_count: 1,
-      generated_macro: "// macro",
-    });
+    expect(row).toMatchObject({ id: String(syncRunId), outcome: "applied" });
     expect(row?.finished_at).toBeInstanceOf(Date);
-    expect(JSON.parse(row?.purged_urls as string)).toEqual(["https://assets.example.com/a.png"]);
-    expect(JSON.parse(row?.world_acknowledgements as string)).toEqual({ kingmaker: false });
-  });
-
-  it("records a dry_run outcome with empty purge urls and world acknowledgements", async () => {
-    const db = createFakeDb();
-    const syncRunId = await startSyncRun(db);
-
-    await finishSyncRun(db, syncRunId, "dry_run", emptyDiff, [], null, {});
-
-    const [row] = db.rows("sync_runs");
-
-    expect(row).toMatchObject({ outcome: "dry_run", generated_macro: null });
-    expect(JSON.parse(row?.purged_urls as string)).toEqual([]);
-    expect(JSON.parse(row?.world_acknowledgements as string)).toEqual({});
   });
 });
 

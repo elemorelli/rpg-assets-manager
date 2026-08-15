@@ -5,69 +5,11 @@ import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import type { BatchDiffResult } from "../../diff/index.ts";
 import { mirrorRemoteAssets } from "../mirror-remote-assets.ts";
 
-const emptyDiff: BatchDiffResult = {
-  added: [],
-  modified: [],
-  deleted: [],
-  renamed: [],
-  ambiguousWarnings: [],
-};
-
+// The decision of which operation applies to which path is covered, without any
+// DB involved, by plan-remote-asset-changes.test.ts. This test only exercises the
+// wiring from a planned operation to the correct Kysely call (insert/delete/update).
 describe("mirrorRemoteAssets", () => {
-  it("inserts a remote_assets row for a newly added asset", async () => {
-    const db = createFakeDb();
-
-    db.seed("assets", [{ path: "tiles/forest.png", size: 10, hash: "hash-forest" }]);
-
-    await mirrorRemoteAssets(db, { ...emptyDiff, added: ["tiles/forest.png"] });
-
-    expect(db.rows("remote_assets")).toMatchObject([
-      { path: "tiles/forest.png", size: 10, hash: "hash-forest" },
-    ]);
-  });
-
-  it("upserts an existing remote_assets row for a modified asset", async () => {
-    const db = createFakeDb();
-
-    db.seed("assets", [{ path: "tiles/forest.png", size: 20, hash: "hash-forest-v2" }]);
-    db.seed("remote_assets", [
-      { id: "1", path: "tiles/forest.png", size: 10, hash: "hash-forest-v1" },
-    ]);
-
-    await mirrorRemoteAssets(db, { ...emptyDiff, modified: ["tiles/forest.png"] });
-
-    expect(db.rows("remote_assets")).toMatchObject([
-      { id: "1", path: "tiles/forest.png", size: 20, hash: "hash-forest-v2" },
-    ]);
-  });
-
-  it("deletes the remote_assets row for a deleted asset", async () => {
-    const db = createFakeDb();
-
-    db.seed("remote_assets", [{ id: "1", path: "tiles/gone.png", size: 1, hash: "hash-gone" }]);
-
-    await mirrorRemoteAssets(db, { ...emptyDiff, deleted: ["tiles/gone.png"] });
-
-    expect(db.rows("remote_assets")).toEqual([]);
-  });
-
-  it("updates path, size and hash on the remote_assets row for a renamed asset", async () => {
-    const db = createFakeDb();
-
-    db.seed("assets", [{ path: "tiles/new-name.png", size: 30, hash: "hash-renamed" }]);
-    db.seed("remote_assets", [{ id: "1", path: "tiles/old-name.png", size: 10, hash: "hash-old" }]);
-
-    await mirrorRemoteAssets(db, {
-      ...emptyDiff,
-      renamed: [{ oldPath: "tiles/old-name.png", newPath: "tiles/new-name.png" }],
-    });
-
-    expect(db.rows("remote_assets")).toMatchObject([
-      { id: "1", path: "tiles/new-name.png", size: 30, hash: "hash-renamed" },
-    ]);
-  });
-
-  it("applies every kind of change in a single diff without cross-contamination", async () => {
+  it("applies an upsert, a delete and a rename against remote_assets", async () => {
     const db = createFakeDb();
 
     db.seed("assets", [
@@ -79,17 +21,25 @@ describe("mirrorRemoteAssets", () => {
       { id: "2", path: "renamed-from.png", size: 9, hash: "hash-stale" },
     ]);
 
-    await mirrorRemoteAssets(db, {
+    const diff: BatchDiffResult = {
       added: ["added.png"],
       modified: [],
       deleted: ["deleted.png"],
       renamed: [{ oldPath: "renamed-from.png", newPath: "renamed-to.png" }],
       ambiguousWarnings: [],
+    };
+
+    await mirrorRemoteAssets(db, diff);
+
+    const rowsByPath = new Map(db.rows("remote_assets").map((row) => [row.path, row]));
+
+    expect(rowsByPath.get("added.png")).toMatchObject({ size: 1, hash: "hash-added" });
+    expect(rowsByPath.get("renamed-to.png")).toMatchObject({
+      id: "2",
+      size: 2,
+      hash: "hash-renamed",
     });
-
-    const paths = db.rows("remote_assets").map((row) => row.path);
-
-    expect(paths).toEqual(expect.arrayContaining(["added.png", "renamed-to.png"]));
-    expect(paths).not.toEqual(expect.arrayContaining(["deleted.png", "renamed-from.png"]));
+    expect(rowsByPath.has("deleted.png")).toBe(false);
+    expect(rowsByPath.has("renamed-from.png")).toBe(false);
   });
 });
