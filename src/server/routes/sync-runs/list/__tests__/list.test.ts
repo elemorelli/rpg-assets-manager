@@ -1,7 +1,7 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { db } from "#server/db/index.ts";
 import { finishSyncRun, startSyncRun } from "../../../apply/sync-run.ts";
-import { listSyncRuns } from "../index.ts";
+import { listSyncRuns } from "../list-sync-runs.ts";
 
 const emptyDiff = { added: [], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] };
 

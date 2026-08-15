@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { searchEntries } from "../index.ts";
+import { searchEntries } from "../search-entries.ts";
 
 describe("searchEntries", () => {
   let tempDir = "";

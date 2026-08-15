@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { db } from "#server/db/index.ts";
-import { listDistinctTags } from "../index.ts";
+import { listDistinctTags } from "../list-distinct-tags.ts";
 
 describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres)", () => {
   afterEach(async () => {

@@ -1,2 +1,2 @@
-export { acknowledgeWorld, acknowledgeWorldHandler } from "./acknowledge-world/index.ts";
-export { listSyncRuns, listSyncRunsHandler, type SyncRunSummary } from "./list/index.ts";
+export { acknowledgeWorldHandler } from "./acknowledge-world/index.ts";
+export { listSyncRunsHandler } from "./list/index.ts";

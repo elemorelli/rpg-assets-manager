@@ -2,7 +2,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
 import { finishSyncRun, startSyncRun } from "../../../apply/sync-run.ts";
-import { acknowledgeWorld } from "../index.ts";
+import { acknowledgeWorld } from "../acknowledge.ts";
 
 const emptyDiff = { added: [], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] };
 const NON_EXISTENT_SYNC_RUN_ID = 999999999;

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
-import { createDirectory } from "../index.ts";
+import { createDirectory } from "../create-directory.ts";
 
 describe("createDirectory", () => {
   let tempDir = "";

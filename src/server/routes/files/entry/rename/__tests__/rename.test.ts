@@ -4,7 +4,7 @@ import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { HttpError } from "#server/errors/index.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
-import { renameEntry } from "../index.ts";
+import { renameEntry } from "../rename-entry.ts";
 
 describe("renameEntry", () => {
   let tempDir = "";
