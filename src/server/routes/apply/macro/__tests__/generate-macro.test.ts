@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { generateMacro } from "../generate-macro.ts";
 
 describe("generateMacro", () => {

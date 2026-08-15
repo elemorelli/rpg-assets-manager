@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
+
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+
 import { resolveThumbnail } from "./resolve-thumbnail.ts";
 
 interface FilesPathQuery {

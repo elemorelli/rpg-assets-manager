@@ -2,7 +2,9 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import * as api from "#web/requests/index.ts";
+
 import { SyncHistoryPanel } from "./sync-history-panel.tsx";
 
 vi.mock("../../requests/index.ts");

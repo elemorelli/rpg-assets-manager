@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+
 import { respondToHttpError } from "./respond-to-http-error.ts";
 
 export const withHttpErrorHandling =

@@ -2,7 +2,9 @@ import path from "node:path";
 import fastifyCookie from "@fastify/cookie";
 import fastifyStatic from "@fastify/static";
 import Fastify, { type FastifyInstance } from "fastify";
+
 import { authConfig, requireAuthHook } from "#server/auth/index.ts";
+
 import { HTTP_STATUS } from "./errors/index.ts";
 import { registerRoutes } from "./routes/index.ts";
 

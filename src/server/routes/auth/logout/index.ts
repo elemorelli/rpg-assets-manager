@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+
 import { SESSION_COOKIE_NAME } from "#server/auth/index.ts";
 
 export const logoutHandler = async (

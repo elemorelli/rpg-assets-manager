@@ -1,5 +1,7 @@
 import { type DragEvent, type JSX, useState } from "react";
+
 import { buildBreadcrumbs } from "#web/utils/breadcrumbs.ts";
+
 import styles from "./breadcrumbs.module.css";
 
 export interface BreadcrumbsProps {

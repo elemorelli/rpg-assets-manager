@@ -2,7 +2,9 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, describe, expect, it } from "vitest";
+
 import { db } from "#server/db/index.ts";
+
 import { bootstrapAssets } from "../bootstrap.ts";
 
 const PREFIX = "bootstrap-test/";

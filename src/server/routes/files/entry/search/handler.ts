@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+
 import { searchEntries } from "./search-entries.ts";
 
 interface SearchQuery {

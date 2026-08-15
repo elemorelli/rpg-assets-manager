@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+
 import { THUMBNAIL_THRESHOLD_BYTES } from "#utils/preview.ts";
+
 import { AssetPreview } from "./asset-preview.tsx";
 
 const SIZE_UNDER_THRESHOLD = 1024;

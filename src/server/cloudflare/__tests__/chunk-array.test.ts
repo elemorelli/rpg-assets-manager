@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { chunkArray } from "../chunk-array.ts";
 
 const THIRD_ITEM = 3;

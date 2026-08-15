@@ -1,4 +1,5 @@
 import type { Kysely } from "kysely";
+
 import type { DB } from "#server/db/index.ts";
 
 export interface SyncRunSummary {

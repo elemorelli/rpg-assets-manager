@@ -1,9 +1,11 @@
 import { type DragEvent, type JSX, useState } from "react";
+
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
+
 import styles from "./directory-table.module.css";
 
 export interface DirectoryTableProps {

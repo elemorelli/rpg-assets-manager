@@ -1,5 +1,6 @@
 import { argon2Verify } from "hash-wasm";
 import { describe, expect, it } from "vitest";
+
 import { hashPassword } from "../hash-password-core.ts";
 
 describe("hashPassword", () => {

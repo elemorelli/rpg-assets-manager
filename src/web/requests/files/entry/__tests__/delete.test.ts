@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { deleteEntry } from "../delete.ts";
 
 describe("deleteEntry", () => {

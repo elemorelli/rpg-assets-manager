@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+
 import { type SearchableEntry, searchEntriesByName } from "./searchable-entries.ts";
 
 const walkAllEntries = async (

@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
+
 import { db } from "#server/db/index.ts";
+
 import { findFilesByTags } from "../find-files-by-tag.ts";
 
 describe("findFilesByTags (requires DATABASE_URL pointing at a running Postgres)", () => {

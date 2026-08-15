@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildHashGroups, resolveRenames } from "../rename-resolution.ts";
 
 describe("buildHashGroups", () => {

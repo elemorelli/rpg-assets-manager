@@ -1,5 +1,6 @@
 import clsx from "clsx";
 import { type ChangeEvent, type JSX, useRef, useState } from "react";
+
 import styles from "./toolbar.module.css";
 
 export interface ToolbarProps {

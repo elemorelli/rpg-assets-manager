@@ -1,4 +1,5 @@
 import { joinUrl } from "#server/utils/url.ts";
+
 import { buildMacroTemplate } from "./macro-template.ts";
 
 export interface RenamePair {

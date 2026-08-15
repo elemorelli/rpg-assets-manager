@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { joinRelativePath, parentDirectory } from "../paths.ts";
 
 describe("joinRelativePath", () => {

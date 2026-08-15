@@ -1,8 +1,10 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import * as api from "#web/requests/index.ts";
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+
 import { App } from "./app.tsx";
 
 vi.mock("./requests/index.ts");

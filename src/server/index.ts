@@ -1,4 +1,5 @@
 import { runner } from "node-pg-migrate";
+
 import { buildApp } from "./app.ts";
 
 const DEFAULT_HOST = "127.0.0.1";

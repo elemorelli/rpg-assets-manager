@@ -1,4 +1,5 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+
 import { moveEntry } from "./move-entry.ts";
 
 interface MoveBody {

@@ -1,4 +1,5 @@
 import { type ChangeEvent, type JSX, useEffect, useState } from "react";
+
 import styles from "./search-box.module.css";
 
 export interface SearchBoxProps {

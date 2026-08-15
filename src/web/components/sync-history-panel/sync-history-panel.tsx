@@ -1,6 +1,8 @@
 import { type JSX, useEffect, useState } from "react";
+
 import * as api from "#web/requests/index.ts";
 import type { SyncRun } from "#web/requests/sync-runs/list.ts";
+
 import styles from "./sync-history-panel.module.css";
 
 export interface SyncHistoryPanelProps {

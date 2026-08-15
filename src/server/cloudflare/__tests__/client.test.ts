@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { purgeCloudflareCache } from "../client.ts";
 
 const FULL_BATCH_SIZE = 30;

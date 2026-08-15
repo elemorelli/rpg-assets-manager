@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildBreadcrumbs } from "../breadcrumbs.ts";
 
 describe("buildBreadcrumbs", () => {

@@ -1,6 +1,8 @@
 import type { JSX } from "react";
+
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
+
 import styles from "./asset-preview.module.css";
 
 export interface AssetPreviewProps {

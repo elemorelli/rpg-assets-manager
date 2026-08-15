@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { acknowledgeWorld } from "../acknowledge-world.ts";
 
 const SYNC_RUN_ID = 42;

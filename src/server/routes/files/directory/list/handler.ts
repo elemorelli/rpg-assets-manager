@@ -1,4 +1,5 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+
 import { listDirectory } from "./list-directory.ts";
 
 interface FilesPathQuery {

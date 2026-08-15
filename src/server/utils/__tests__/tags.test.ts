@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { normalizeTags } from "../tags.ts";
 
 describe("normalizeTags", () => {

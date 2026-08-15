@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+
 import { parseCombinedReport, type RcloneCheckResult } from "./combined-report.ts";
 
 const execFileAsync = promisify(execFile);

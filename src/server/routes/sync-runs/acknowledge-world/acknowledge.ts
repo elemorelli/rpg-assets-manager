@@ -1,5 +1,6 @@
 import type { Kysely } from "kysely";
 import { sql } from "kysely";
+
 import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 

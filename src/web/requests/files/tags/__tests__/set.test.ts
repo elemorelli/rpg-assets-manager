@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { setAssetTags } from "../set.ts";
 
 describe("setAssetTags", () => {

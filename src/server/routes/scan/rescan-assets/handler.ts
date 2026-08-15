@@ -1,6 +1,8 @@
 import type { FastifyRequest } from "fastify";
+
 import { db } from "#server/db/index.ts";
 import { failJob, startJob, toErrorMessage } from "#utils/job.ts";
+
 import { setCurrentJob } from "../../jobs/index.ts";
 import { rescanAssets } from "./rescan.ts";
 

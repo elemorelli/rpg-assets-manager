@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { type DirectoryEntry, sortDirectoryEntries } from "../directory-listing.ts";
 
 describe("sortDirectoryEntries", () => {

@@ -1,5 +1,7 @@
 import path from "node:path";
+
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+
 import { moveEntry } from "../move/index.ts";
 
 export const renameEntry = async (

@@ -2,7 +2,9 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+
 import { DirectoryTable } from "./directory-table.tsx";
 
 const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };

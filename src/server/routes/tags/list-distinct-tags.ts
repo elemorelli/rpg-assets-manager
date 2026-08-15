@@ -1,4 +1,5 @@
 import { sql } from "kysely";
+
 import { db } from "#server/db/index.ts";
 
 export const listDistinctTags = async (): Promise<string[]> => {

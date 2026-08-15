@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
+
 import { db } from "../index.ts";
 
 describe("db (requires DATABASE_URL pointing at a running Postgres)", () => {

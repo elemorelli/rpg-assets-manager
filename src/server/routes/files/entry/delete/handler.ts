@@ -1,5 +1,6 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesPathBody } from "#server/routes/files/path-body.ts";
+
 import { deleteEntry } from "./delete-entry.ts";
 
 export const deleteEntryHandler = (assetTreeRoot: string) =>

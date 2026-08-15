@@ -1,5 +1,6 @@
 import fastifyMultipart from "@fastify/multipart";
 import type { FastifyInstance } from "fastify";
+
 import { applyBatchHandler } from "./apply/index.ts";
 import { loginHandler, logoutHandler, sessionHandler } from "./auth/index.ts";
 import { convertAssetsHandler, convertPlanHandler } from "./convert/index.ts";

@@ -1,4 +1,5 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+
 import { renameEntry } from "./rename-entry.ts";
 
 interface RenameBody {

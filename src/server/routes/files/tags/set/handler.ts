@@ -1,4 +1,5 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+
 import { setAssetTags } from "./set-asset-tags.ts";
 
 interface SetTagsBody {

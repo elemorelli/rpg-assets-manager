@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildApp } from "../app.ts";
 import { HTTP_STATUS } from "../errors/index.ts";
 

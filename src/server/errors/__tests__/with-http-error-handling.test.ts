@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { describe, expect, it, vi } from "vitest";
+
 import { HttpError } from "../http-error.ts";
 import { HTTP_STATUS } from "../http-status.ts";
 import { withHttpErrorHandling } from "../with-http-error-handling.ts";

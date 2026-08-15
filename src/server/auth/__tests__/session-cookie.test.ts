@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildSessionCookieOptions } from "../session-cookie.ts";
 
 const SECONDS_PER_DAY = 60 * 60 * 24;

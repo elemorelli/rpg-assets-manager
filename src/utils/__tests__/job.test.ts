@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { advanceJob, failJob, formatJobEvent, parseJobEvent, startJob } from "../job.ts";
 
 const TOTAL_FILES = 10;

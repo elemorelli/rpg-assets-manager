@@ -1,5 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+
 import { HTTP_STATUS } from "#server/errors/index.ts";
+
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_VALUE } from "./session-cookie.ts";
 
 const UNPROTECTED_PATHS = new Set(["/api/health", "/api/login"]);

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { resolveSafeRelativePath, UnsafePathError } from "../safe-path.ts";
 
 describe("resolveSafeRelativePath", () => {

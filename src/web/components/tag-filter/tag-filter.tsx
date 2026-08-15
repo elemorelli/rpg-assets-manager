@@ -1,4 +1,5 @@
 import type { JSX } from "react";
+
 import styles from "./tag-filter.module.css";
 
 export interface TagFilterProps {

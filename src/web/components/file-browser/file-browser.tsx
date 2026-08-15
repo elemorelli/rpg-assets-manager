@@ -1,4 +1,5 @@
 import { type JSX, useCallback, useEffect, useState } from "react";
+
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { ConversionPanel } from "#components/conversion-panel/conversion-panel.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
@@ -15,6 +16,7 @@ import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
 import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
+
 import styles from "./file-browser.module.css";
 
 const describeError = (caught: unknown): string =>

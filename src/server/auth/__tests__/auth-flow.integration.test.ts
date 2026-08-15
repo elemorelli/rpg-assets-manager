@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { buildApp } from "#server/app.ts";
 import { HTTP_STATUS } from "#server/errors/index.ts";
 import { loginTestSession, TEST_PASSWORD } from "#server/test-utils/login-test-session.ts";

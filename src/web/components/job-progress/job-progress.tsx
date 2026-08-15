@@ -1,5 +1,7 @@
 import { type JSX, useEffect, useState } from "react";
+
 import { type CurrentJob, parseJobEvent } from "#utils/job.ts";
+
 import styles from "./job-progress.module.css";
 
 export const JobProgress = (): JSX.Element | null => {

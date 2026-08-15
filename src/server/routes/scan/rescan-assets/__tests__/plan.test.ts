@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { computeRescanPlan } from "../plan.ts";
 
 describe("computeRescanPlan", () => {

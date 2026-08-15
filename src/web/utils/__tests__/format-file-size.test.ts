@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { formatFileSize } from "../format-file-size.ts";
 
 const ZERO_BYTES = 0;

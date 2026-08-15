@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { classifyHashedCandidates } from "../classify.ts";
 
 describe("classifyHashedCandidates", () => {

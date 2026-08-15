@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+
 import { JobProgress } from "./job-progress.tsx";
 
 describe("JobProgress", () => {

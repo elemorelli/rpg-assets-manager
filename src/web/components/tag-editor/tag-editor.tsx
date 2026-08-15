@@ -1,4 +1,5 @@
 import { type JSX, type KeyboardEvent, useState } from "react";
+
 import styles from "./tag-editor.module.css";
 
 export interface TagEditorProps {

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { argon2id } from "hash-wasm";
 import { describe, expect, it } from "vitest";
+
 import { verifyPassword } from "../verify-password.ts";
 
 const ARGON2ID_MEMORY_SIZE_KIB = 19456;

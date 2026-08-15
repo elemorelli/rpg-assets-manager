@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { isValidDropTarget } from "../drag-drop.ts";
 
 describe("isValidDropTarget", () => {

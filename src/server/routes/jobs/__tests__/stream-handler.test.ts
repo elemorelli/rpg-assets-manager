@@ -1,6 +1,7 @@
 import { EventEmitter } from "node:events";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { setCurrentJob } from "../store.ts";
 import { jobsStreamHandler } from "../stream-handler.ts";
 
