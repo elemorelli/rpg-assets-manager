@@ -94,12 +94,14 @@ against a real remote.
 
 ## Docker / deploy
 
-`docker-compose.yml` defines `postgres` and `api`. The `api` service's
-`image` points at `ghcr.io/elemorelli/rpg-assets-manager:latest`, published
-by `.github/workflows/docker-publish.yml` on every push to `main`; it also
-keeps a `build` block for local image builds. Full deploy runbook, including
-the dev-bucket dry run and the production bootstrap, is in
-`docs/deploy.md`.
+`docker-compose.yml` defines `postgres`, `api` and `backup`. The `api`
+service's `image` points at `ghcr.io/elemorelli/rpg-assets-manager:latest`,
+published by `.github/workflows/docker-publish.yml` on every push to `main`;
+it also keeps a `build` block for local image builds. `backup` runs
+`pg_dump` on a loop and uploads the compressed dump to a dedicated R2
+bucket via `rclone`, pruning old dumps past `BACKUP_RETENTION_DAYS`. Full
+deploy runbook, including the dev-bucket dry run and the production
+bootstrap, is in `docs/deploy.md`.
 
 ## Docs
 
