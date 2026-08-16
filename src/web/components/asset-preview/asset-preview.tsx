@@ -59,7 +59,11 @@ export const AssetPreview = ({
         alt={entry.name}
         loading="lazy"
         data-size={size}
-        className={clsx(styles.image, isLarge && styles.imageLarge)}
+        className={clsx(
+          styles.image,
+          isLarge && styles.imageLarge,
+          isOpenable && styles.imageOpenable,
+        )}
         role={isOpenable ? "button" : undefined}
         tabIndex={isOpenable ? 0 : undefined}
         onClick={isOpenable ? handleOpenClick : undefined}

@@ -4,6 +4,10 @@
   object-fit: cover;
 }
 
+.imageOpenable {
+  cursor: pointer;
+}
+
 .previewWrapper {
   position: relative;
   display: inline-block;
