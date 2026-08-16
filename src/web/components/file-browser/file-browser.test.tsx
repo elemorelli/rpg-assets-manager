@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as api from "#web/requests/index.ts";
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
 
-import { FileBrowser, type FileBrowserProps } from "./file-browser.tsx";
+import { FileBrowser } from "./file-browser.tsx";
 
 vi.mock("../../requests/index.ts");
 
@@ -19,19 +19,15 @@ const moveEntryMock = vi.mocked(api.moveEntry);
 const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
-const logoutMock = vi.mocked(api.logout);
 const fetchTagsMock = vi.mocked(api.fetchTags);
 const setAssetTagsMock = vi.mocked(api.setAssetTags);
 const fetchFilesByTagMock = vi.mocked(api.fetchFilesByTag);
 
-const renderFileBrowser = (
-  props: FileBrowserProps = { onLoggedOut: vi.fn() },
-  initialPath = "/",
-): ReturnType<typeof render> =>
+const renderFileBrowser = (initialPath = "/"): ReturnType<typeof render> =>
   render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        <Route path="/*" element={<FileBrowser {...props} />} />
+        <Route path="/*" element={<FileBrowser />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -63,7 +59,6 @@ describe("FileBrowser", () => {
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
     fetchSyncRunsMock.mockResolvedValue([]);
-    logoutMock.mockResolvedValue(undefined);
     fetchTagsMock.mockResolvedValue(["npc", "loot"]);
     setAssetTagsMock.mockResolvedValue([]);
     fetchFilesByTagMock.mockResolvedValue([]);
@@ -97,7 +92,7 @@ describe("FileBrowser", () => {
         : Promise.resolve([{ name: "icons", type: "directory" }]),
     );
 
-    renderFileBrowser({ onLoggedOut: vi.fn() }, "/icons");
+    renderFileBrowser("/icons");
 
     await screen.findByText("npc.png");
     expect(listDirectoryMock).toHaveBeenCalledWith("icons");
@@ -112,7 +107,7 @@ describe("FileBrowser", () => {
       path === "missing" ? Promise.reject(new Error("not found")) : Promise.resolve([]),
     );
 
-    renderFileBrowser({ onLoggedOut: vi.fn() }, "/missing");
+    renderFileBrowser("/missing");
 
     expect(await screen.findByText("not found")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Back to root" })).toBeInTheDocument();
@@ -325,19 +320,6 @@ describe("FileBrowser", () => {
     expect(moveEntryMock).not.toHaveBeenCalled();
   });
 
-  it("calls the logout request and reloads into the login form when Log out is clicked", async () => {
-    const user = userEvent.setup();
-
-    renderFileBrowser();
-    await screen.findAllByText("tiles");
-
-    await user.click(screen.getByRole("button", { name: "Log out" }));
-
-    await waitFor(() => {
-      expect(logoutMock).toHaveBeenCalled();
-    });
-  });
-
   it("fetches the tag list on mount and renders it as filter chips", async () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
@@ -489,13 +471,13 @@ describe("FileBrowser", () => {
       ),
     );
 
-    const { unmount } = renderFileBrowser({ onLoggedOut: vi.fn() }, "/");
+    const { unmount } = renderFileBrowser("/");
     await screen.findByText("map.png");
     await user.click(screen.getByRole("button", { name: "Grid view" }));
     await screen.findByTestId("tile-map.png");
     unmount();
 
-    renderFileBrowser({ onLoggedOut: vi.fn() }, "/icons");
+    renderFileBrowser("/icons");
     await screen.findByText("sword.png");
 
     expect(screen.queryByTestId("tile-sword.png")).not.toBeInTheDocument();

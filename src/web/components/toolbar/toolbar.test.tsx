@@ -27,7 +27,6 @@ describe("Toolbar", () => {
         onCreateDirectory={onCreateDirectory}
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
-        onLogout={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -46,7 +45,6 @@ describe("Toolbar", () => {
         onCreateDirectory={onCreateDirectory}
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
-        onLogout={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -65,7 +63,6 @@ describe("Toolbar", () => {
         onCreateDirectory={vi.fn()}
         onUploadFile={onUploadFile}
         onRescan={vi.fn()}
-        onLogout={vi.fn()}
       />,
     );
     const hiddenInput = document.querySelector('input[type="file"]');
@@ -89,7 +86,6 @@ describe("Toolbar", () => {
         onCreateDirectory={vi.fn()}
         onUploadFile={vi.fn()}
         onRescan={onRescan}
-        onLogout={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -107,7 +103,6 @@ describe("Toolbar", () => {
         onCreateDirectory={vi.fn()}
         onUploadFile={vi.fn()}
         onRescan={onRescan}
-        onLogout={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
@@ -125,7 +120,6 @@ describe("Toolbar", () => {
         onCreateDirectory={vi.fn()}
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
-        onLogout={vi.fn()}
       />,
     );
     const rehashButton = screen.getByRole("button", { name: "Full rehash" });
@@ -139,36 +133,12 @@ describe("Toolbar", () => {
 
   it("disables its buttons while busy", () => {
     render(
-      <Toolbar
-        busy={true}
-        onCreateDirectory={vi.fn()}
-        onUploadFile={vi.fn()}
-        onRescan={vi.fn()}
-        onLogout={vi.fn()}
-      />,
+      <Toolbar busy={true} onCreateDirectory={vi.fn()} onUploadFile={vi.fn()} onRescan={vi.fn()} />,
     );
 
     expect(screen.getByRole("button", { name: "New folder" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Rescan" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Full rehash" })).toBeDisabled();
-  });
-
-  it("calls onLogout when the Log out button is clicked", async () => {
-    const user = userEvent.setup();
-    const onLogout = vi.fn();
-
-    render(
-      <Toolbar
-        busy={false}
-        onCreateDirectory={vi.fn()}
-        onUploadFile={vi.fn()}
-        onRescan={vi.fn()}
-        onLogout={onLogout}
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: "Log out" }));
-
-    expect(onLogout).toHaveBeenCalled();
   });
 });

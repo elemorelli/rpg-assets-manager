@@ -2,7 +2,6 @@ import {
   faArrowsRotate,
   faFolderPlus,
   faHashtag,
-  faRightFromBracket,
   faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,7 +15,6 @@ export interface ToolbarProps {
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
   onRescan: (forceRehash: boolean) => void;
-  onLogout: () => void;
 }
 
 export const Toolbar = ({
@@ -24,7 +22,6 @@ export const Toolbar = ({
   onCreateDirectory,
   onUploadFile,
   onRescan,
-  onLogout,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -95,9 +92,6 @@ export const Toolbar = ({
           onChange={handleFileSelected}
         />
       </div>
-      <button type="button" aria-label="Log out" title="Log out" onClick={onLogout}>
-        <FontAwesomeIcon icon={faRightFromBracket} />
-      </button>
     </div>
   );
 };

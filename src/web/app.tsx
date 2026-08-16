@@ -1,3 +1,5 @@
+import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router";
 
@@ -44,6 +46,10 @@ export const App = (): JSX.Element | null => {
       .catch((caught: unknown) => setSessionCheckError(describeError(caught)));
   }, []);
 
+  const handleLogout = (): void => {
+    api.logout().then(() => setAuthenticated(false));
+  };
+
   if (sessionCheckError) {
     return (
       <main>
@@ -60,13 +66,17 @@ export const App = (): JSX.Element | null => {
   return (
     <BrowserRouter>
       <main>
-        <AppTitle linkToRoot={authenticated} />
+        <div className={styles.titleBar}>
+          <AppTitle linkToRoot={authenticated} />
+          {authenticated && (
+            <button type="button" aria-label="Log out" title="Log out" onClick={handleLogout}>
+              <FontAwesomeIcon icon={faRightFromBracket} />
+            </button>
+          )}
+        </div>
         {authenticated ? (
           <Routes>
-            <Route
-              path="/*"
-              element={<FileBrowser onLoggedOut={() => setAuthenticated(false)} />}
-            />
+            <Route path="/*" element={<FileBrowser />} />
           </Routes>
         ) : (
           <LoginForm onLoggedIn={() => setAuthenticated(true)} />
