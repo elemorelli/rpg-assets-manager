@@ -1,3 +1,5 @@
+import { faFolder } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import type { JSX } from "react";
 
@@ -17,15 +19,27 @@ export const AssetPreview = ({
   relativePath,
   size = "small",
 }: AssetPreviewProps): JSX.Element => {
-  const previewSource = resolvePreviewSource(entry);
   const isLarge = size === "large";
+
+  if (entry.type === "directory") {
+    return (
+      <span
+        data-size={size}
+        aria-label="Folder"
+        className={clsx(styles.folderIcon, isLarge && styles.folderIconLarge)}>
+        <FontAwesomeIcon icon={faFolder} />
+      </span>
+    );
+  }
+
+  const previewSource = resolvePreviewSource(entry);
 
   if (previewSource.kind === "image") {
     const imageUrl = previewSource.useThumbnail
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
 
-    return (
+    const image = (
       <img
         src={imageUrl}
         alt={entry.name}
@@ -33,6 +47,17 @@ export const AssetPreview = ({
         data-size={size}
         className={clsx(styles.image, isLarge && styles.imageLarge)}
       />
+    );
+
+    if (isLarge) {
+      return image;
+    }
+
+    return (
+      <span className={styles.previewWrapper}>
+        {image}
+        <img src={imageUrl} alt="" aria-hidden="true" className={styles.imageZoom} />
+      </span>
     );
   }
 

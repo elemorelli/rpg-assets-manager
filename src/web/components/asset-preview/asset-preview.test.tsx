@@ -55,10 +55,10 @@ describe("AssetPreview", () => {
     expect(screen.getByLabelText("No preview available")).toBeInTheDocument();
   });
 
-  it("renders a placeholder for a directory", () => {
+  it("renders a folder icon for a directory", () => {
     render(<AssetPreview entry={{ name: "tiles", type: "directory" }} relativePath="tiles" />);
 
-    expect(screen.getByLabelText("No preview available")).toBeInTheDocument();
+    expect(screen.getByLabelText("Folder")).toBeInTheDocument();
   });
 
   it("marks the rendered image with the requested size", () => {
@@ -82,5 +82,29 @@ describe("AssetPreview", () => {
     );
 
     expect(screen.getByRole("img", { name: "forest.png" })).toHaveAttribute("data-size", "small");
+  });
+
+  it("renders a hidden hover-zoom image alongside a small-size image", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: SIZE_UNDER_THRESHOLD }}
+        relativePath="tiles/forest.png"
+      />,
+    );
+
+    const zoomImage = document.querySelector('img[aria-hidden="true"]');
+    expect(zoomImage).toHaveAttribute("src", "/api/files/raw?path=tiles%2Fforest.png");
+  });
+
+  it("does not render a hover-zoom image alongside a large-size image", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: SIZE_UNDER_THRESHOLD }}
+        relativePath="tiles/forest.png"
+        size="large"
+      />,
+    );
+
+    expect(document.querySelector('img[aria-hidden="true"]')).not.toBeInTheDocument();
   });
 });

@@ -152,7 +152,7 @@ export const DirectoryTableRow = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onContextMenu={contextMenu.open}>
-      <td>
+      <td className={styles.preview}>
         <AssetPreview entry={entry} relativePath={joinRelativePath(currentPath, entry.name)} />
       </td>
       <td>

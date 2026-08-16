@@ -43,7 +43,7 @@ export const DirectoryTable = ({
   <table className={styles.table}>
     <thead>
       <tr>
-        <th>Preview</th>
+        <th className={styles.preview}>Preview</th>
         <th>Name</th>
         <th>Type</th>
         <th>Size</th>

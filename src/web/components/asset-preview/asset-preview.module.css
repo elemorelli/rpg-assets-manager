@@ -4,6 +4,48 @@
   object-fit: cover;
 }
 
+.previewWrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.imageZoom {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  margin-left: var(--spacing-xs);
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  z-index: 50;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.previewWrapper:hover .imageZoom {
+  display: block;
+}
+
+.folderIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+.folderIconLarge {
+  width: 128px;
+  height: 128px;
+  font-size: 64px;
+}
+
 .audio {
   height: 20px;
   max-width: 160px;

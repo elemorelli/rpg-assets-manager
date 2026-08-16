@@ -19,6 +19,11 @@
   padding: 0;
 }
 
+.preview {
+  text-align: center;
+  vertical-align: middle;
+}
+
 .actions {
   width: 40px;
   text-align: center;
