@@ -1,7 +1,7 @@
 import { faFolder } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import type { JSX } from "react";
+import type { JSX, KeyboardEvent } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
@@ -12,12 +12,14 @@ export interface AssetPreviewProps {
   entry: DirectoryEntry;
   relativePath: string;
   size?: "small" | "large";
+  onOpen?: (entry: DirectoryEntry) => void;
 }
 
 export const AssetPreview = ({
   entry,
   relativePath,
   size = "small",
+  onOpen,
 }: AssetPreviewProps): JSX.Element => {
   const isLarge = size === "large";
 
@@ -38,6 +40,18 @@ export const AssetPreview = ({
     const imageUrl = previewSource.useThumbnail
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
+    const isOpenable = !isLarge && onOpen !== undefined;
+
+    const handleOpenClick = (): void => {
+      onOpen?.(entry);
+    };
+
+    const handleOpenKeyDown = (event: KeyboardEvent<HTMLImageElement>): void => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onOpen?.(entry);
+      }
+    };
 
     const image = (
       <img
@@ -46,6 +60,10 @@ export const AssetPreview = ({
         loading="lazy"
         data-size={size}
         className={clsx(styles.image, isLarge && styles.imageLarge)}
+        role={isOpenable ? "button" : undefined}
+        tabIndex={isOpenable ? 0 : undefined}
+        onClick={isOpenable ? handleOpenClick : undefined}
+        onKeyDown={isOpenable ? handleOpenKeyDown : undefined}
       />
     );
 

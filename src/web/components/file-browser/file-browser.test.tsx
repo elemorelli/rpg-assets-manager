@@ -504,4 +504,125 @@ describe("FileBrowser", () => {
 
     expect(await screen.findByTestId("tile-map.png")).toBeInTheDocument();
   });
+
+  it("opens the lightbox when the small preview image is clicked", async () => {
+    const user = userEvent.setup();
+
+    renderFileBrowser();
+    await screen.findByText("map.png");
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("opens the lightbox on double-click of a table row", async () => {
+    renderFileBrowser();
+    await screen.findByText("map.png");
+
+    const row = screen.getByText("map.png").closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.doubleClick(row);
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("does not open the lightbox on double-click of a directory row", async () => {
+    renderFileBrowser();
+    await screen.findByText("map.png");
+
+    const row = within(screen.getByRole("table")).getByText("tiles").closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.doubleClick(row);
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("steps to the next previewable entry and disables Next at the end", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 10 },
+              { name: "b.wav", type: "file", size: 10 },
+            ]
+          : [],
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    await user.click(screen.getByRole("button", { name: "a.png" }));
+    expect(screen.getByRole("img", { name: "a.png" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(document.querySelector("audio")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+  });
+
+  it("advances to the next previewable entry after deleting the current one", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 10 },
+              { name: "b.png", type: "file", size: 10 },
+            ]
+          : [],
+      ),
+    );
+
+    const user = userEvent.setup();
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    await user.click(screen.getByRole("button", { name: "a.png" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(screen.getByRole("img", { name: "b.png" })).toBeInTheDocument();
+    expect(deleteEntryMock).toHaveBeenCalledWith("a.png");
+  });
+
+  it("keeps the lightbox open on the renamed entry", async () => {
+    const user = userEvent.setup();
+    let currentFileName = "map.png";
+
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "tiles", type: "directory" },
+              { name: currentFileName, type: "file", size: 1024 },
+            ]
+          : [],
+      ),
+    );
+    renameEntryMock.mockImplementation(async (_path: string, newName: string) => {
+      currentFileName = newName;
+    });
+
+    renderFileBrowser();
+    await screen.findByText("map.png");
+
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+
+    const input = screen.getByLabelText("Rename map.png");
+
+    await user.clear(input);
+    await user.type(input, "castle.png{Enter}");
+
+    expect(renameEntryMock).toHaveBeenCalledWith("map.png", "castle.png");
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
 });

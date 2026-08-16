@@ -17,6 +17,7 @@ import { EntryContextMenu } from "#components/entry-context-menu/entry-context-m
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
+import { resolvePreviewSource } from "#utils/preview.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
 import { modifierFromClick, type SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
@@ -37,6 +38,7 @@ export interface DirectoryTableRowProps {
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onOpenLightbox: (entry: DirectoryEntry) => void;
 }
 
 export const DirectoryTableRow = ({
@@ -53,6 +55,7 @@ export const DirectoryTableRow = ({
   onSelectRow,
   availableTags,
   onTagsChange,
+  onOpenLightbox,
 }: DirectoryTableRowProps): JSX.Element => {
   const [dragOver, setDragOver] = useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
@@ -101,6 +104,18 @@ export const DirectoryTableRow = ({
     onSelectRow(entry, modifierFromClick(event));
   };
 
+  const handleRowDoubleClick = (event: MouseEvent<HTMLTableRowElement>): void => {
+    if (event.target instanceof HTMLElement && event.target.closest("button, input")) {
+      return;
+    }
+
+    if (entry.type !== "file" || resolvePreviewSource(entry).kind === "none") {
+      return;
+    }
+
+    onOpenLightbox(entry);
+  };
+
   const handleNameClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     onOpenDirectory(entry.name);
@@ -146,6 +161,7 @@ export const DirectoryTableRow = ({
       aria-selected={isSelected}
       className={clsx(isDropTarget && dragOver && styles.dragOver, isSelected && styles.selected)}
       onClick={handleRowClick}
+      onDoubleClick={handleRowDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
@@ -153,7 +169,11 @@ export const DirectoryTableRow = ({
       onDrop={handleDrop}
       onContextMenu={contextMenu.open}>
       <td className={styles.preview}>
-        <AssetPreview entry={entry} relativePath={joinRelativePath(currentPath, entry.name)} />
+        <AssetPreview
+          entry={entry}
+          relativePath={joinRelativePath(currentPath, entry.name)}
+          onOpen={onOpenLightbox}
+        />
       </td>
       <td>
         {isRenaming ? (
@@ -190,6 +210,7 @@ export const DirectoryTableRow = ({
           entry={entry}
           position={contextMenu.position}
           onClose={contextMenu.close}
+          onView={onOpenLightbox}
           onRenameRequested={startRenaming}
           onDelete={onDelete}
           availableTags={availableTags}

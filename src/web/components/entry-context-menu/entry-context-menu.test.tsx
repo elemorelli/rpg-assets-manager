@@ -13,6 +13,7 @@ const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };
 const baseProps = {
   position: { x: 10, y: 20 },
   onClose: vi.fn(),
+  onView: vi.fn(),
   onRenameRequested: vi.fn(),
   onDelete: vi.fn(),
   availableTags: ["npc", "loot"],
@@ -97,5 +98,31 @@ describe("EntryContextMenu", () => {
     render(<EntryContextMenu {...baseProps} entry={directoryEntry} />);
 
     expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("shows View for a previewable file and calls onView then onClose", async () => {
+    const user = userEvent.setup();
+    const onView = vi.fn();
+    const onClose = vi.fn();
+
+    render(<EntryContextMenu {...baseProps} entry={fileEntry} onView={onView} onClose={onClose} />);
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    expect(onView).toHaveBeenCalledWith(fileEntry);
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not show View for a directory entry", () => {
+    render(<EntryContextMenu {...baseProps} entry={directoryEntry} />);
+
+    expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+  });
+
+  it("does not show View for an unsupported file type", () => {
+    const unsupportedEntry: DirectoryEntry = { name: "notes.xcf", type: "file" };
+
+    render(<EntryContextMenu {...baseProps} entry={unsupportedEntry} />);
+
+    expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
   });
 });

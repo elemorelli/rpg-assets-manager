@@ -3,6 +3,7 @@ import { type JSX, useEffect, useState } from "react";
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import { resolvePreviewSource } from "#utils/preview.ts";
 
 import styles from "./entry-context-menu.module.css";
 
@@ -10,6 +11,7 @@ export interface EntryContextMenuProps {
   entry: DirectoryEntry;
   position: { x: number; y: number } | null;
   onClose: () => void;
+  onView: (entry: DirectoryEntry) => void;
   onRenameRequested: () => void;
   onDelete: (entry: DirectoryEntry) => void;
   availableTags: string[];
@@ -20,6 +22,7 @@ export const EntryContextMenu = ({
   entry,
   position,
   onClose,
+  onView,
   onRenameRequested,
   onDelete,
   availableTags,
@@ -32,6 +35,13 @@ export const EntryContextMenu = ({
       setConfirmingDelete(false);
     }
   }, [position]);
+
+  const isPreviewable = entry.type === "file" && resolvePreviewSource(entry).kind !== "none";
+
+  const handleView = (): void => {
+    onView(entry);
+    onClose();
+  };
 
   const handleRename = (): void => {
     onRenameRequested();
@@ -57,6 +67,11 @@ export const EntryContextMenu = ({
         </div>
       ) : (
         <div className={styles.items}>
+          {isPreviewable && (
+            <button type="button" className={styles.item} onClick={handleView}>
+              View
+            </button>
+          )}
           <button type="button" className={styles.item} onClick={handleRename}>
             Rename
           </button>

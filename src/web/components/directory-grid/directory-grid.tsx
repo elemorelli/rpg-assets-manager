@@ -21,6 +21,7 @@ export interface DirectoryGridProps {
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
   selectedNames: Set<string>;
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
+  onOpenLightbox: (entry: DirectoryEntry) => void;
 }
 
 const UNGROUPED_KEY = "__ungrouped__";
@@ -39,6 +40,7 @@ export const DirectoryGrid = ({
   onTagsChange,
   selectedNames,
   onSelectRow,
+  onOpenLightbox,
 }: DirectoryGridProps): JSX.Element => (
   <div>
     {groups.map((group) => (
@@ -61,6 +63,7 @@ export const DirectoryGrid = ({
               onSelectRow={onSelectRow}
               availableTags={availableTags}
               onTagsChange={onTagsChange}
+              onOpenLightbox={onOpenLightbox}
             />
           ))}
         </div>

@@ -23,6 +23,7 @@ const baseProps = {
   onTagsChange: vi.fn(),
   selectedNames: new Set<string>(),
   onSelectRow: vi.fn(),
+  onOpenLightbox: vi.fn(),
 };
 
 describe("DirectoryGrid", () => {
@@ -347,5 +348,67 @@ describe("DirectoryGrid", () => {
 
     expect(screen.getByRole("heading", { name: "Folders" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "npc" })).toBeInTheDocument();
+  });
+
+  it("opens the lightbox on double-click of a file tile", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByTestId("tile-map.png"));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("does not open the lightbox on double-click of a directory tile", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [directoryEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByTestId("tile-tiles"));
+
+    expect(onOpenLightbox).not.toHaveBeenCalled();
+  });
+
+  it("does not open the lightbox on double-click of the actions menu button", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByRole("button", { name: "Actions for map.png" }));
+
+    expect(onOpenLightbox).not.toHaveBeenCalled();
+  });
+
+  it("opens the lightbox via View in the context menu", async () => {
+    const user = userEvent.setup();
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 });

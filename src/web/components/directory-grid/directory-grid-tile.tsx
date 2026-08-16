@@ -17,6 +17,7 @@ import { EntryContextMenu } from "#components/entry-context-menu/entry-context-m
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
+import { resolvePreviewSource } from "#utils/preview.ts";
 import { modifierFromClick, type SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
@@ -36,6 +37,7 @@ export interface DirectoryGridTileProps {
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onOpenLightbox: (entry: DirectoryEntry) => void;
 }
 
 export const DirectoryGridTile = ({
@@ -52,6 +54,7 @@ export const DirectoryGridTile = ({
   onSelectRow,
   availableTags,
   onTagsChange,
+  onOpenLightbox,
 }: DirectoryGridTileProps): JSX.Element => {
   const [dragOver, setDragOver] = useState<boolean>(false);
   const [isRenaming, setIsRenaming] = useState<boolean>(false);
@@ -96,6 +99,18 @@ export const DirectoryGridTile = ({
 
   const handleTileClick = (event: MouseEvent<HTMLDivElement>): void => {
     onSelectRow(entry, modifierFromClick(event));
+  };
+
+  const handleTileDoubleClick = (event: MouseEvent<HTMLDivElement>): void => {
+    if (event.target instanceof HTMLElement && event.target.closest("button, input")) {
+      return;
+    }
+
+    if (entry.type !== "file" || resolvePreviewSource(entry).kind === "none") {
+      return;
+    }
+
+    onOpenLightbox(entry);
   };
 
   const handleNameClick = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -148,6 +163,7 @@ export const DirectoryGridTile = ({
         isSelected && styles.selected,
       )}
       onClick={handleTileClick}
+      onDoubleClick={handleTileDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
@@ -191,6 +207,7 @@ export const DirectoryGridTile = ({
         entry={entry}
         position={contextMenu.position}
         onClose={contextMenu.close}
+        onView={onOpenLightbox}
         onRenameRequested={startRenaming}
         onDelete={onDelete}
         availableTags={availableTags}

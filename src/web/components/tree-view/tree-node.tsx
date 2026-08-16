@@ -209,6 +209,7 @@ export const TreeNode = ({
           entry={nodeEntry}
           position={contextMenu.position}
           onClose={contextMenu.close}
+          onView={() => {}}
           onRenameRequested={startRenaming}
           onDelete={() => onDelete(path)}
           availableTags={availableTags}

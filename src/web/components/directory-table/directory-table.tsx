@@ -21,6 +21,7 @@ export interface DirectoryTableProps {
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
   selectedNames: Set<string>;
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
+  onOpenLightbox: (entry: DirectoryEntry) => void;
 }
 
 const UNGROUPED_KEY = "__ungrouped__";
@@ -39,6 +40,7 @@ export const DirectoryTable = ({
   onTagsChange,
   selectedNames,
   onSelectRow,
+  onOpenLightbox,
 }: DirectoryTableProps): JSX.Element => (
   <table className={styles.table}>
     <thead>
@@ -75,6 +77,7 @@ export const DirectoryTable = ({
               onSelectRow={onSelectRow}
               availableTags={availableTags}
               onTagsChange={onTagsChange}
+              onOpenLightbox={onOpenLightbox}
             />
           ))}
         </Fragment>

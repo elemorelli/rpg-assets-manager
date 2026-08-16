@@ -7,6 +7,7 @@ import { ConversionPanel } from "#components/conversion-panel/conversion-panel.t
 import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
+import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
 import { ReconciliationPanel } from "#components/reconciliation-panel/reconciliation-panel.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
@@ -19,6 +20,7 @@ import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { ViewControls } from "#components/view-controls/view-controls.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
+import { resolvePreviewSource } from "#utils/preview.ts";
 import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
@@ -56,6 +58,7 @@ export const FileBrowser = (): JSX.Element => {
   const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
+  const [lightboxEntryName, setLightboxEntryName] = useState<string | null>(null);
 
   const {
     viewMode,
@@ -201,6 +204,39 @@ export const FileBrowser = (): JSX.Element => {
     runAction(() => api.setAssetTags(entryPath, tags).then(() => refreshTags()));
   };
 
+  const handleOpenLightbox = (entry: DirectoryEntry): void => {
+    setLightboxEntryName(entry.name);
+  };
+
+  const handleCloseLightbox = (): void => {
+    setLightboxEntryName(null);
+  };
+
+  const handleLightboxPrev = (): void => {
+    if (lightboxIndex > 0) {
+      setLightboxEntryName(previewableEntries[lightboxIndex - 1].name);
+    }
+  };
+
+  const handleLightboxNext = (): void => {
+    if (lightboxIndex !== -1 && lightboxIndex < previewableEntries.length - 1) {
+      setLightboxEntryName(previewableEntries[lightboxIndex + 1].name);
+    }
+  };
+
+  const handleLightboxRename = (entry: DirectoryEntry, newName: string): void => {
+    handleRename(entry, newName);
+    setLightboxEntryName(newName);
+  };
+
+  const handleLightboxDelete = (entry: DirectoryEntry): void => {
+    const fallbackEntry =
+      previewableEntries[lightboxIndex + 1] ?? previewableEntries[lightboxIndex - 1];
+
+    handleDelete(entry);
+    setLightboxEntryName(fallbackEntry?.name ?? null);
+  };
+
   const handleToggleTag = (tag: string): void => {
     const nextSelectedTags = selectedTags.includes(tag)
       ? selectedTags.filter((selected) => selected !== tag)
@@ -320,6 +356,15 @@ export const FileBrowser = (): JSX.Element => {
   const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
   const groups = groupEntries(sortedEntries, groupCriterion);
 
+  const previewableEntries = sortedEntries.filter(
+    (entry) => entry.type === "file" && resolvePreviewSource(entry).kind !== "none",
+  );
+  const lightboxIndex =
+    lightboxEntryName === null
+      ? -1
+      : previewableEntries.findIndex((entry) => entry.name === lightboxEntryName);
+  const lightboxEntry = lightboxIndex === -1 ? null : previewableEntries[lightboxIndex];
+
   return (
     <AppShell
       sidebar={
@@ -406,6 +451,7 @@ export const FileBrowser = (): JSX.Element => {
                   onTagsChange={handleTagsChange}
                   selectedNames={selection.selectedNames}
                   onSelectRow={handleSelectRow}
+                  onOpenLightbox={handleOpenLightbox}
                 />
               ) : (
                 <DirectoryGrid
@@ -422,9 +468,25 @@ export const FileBrowser = (): JSX.Element => {
                   onTagsChange={handleTagsChange}
                   selectedNames={selection.selectedNames}
                   onSelectRow={handleSelectRow}
+                  onOpenLightbox={handleOpenLightbox}
                 />
               )}
             </>
+          )}
+          {lightboxEntry && (
+            <Lightbox
+              entry={lightboxEntry}
+              relativePath={joinRelativePath(currentPath, lightboxEntry.name)}
+              hasPrev={lightboxIndex > 0}
+              hasNext={lightboxIndex < previewableEntries.length - 1}
+              onPrev={handleLightboxPrev}
+              onNext={handleLightboxNext}
+              onClose={handleCloseLightbox}
+              onRename={handleLightboxRename}
+              onDelete={handleLightboxDelete}
+              availableTags={availableTags}
+              onTagsChange={handleTagsChange}
+            />
           )}
         </div>
       }

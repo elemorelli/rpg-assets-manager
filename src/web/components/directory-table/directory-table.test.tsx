@@ -23,6 +23,7 @@ const baseProps = {
   onTagsChange: vi.fn(),
   selectedNames: new Set<string>(),
   onSelectRow: vi.fn(),
+  onOpenLightbox: vi.fn(),
 };
 
 const getRow = (text: string): HTMLElement => {
@@ -45,8 +46,7 @@ describe("DirectoryTable", () => {
     );
 
     expect(screen.getByRole("button", { name: "tiles" })).toBeInTheDocument();
-    expect(screen.getByText("map.png")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "map.png" })).not.toBeInTheDocument();
+    expect(screen.getByText("map.png").tagName).not.toBe("BUTTON");
   });
 
   it("shows the formatted size for files, and nothing for directories", () => {
@@ -145,7 +145,7 @@ describe("DirectoryTable", () => {
   it("renders a preview using the entry's path joined with the current directory", () => {
     render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
 
-    expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "map.png" })).toHaveAttribute(
       "src",
       "/api/files/raw?path=tiles%2Fmap.png",
     );
@@ -422,5 +422,85 @@ describe("DirectoryTable", () => {
     expect(screen.queryAllByRole("columnheader").map((header) => header.textContent)).not.toContain(
       null,
     );
+  });
+
+  it("opens the lightbox when the small preview image is clicked", async () => {
+    const user = userEvent.setup();
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("opens the lightbox on double-click of a file row", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(getRow("map.png"));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("does not open the lightbox on double-click of a directory row", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [directoryEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(
+      screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement,
+    );
+
+    expect(onOpenLightbox).not.toHaveBeenCalled();
+  });
+
+  it("does not open the lightbox on double-click of the actions menu button", () => {
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByRole("button", { name: "Actions for map.png" }));
+
+    expect(onOpenLightbox).not.toHaveBeenCalled();
+  });
+
+  it("opens the lightbox via View in the context menu", async () => {
+    const user = userEvent.setup();
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.contextMenu(getRow("map.png"));
+    await user.click(screen.getByRole("button", { name: "View" }));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 });
