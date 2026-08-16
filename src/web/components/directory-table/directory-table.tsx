@@ -11,9 +11,8 @@ export interface DirectoryTableProps {
   groups: EntryGroup[];
   currentPath: string;
   onOpenDirectory: (name: string) => void;
-  onRename: (entry: DirectoryEntry) => void;
+  onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
-  onMove: (entry: DirectoryEntry) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
@@ -32,7 +31,6 @@ export const DirectoryTable = ({
   onOpenDirectory,
   onRename,
   onDelete,
-  onMove,
   onDragStart,
   onDragEnd,
   canDropEntry,
@@ -50,7 +48,7 @@ export const DirectoryTable = ({
         <th>Type</th>
         <th>Size</th>
         <th>Tags</th>
-        <th aria-label="Actions" />
+        <th className={styles.actions} aria-label="Actions" />
       </tr>
     </thead>
     <tbody>
@@ -71,7 +69,6 @@ export const DirectoryTable = ({
               onOpenDirectory={onOpenDirectory}
               onRename={onRename}
               onDelete={onDelete}
-              onMove={onMove}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropEntry={onDropEntry}

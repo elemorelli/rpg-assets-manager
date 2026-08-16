@@ -159,36 +159,24 @@ export const FileBrowser = (): JSX.Element => {
     runAction(() => api.rescan(forceRehash).then(() => undefined));
   };
 
-  const handleRename = (entry: DirectoryEntry): void => {
-    const newName = window.prompt("New name", entry.name);
-
-    if (!newName || newName === entry.name) {
-      return;
-    }
-
+  const handleRename = (entry: DirectoryEntry, newName: string): void => {
     runAction(() => api.renameEntry(joinRelativePath(currentPath, entry.name), newName));
   };
 
   const handleDelete = (entry: DirectoryEntry): void => {
-    if (!window.confirm(`Delete ${entry.name}?`)) {
-      return;
-    }
-
     runAction(() => api.deleteEntry(joinRelativePath(currentPath, entry.name)));
   };
 
-  const handleMove = (entry: DirectoryEntry): void => {
-    const currentEntryPath = joinRelativePath(currentPath, entry.name);
-    const destination = window.prompt(
-      "Destination path (relative to asset tree root)",
-      currentEntryPath,
-    );
+  const handleTreeRename = (path: string, newName: string): void => {
+    runAction(() => api.renameEntry(path, newName));
+  };
 
-    if (!destination) {
-      return;
-    }
+  const handleTreeDelete = (path: string): void => {
+    runAction(() => api.deleteEntry(path));
+  };
 
-    runAction(() => api.moveEntry(currentEntryPath, destination));
+  const handleTreeTagsChange = (path: string, tags: string[]): void => {
+    runAction(() => api.setAssetTags(path, tags).then(() => refreshTags()));
   };
 
   const handleSearch = (nextQuery: string): void => {
@@ -340,6 +328,10 @@ export const FileBrowser = (): JSX.Element => {
           onNavigate={navigateToPath}
           canDropOnPath={canDropOnDirectory}
           onDropEntry={handleDropOnDirectory}
+          onRename={handleTreeRename}
+          onDelete={handleTreeDelete}
+          availableTags={availableTags}
+          onTagsChange={handleTreeTagsChange}
         />
       }
       main={
@@ -406,7 +398,6 @@ export const FileBrowser = (): JSX.Element => {
                   onOpenDirectory={handleOpenDirectory}
                   onRename={handleRename}
                   onDelete={handleDelete}
-                  onMove={handleMove}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   canDropEntry={canDropOnEntry}
@@ -423,7 +414,6 @@ export const FileBrowser = (): JSX.Element => {
                   onOpenDirectory={handleOpenDirectory}
                   onRename={handleRename}
                   onDelete={handleDelete}
-                  onMove={handleMove}
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   canDropEntry={canDropOnEntry}

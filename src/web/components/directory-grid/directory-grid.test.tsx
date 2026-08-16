@@ -15,7 +15,6 @@ const baseProps = {
   onOpenDirectory: vi.fn(),
   onRename: vi.fn(),
   onDelete: vi.fn(),
-  onMove: vi.fn(),
   onDragStart: vi.fn(),
   onDragEnd: vi.fn(),
   canDropEntry: () => false,
@@ -53,31 +52,6 @@ describe("DirectoryGrid", () => {
     await user.click(screen.getByRole("button", { name: "tiles" }));
 
     expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
-  });
-
-  it("forwards the entry to onRename, onMove, and onDelete", async () => {
-    const user = userEvent.setup();
-    const onRename = vi.fn();
-    const onMove = vi.fn();
-    const onDelete = vi.fn();
-
-    render(
-      <DirectoryGrid
-        {...baseProps}
-        onRename={onRename}
-        onMove={onMove}
-        onDelete={onDelete}
-        groups={[{ label: null, entries: [fileEntry] }]}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Rename" }));
-    await user.click(screen.getByRole("button", { name: "Move" }));
-    await user.click(screen.getByRole("button", { name: "Delete" }));
-
-    expect(onRename).toHaveBeenCalledWith(fileEntry);
-    expect(onMove).toHaveBeenCalledWith(fileEntry);
-    expect(onDelete).toHaveBeenCalledWith(fileEntry);
   });
 
   it("calls onDragStart and onDragEnd", () => {
@@ -148,7 +122,22 @@ describe("DirectoryGrid", () => {
     expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute("data-size", "large");
   });
 
-  it("renders a tag editor for file tiles and calls onTagsChange when a tag is added", async () => {
+  it("renders read-only tag badges for file tiles", () => {
+    const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
+
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [taggedFile] }]} />);
+
+    expect(screen.getByText("npc")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("does not render tag badges for directory tiles", () => {
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
+
+    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("allows editing tags through the context menu for file tiles", async () => {
     const user = userEvent.setup();
     const onTagsChange = vi.fn();
     const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
@@ -162,17 +151,10 @@ describe("DirectoryGrid", () => {
       />,
     );
 
-    expect(screen.getByText("npc")).toBeInTheDocument();
-
+    fireEvent.contextMenu(screen.getByTestId("tile-npc.png"));
     await user.type(screen.getByLabelText("Add tag"), "loot{Enter}");
 
     expect(onTagsChange).toHaveBeenCalledWith(taggedFile, ["npc", "loot"]);
-  });
-
-  it("does not render a tag editor for directory tiles", () => {
-    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
-
-    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
   });
 
   it("marks a tile that is in the selected set", () => {
@@ -216,6 +198,140 @@ describe("DirectoryGrid", () => {
     fireEvent.click(screen.getByTestId("tile-map.png"), { ctrlKey: true });
 
     expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "toggle");
+  });
+
+  it("opens the context menu on right-click without also calling onSelectRow", () => {
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onSelectRow={onSelectRow}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+
+    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
+    expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
+  it("opens the context menu via the actions button without also calling onSelectRow", async () => {
+    const user = userEvent.setup();
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onSelectRow={onSelectRow}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Actions for map.png" }));
+
+    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
+    expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
+  it("closes the previously open menu when a second entry's menu is opened", () => {
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        groups={[{ label: null, entries: [directoryEntry, fileEntry] }]}
+      />,
+    );
+    const directoryTile = screen.getByTestId("tile-tiles");
+    const fileTile = screen.getByTestId("tile-map.png");
+
+    fireEvent.mouseDown(directoryTile);
+    fireEvent.contextMenu(directoryTile);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    fireEvent.mouseDown(fileTile);
+    fireEvent.contextMenu(fileTile);
+
+    expect(screen.getAllByRole("menu")).toHaveLength(1);
+  });
+
+  it("renames an entry via the inline input after choosing Rename from the context menu", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onRename={onRename}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+
+    const input = screen.getByRole("textbox", { name: "Rename map.png" });
+
+    await user.clear(input);
+    await user.type(input, "renamed.png{Enter}");
+
+    expect(onRename).toHaveBeenCalledWith(fileEntry, "renamed.png");
+  });
+
+  it("cancels renaming on Escape without calling onRename", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onRename={onRename}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+    await user.type(screen.getByRole("textbox", { name: "Rename map.png" }), "{Escape}");
+
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.getByText("map.png")).toBeInTheDocument();
+  });
+
+  it("deletes an entry after confirming from the context menu", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onDelete={onDelete}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onDelete).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("does not call onDelete when deletion is cancelled from the context menu", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onDelete={onDelete}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(screen.getByTestId("tile-map.png"));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it("renders a heading for each labeled group", () => {

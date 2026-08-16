@@ -1,14 +1,27 @@
+import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type DragEvent, type JSX, useState } from "react";
+import {
+  type ChangeEvent,
+  type DragEvent,
+  type JSX,
+  type KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
+import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
+import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
 import styles from "./tree-view.module.css";
 
 export type TreeChildrenState = "loading" | "error" | DirectoryEntry[];
 
 const INDENT_PX = 16;
+const DRAG_EXPAND_DELAY_MS = 600;
 
 const ChevronIcon = ({ expanded }: { expanded: boolean }): JSX.Element => (
   <svg
@@ -33,6 +46,10 @@ export interface TreeNodeProps {
   onNavigate: (path: string) => void;
   canDropOnPath: (path: string) => boolean;
   onDropEntry: (path: string) => void;
+  onRename: (path: string, newName: string) => void;
+  onDelete: (path: string) => void;
+  availableTags: string[];
+  onTagsChange: (path: string, tags: string[]) => void;
 }
 
 export const TreeNode = ({
@@ -47,12 +64,42 @@ export const TreeNode = ({
   onNavigate,
   canDropOnPath,
   onDropEntry,
+  onRename,
+  onDelete,
+  availableTags,
+  onTagsChange,
 }: TreeNodeProps): JSX.Element => {
   const [dragOver, setDragOver] = useState<boolean>(false);
+  const [isRenaming, setIsRenaming] = useState<boolean>(false);
+  const [renameDraft, setRenameDraft] = useState<string>(name);
+  const renameInputRef = useRef<HTMLInputElement | null>(null);
+  const dragExpandTimerRef = useRef<number | null>(null);
+  const contextMenu = useContextMenu();
   const isExpanded = expandedPaths.has(path);
   const isActive = path === activePath;
   const isDropTarget = canDropOnPath(path);
   const state = childrenByPath[path];
+  const nodeEntry: DirectoryEntry = { name, type: "directory" };
+
+  useEffect(() => {
+    if (isRenaming) {
+      renameInputRef.current?.focus();
+      renameInputRef.current?.select();
+    }
+  }, [isRenaming]);
+
+  const clearDragExpandTimer = (): void => {
+    if (dragExpandTimerRef.current !== null) {
+      window.clearTimeout(dragExpandTimerRef.current);
+      dragExpandTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearDragExpandTimer();
+    };
+  }, []);
 
   const handleDragOver = (event: DragEvent<HTMLLIElement>): void => {
     if (!isDropTarget) {
@@ -60,11 +107,22 @@ export const TreeNode = ({
     }
 
     event.preventDefault();
-    setDragOver(true);
+
+    if (!dragOver) {
+      setDragOver(true);
+
+      if (!isExpanded && dragExpandTimerRef.current === null) {
+        dragExpandTimerRef.current = window.setTimeout(() => {
+          dragExpandTimerRef.current = null;
+          onToggle(path);
+        }, DRAG_EXPAND_DELAY_MS);
+      }
+    }
   };
 
   const handleDragLeave = (): void => {
     setDragOver(false);
+    clearDragExpandTimer();
   };
 
   const handleDrop = (event: DragEvent<HTMLLIElement>): void => {
@@ -74,14 +132,45 @@ export const TreeNode = ({
 
     event.preventDefault();
     setDragOver(false);
+    clearDragExpandTimer();
     onDropEntry(path);
+  };
+
+  const startRenaming = (): void => {
+    setRenameDraft(name);
+    setIsRenaming(true);
+  };
+
+  const commitRename = (): void => {
+    const trimmed = renameDraft.trim();
+
+    if (trimmed && trimmed !== name) {
+      onRename(path, trimmed);
+    }
+
+    setIsRenaming(false);
+  };
+
+  const handleRenameKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      commitRename();
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      setIsRenaming(false);
+    }
+  };
+
+  const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setRenameDraft(event.target.value);
   };
 
   return (
     <li onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
       <div
         className={clsx(styles.row, isDropTarget && dragOver && styles.dragOver)}
-        style={{ paddingLeft: depth * INDENT_PX }}>
+        style={{ paddingLeft: depth * INDENT_PX }}
+        onContextMenu={contextMenu.open}>
         <button
           type="button"
           className={styles.toggle}
@@ -89,13 +178,42 @@ export const TreeNode = ({
           onClick={() => onToggle(path)}>
           <ChevronIcon expanded={isExpanded} />
         </button>
+        {isRenaming ? (
+          <input
+            ref={renameInputRef}
+            type="text"
+            className={styles.renameInput}
+            aria-label={`Rename ${name}`}
+            value={renameDraft}
+            onChange={handleRenameDraftChange}
+            onKeyDown={handleRenameKeyDown}
+            onBlur={commitRename}
+          />
+        ) : (
+          <button
+            type="button"
+            className={clsx(styles.nameButton, isActive && styles.active)}
+            aria-current={isActive ? "true" : undefined}
+            onClick={() => onNavigate(path)}>
+            {name}
+          </button>
+        )}
         <button
           type="button"
-          className={clsx(styles.nameButton, isActive && styles.active)}
-          aria-current={isActive ? "true" : undefined}
-          onClick={() => onNavigate(path)}>
-          {name}
+          className={styles.menuButton}
+          aria-label={`Actions for ${name}`}
+          onClick={contextMenu.open}>
+          <FontAwesomeIcon icon={faEllipsisVertical} />
         </button>
+        <EntryContextMenu
+          entry={nodeEntry}
+          position={contextMenu.position}
+          onClose={contextMenu.close}
+          onRenameRequested={startRenaming}
+          onDelete={() => onDelete(path)}
+          availableTags={availableTags}
+          onTagsChange={(_entry, tags) => onTagsChange(path, tags)}
+        />
       </div>
       {isExpanded && state === "error" && (
         <p className={styles.error}>
@@ -121,6 +239,10 @@ export const TreeNode = ({
               onNavigate={onNavigate}
               canDropOnPath={canDropOnPath}
               onDropEntry={onDropEntry}
+              onRename={onRename}
+              onDelete={onDelete}
+              availableTags={availableTags}
+              onTagsChange={onTagsChange}
             />
           ))}
         </ul>

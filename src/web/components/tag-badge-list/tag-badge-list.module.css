@@ -1,0 +1,14 @@
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  background: var(--color-surface);
+  border-radius: 4px;
+  padding: 0 var(--spacing-xs);
+  font-size: 0.85em;
+}

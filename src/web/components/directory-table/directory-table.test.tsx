@@ -15,7 +15,6 @@ const baseProps = {
   onOpenDirectory: vi.fn(),
   onRename: vi.fn(),
   onDelete: vi.fn(),
-  onMove: vi.fn(),
   onDragStart: vi.fn(),
   onDragEnd: vi.fn(),
   canDropEntry: () => false,
@@ -24,6 +23,16 @@ const baseProps = {
   onTagsChange: vi.fn(),
   selectedNames: new Set<string>(),
   onSelectRow: vi.fn(),
+};
+
+const getRow = (text: string): HTMLElement => {
+  const row = screen.getByText(text).closest("tr");
+
+  if (!row) {
+    throw new Error(`row for "${text}" not found`);
+  }
+
+  return row;
 };
 
 describe("DirectoryTable", () => {
@@ -67,31 +76,6 @@ describe("DirectoryTable", () => {
     expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
   });
 
-  it("forwards the entry to onRename, onMove, and onDelete", async () => {
-    const user = userEvent.setup();
-    const onRename = vi.fn();
-    const onMove = vi.fn();
-    const onDelete = vi.fn();
-
-    render(
-      <DirectoryTable
-        {...baseProps}
-        onRename={onRename}
-        onMove={onMove}
-        onDelete={onDelete}
-        groups={[{ label: null, entries: [fileEntry] }]}
-      />,
-    );
-
-    await user.click(screen.getByRole("button", { name: "Rename" }));
-    await user.click(screen.getByRole("button", { name: "Move" }));
-    await user.click(screen.getByRole("button", { name: "Delete" }));
-
-    expect(onRename).toHaveBeenCalledWith(fileEntry);
-    expect(onMove).toHaveBeenCalledWith(fileEntry);
-    expect(onDelete).toHaveBeenCalledWith(fileEntry);
-  });
-
   it("calls onDragStart with the source entry, and onDragEnd when the drag ends", () => {
     const onDragStart = vi.fn();
     const onDragEnd = vi.fn();
@@ -104,11 +88,7 @@ describe("DirectoryTable", () => {
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    const row = screen.getByText("map.png").closest("tr");
-
-    if (!row) {
-      throw new Error("row not found");
-    }
+    const row = getRow("map.png");
 
     fireEvent.dragStart(row);
     expect(onDragStart).toHaveBeenCalledWith(fileEntry);
@@ -171,7 +151,22 @@ describe("DirectoryTable", () => {
     );
   });
 
-  it("renders a tag editor for file rows and calls onTagsChange when a tag is added", async () => {
+  it("renders read-only tag badges for file rows", () => {
+    const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
+
+    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [taggedFile] }]} />);
+
+    expect(screen.getByText("npc")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("does not render tag badges for directory rows", () => {
+    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
+
+    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+  });
+
+  it("allows editing tags through the context menu for file rows", async () => {
     const user = userEvent.setup();
     const onTagsChange = vi.fn();
     const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
@@ -185,17 +180,10 @@ describe("DirectoryTable", () => {
       />,
     );
 
-    expect(screen.getByText("npc")).toBeInTheDocument();
-
+    fireEvent.contextMenu(getRow("npc.png"));
     await user.type(screen.getByLabelText("Add tag"), "loot{Enter}");
 
     expect(onTagsChange).toHaveBeenCalledWith(taggedFile, ["npc", "loot"]);
-  });
-
-  it("does not render a tag editor for directory rows", () => {
-    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
-
-    expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
   });
 
   it("highlights a row that is in the selected set", () => {
@@ -273,6 +261,144 @@ describe("DirectoryTable", () => {
 
     expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
     expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
+  it("opens the context menu on right-click without also calling onSelectRow", () => {
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onSelectRow={onSelectRow}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    fireEvent.contextMenu(getRow("map.png"));
+
+    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
+    expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
+  it("opens the context menu via the actions button without also calling onSelectRow", async () => {
+    const user = userEvent.setup();
+    const onSelectRow = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onSelectRow={onSelectRow}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Actions for map.png" }));
+
+    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
+    expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
+  it("closes the previously open menu when a second entry's menu is opened", () => {
+    render(
+      <DirectoryTable
+        {...baseProps}
+        groups={[{ label: null, entries: [directoryEntry, fileEntry] }]}
+      />,
+    );
+    const directoryRow = screen.getByRole("button", { name: "tiles" }).closest("tr");
+    const fileRow = getRow("map.png");
+
+    if (!directoryRow) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.mouseDown(directoryRow);
+    fireEvent.contextMenu(directoryRow);
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+
+    fireEvent.mouseDown(fileRow);
+    fireEvent.contextMenu(fileRow);
+
+    expect(screen.getAllByRole("menu")).toHaveLength(1);
+  });
+
+  it("renames an entry via the inline input after choosing Rename from the context menu", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onRename={onRename}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(getRow("map.png"));
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+
+    const input = screen.getByRole("textbox", { name: "Rename map.png" });
+
+    await user.clear(input);
+    await user.type(input, "renamed.png{Enter}");
+
+    expect(onRename).toHaveBeenCalledWith(fileEntry, "renamed.png");
+  });
+
+  it("cancels renaming on Escape without calling onRename", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onRename={onRename}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(getRow("map.png"));
+    await user.click(screen.getByRole("button", { name: "Rename" }));
+    await user.type(screen.getByRole("textbox", { name: "Rename map.png" }), "{Escape}");
+
+    expect(onRename).not.toHaveBeenCalled();
+    expect(screen.getByText("map.png")).toBeInTheDocument();
+  });
+
+  it("deletes an entry after confirming from the context menu", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onDelete={onDelete}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(getRow("map.png"));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(onDelete).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("does not call onDelete when deletion is cancelled from the context menu", async () => {
+    const user = userEvent.setup();
+    const onDelete = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onDelete={onDelete}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    fireEvent.contextMenu(getRow("map.png"));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it("renders a header row for each labeled group, in the given order", () => {

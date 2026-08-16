@@ -166,32 +166,36 @@ describe("FileBrowser", () => {
     promptSpy.mockRestore();
   });
 
-  it("deletes an entry after the user confirms", async () => {
+  it("deletes an entry after confirming from the context menu", async () => {
     const user = userEvent.setup();
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
 
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
+    const table = screen.getByRole("table");
+
+    await user.click(within(table).getByRole("button", { name: "Actions for tiles" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     await waitFor(() => {
       expect(deleteEntryMock).toHaveBeenCalledWith("tiles");
     });
-    confirmSpy.mockRestore();
   });
 
   it("does not delete an entry when the user cancels the confirmation", async () => {
     const user = userEvent.setup();
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
 
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await user.click(screen.getAllByRole("button", { name: "Delete" })[0]);
+    const table = screen.getByRole("table");
+
+    await user.click(within(table).getByRole("button", { name: "Actions for tiles" }));
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(deleteEntryMock).not.toHaveBeenCalled();
-    confirmSpy.mockRestore();
   });
 
   it("triggers a rescan via the toolbar button", async () => {

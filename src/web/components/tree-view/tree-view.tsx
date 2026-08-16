@@ -12,6 +12,10 @@ export interface TreeViewProps {
   onNavigate: (path: string) => void;
   canDropOnPath: (path: string) => boolean;
   onDropEntry: (path: string) => void;
+  onRename: (path: string, newName: string) => void;
+  onDelete: (path: string) => void;
+  availableTags: string[];
+  onTagsChange: (path: string, tags: string[]) => void;
 }
 
 const ROOT_PATH = "";
@@ -21,6 +25,10 @@ export const TreeView = ({
   onNavigate,
   canDropOnPath,
   onDropEntry,
+  onRename,
+  onDelete,
+  availableTags,
+  onTagsChange,
 }: TreeViewProps): JSX.Element => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set([ROOT_PATH]));
   const [childrenByPath, setChildrenByPath] = useState<Record<string, TreeChildrenState>>({});
@@ -149,6 +157,10 @@ export const TreeView = ({
             onNavigate={onNavigate}
             canDropOnPath={canDropOnPath}
             onDropEntry={onDropEntry}
+            onRename={onRename}
+            onDelete={onDelete}
+            availableTags={availableTags}
+            onTagsChange={onTagsChange}
           />
         ))}
     </ul>

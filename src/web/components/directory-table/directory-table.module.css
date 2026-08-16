@@ -6,7 +6,7 @@
 .table th,
 .table td {
   text-align: left;
-  padding: var(--spacing-sm);
+  padding: var(--spacing-xs);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -20,8 +20,9 @@
 }
 
 .actions {
-  display: flex;
-  gap: var(--spacing-xs);
+  width: 40px;
+  text-align: center;
+  vertical-align: middle;
 }
 
 .dragOver {
@@ -40,4 +41,25 @@
 
 .selected {
   background: var(--color-surface);
+}
+
+.menuButton {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: var(--spacing-xs);
+}
+
+.menuButton:hover,
+.menuButton:focus-visible {
+  color: var(--color-text);
+}
+
+.renameInput {
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px var(--spacing-xs);
+  width: 100%;
 }

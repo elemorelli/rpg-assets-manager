@@ -1,0 +1,32 @@
+.items,
+.confirmDelete {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.item {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  text-align: left;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font: inherit;
+  cursor: pointer;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--color-surface);
+}
+
+.confirmMessage {
+  margin: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+}
+
+.tagsSection {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+}

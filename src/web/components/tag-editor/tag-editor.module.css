@@ -26,6 +26,7 @@
 .input {
   border: none;
   background: none;
+  color: var(--color-text);
   min-width: 6em;
   font-size: 0.85em;
 }

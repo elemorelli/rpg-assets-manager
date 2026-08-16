@@ -63,3 +63,26 @@
   margin: 0;
   padding-left: calc(var(--spacing-sm) + 14px);
 }
+
+.menuButton {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 0 var(--spacing-xs);
+  margin-left: auto;
+}
+
+.menuButton:hover,
+.menuButton:focus-visible {
+  color: var(--color-text);
+}
+
+.renameInput {
+  font: inherit;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 0 var(--spacing-xs);
+  min-width: 0;
+  flex: 1;
+}

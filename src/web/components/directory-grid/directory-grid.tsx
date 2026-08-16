@@ -11,9 +11,8 @@ export interface DirectoryGridProps {
   groups: EntryGroup[];
   currentPath: string;
   onOpenDirectory: (name: string) => void;
-  onRename: (entry: DirectoryEntry) => void;
+  onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
-  onMove: (entry: DirectoryEntry) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
@@ -32,7 +31,6 @@ export const DirectoryGrid = ({
   onOpenDirectory,
   onRename,
   onDelete,
-  onMove,
   onDragStart,
   onDragEnd,
   canDropEntry,
@@ -57,7 +55,6 @@ export const DirectoryGrid = ({
               onOpenDirectory={onOpenDirectory}
               onRename={onRename}
               onDelete={onDelete}
-              onMove={onMove}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropEntry={onDropEntry}
