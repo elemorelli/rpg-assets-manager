@@ -1,17 +1,28 @@
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useEffect, useRef, useState } from "react";
 
-import { type CurrentJob, parseJobEvent } from "#utils/job.ts";
+import { parseJobEvent } from "#utils/job.ts";
+import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
 
 import styles from "./job-progress.module.css";
 
-export const JobProgress = (): JSX.Element | null => {
-  const [job, setJob] = useState<CurrentJob>(null);
+export interface JobProgressProps {
+  onJobStarted?: () => void;
+}
+
+const SUCCESS_AUTO_DISMISS_MS = 4000;
+
+const IDLE: JobDisplayState = { kind: "idle" };
+
+export const JobProgress = ({ onJobStarted }: JobProgressProps): JSX.Element | null => {
+  const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
+  const previousKindRef = useRef<JobDisplayState["kind"]>("idle");
 
   useEffect(() => {
     const source = new EventSource("/api/jobs/stream");
 
     source.onmessage = (event) => {
-      setJob(parseJobEvent(event.data));
+      const incoming = parseJobEvent(event.data);
+      setDisplayState((previous) => nextJobDisplayState(previous, incoming));
     };
 
     return () => {
@@ -19,19 +30,59 @@ export const JobProgress = (): JSX.Element | null => {
     };
   }, []);
 
-  if (!job) {
+  useEffect(() => {
+    if (previousKindRef.current !== "running" && displayState.kind === "running") {
+      onJobStarted?.();
+    }
+
+    previousKindRef.current = displayState.kind;
+  }, [displayState, onJobStarted]);
+
+  useEffect(() => {
+    if (displayState.kind !== "succeeded") {
+      return;
+    }
+
+    const timer = setTimeout(() => setDisplayState(IDLE), SUCCESS_AUTO_DISMISS_MS);
+
+    return () => clearTimeout(timer);
+  }, [displayState]);
+
+  const handleDismiss = (): void => {
+    setDisplayState(IDLE);
+  };
+
+  if (displayState.kind === "idle") {
     return null;
   }
 
-  if (job.error) {
-    return <p className={styles.error}>{`${job.type} failed: ${job.error}`}</p>;
+  if (displayState.kind === "running") {
+    return (
+      <div className={styles.progress}>
+        <span>{`${displayState.type}: ${displayState.stage}`}</span>
+        <progress value={displayState.done} max={displayState.total} />
+        <span>{`${displayState.done} / ${displayState.total}`}</span>
+      </div>
+    );
+  }
+
+  if (displayState.kind === "succeeded") {
+    return (
+      <div className={styles.succeeded}>
+        <span>{`${displayState.type}: completed`}</span>
+        <button type="button" className={styles.dismissButton} onClick={handleDismiss}>
+          Dismiss
+        </button>
+      </div>
+    );
   }
 
   return (
-    <div className={styles.progress}>
-      <span>{`${job.type}: ${job.stage}`}</span>
-      <progress value={job.done} max={job.total} />
-      <span>{`${job.done} / ${job.total}`}</span>
+    <div className={styles.error}>
+      <span>{`${displayState.type} failed: ${displayState.error}`}</span>
+      <button type="button" className={styles.dismissButton} onClick={handleDismiss}>
+        Dismiss
+      </button>
     </div>
   );
 };

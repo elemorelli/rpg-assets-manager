@@ -56,6 +56,7 @@ export const FileBrowser = (): JSX.Element => {
   const [error, setError] = useState<string | null>(null);
   const [draggedEntries, setDraggedEntries] = useState<DirectoryEntry[]>([]);
   const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
+  const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
   const [lightboxEntryName, setLightboxEntryName] = useState<string | null>(null);
@@ -90,6 +91,10 @@ export const FileBrowser = (): JSX.Element => {
     const tags = await api.fetchTags();
 
     setAvailableTags(tags);
+  }, []);
+
+  const handleJobStarted = useCallback((): void => {
+    setDrawerExpandTrigger((previous) => (previous ?? 0) + 1);
   }, []);
 
   useEffect(() => {
@@ -491,8 +496,8 @@ export const FileBrowser = (): JSX.Element => {
         </div>
       }
       drawer={
-        <PanelDrawer>
-          <JobProgress />
+        <PanelDrawer expandTrigger={drawerExpandTrigger}>
+          <JobProgress onJobStarted={handleJobStarted} />
           <ConversionPanel onConverted={() => loadDirectory(currentPath)} />
           <SyncPanel
             onApplied={() => {

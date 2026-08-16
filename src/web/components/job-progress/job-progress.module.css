@@ -6,7 +6,28 @@
   color: var(--color-text-muted);
 }
 
+.succeeded {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+}
+
 .error {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
   font-size: var(--font-size-sm);
   color: var(--color-danger);
+}
+
+.dismissButton {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
 }
