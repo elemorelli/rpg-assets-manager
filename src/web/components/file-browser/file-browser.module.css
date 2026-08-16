@@ -6,9 +6,16 @@
 
 .controls {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--spacing-md);
   align-items: center;
   justify-content: space-between;
+}
+
+.controlsGroup {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
 }
 
 .error {

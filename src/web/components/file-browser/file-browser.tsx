@@ -351,18 +351,34 @@ export const FileBrowser = (): JSX.Element => {
             onDropEntry={handleDropOnDirectory}
           />
           <div className={styles.controls}>
-            <Toolbar
-              busy={busy}
-              onCreateDirectory={handleCreateDirectory}
-              onUploadFile={handleUploadFile}
-              onRescan={handleRescan}
-            />
-            <SearchBox onSearch={handleSearch} />
-            <TagFilter
-              availableTags={availableTags}
-              selectedTags={selectedTags}
-              onToggleTag={handleToggleTag}
-            />
+            <div className={styles.controlsGroup}>
+              <Toolbar
+                busy={busy}
+                onCreateDirectory={handleCreateDirectory}
+                onUploadFile={handleUploadFile}
+                onRescan={handleRescan}
+              />
+              {searchResults === null && tagFilterResults === null && (
+                <ViewControls
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  sortCriterion={sortCriterion}
+                  onSortCriterionChange={setSortCriterion}
+                  sortDirection={sortDirection}
+                  onSortDirectionChange={setSortDirection}
+                  groupCriterion={groupCriterion}
+                  onGroupCriterionChange={setGroupCriterion}
+                />
+              )}
+            </div>
+            <div className={styles.controlsGroup}>
+              <SearchBox onSearch={handleSearch} />
+              <TagFilter
+                availableTags={availableTags}
+                selectedTags={selectedTags}
+                onToggleTag={handleToggleTag}
+              />
+            </div>
           </div>
           {error && (
             <p className={styles.error}>
@@ -383,16 +399,6 @@ export const FileBrowser = (): JSX.Element => {
             <SearchResults results={tagFilterResults} onOpenResult={handleOpenSearchResult} />
           ) : (
             <>
-              <ViewControls
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                sortCriterion={sortCriterion}
-                onSortCriterionChange={setSortCriterion}
-                sortDirection={sortDirection}
-                onSortDirectionChange={setSortDirection}
-                groupCriterion={groupCriterion}
-                onGroupCriterionChange={setGroupCriterion}
-              />
               {viewMode === "table" ? (
                 <DirectoryTable
                   groups={groups}

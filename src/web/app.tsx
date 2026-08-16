@@ -69,7 +69,12 @@ export const App = (): JSX.Element | null => {
         <div className={styles.titleBar}>
           <AppTitle linkToRoot={authenticated} />
           {authenticated && (
-            <button type="button" aria-label="Log out" title="Log out" onClick={handleLogout}>
+            <button
+              type="button"
+              className={styles.logoutButton}
+              aria-label="Log out"
+              title="Log out"
+              onClick={handleLogout}>
               <FontAwesomeIcon icon={faRightFromBracket} />
             </button>
           )}
