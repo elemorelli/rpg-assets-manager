@@ -1,15 +1,29 @@
-import { type JSX, type ReactNode, useState } from "react";
+import { type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 
 import styles from "./panel-drawer.module.css";
 
 export interface PanelDrawerProps {
   children: ReactNode;
+  expandTrigger?: number;
 }
 
 const DRAWER_STATUS_LABEL = "Panels";
 
-export const PanelDrawer = ({ children }: PanelDrawerProps): JSX.Element => {
+export const PanelDrawer = ({ children, expandTrigger }: PanelDrawerProps): JSX.Element => {
   const [collapsed, setCollapsed] = useState<boolean>(true);
+  const isFirstRender = useRef<boolean>(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+
+      return;
+    }
+
+    if (expandTrigger !== undefined) {
+      setCollapsed(false);
+    }
+  }, [expandTrigger]);
 
   return (
     <div className={styles.drawer}>

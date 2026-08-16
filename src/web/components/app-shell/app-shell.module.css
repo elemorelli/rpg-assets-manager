@@ -5,7 +5,8 @@
   grid-template-areas:
     "sidebar main"
     "sidebar drawer";
-  height: 100vh;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar {
@@ -17,7 +18,7 @@
 
 .main {
   grid-area: main;
-  overflow-y: auto;
+  overflow: auto;
   padding: var(--spacing-md);
 }
 

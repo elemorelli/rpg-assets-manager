@@ -1,3 +1,9 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .titleBar {
   display: flex;
   align-items: center;

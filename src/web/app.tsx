@@ -65,7 +65,7 @@ export const App = (): JSX.Element | null => {
 
   return (
     <BrowserRouter>
-      <main>
+      <main className={styles.page}>
         <div className={styles.titleBar}>
           <AppTitle linkToRoot={authenticated} />
           {authenticated && (
