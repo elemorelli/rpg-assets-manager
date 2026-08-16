@@ -116,11 +116,11 @@ describe("DirectoryGrid", () => {
   it("renders a large preview using the entry's path joined with the current directory", () => {
     render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
 
-    expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "map.png" })).toHaveAttribute(
       "src",
       "/api/files/raw?path=tiles%2Fmap.png",
     );
-    expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute("data-size", "large");
+    expect(screen.getByRole("button", { name: "map.png" })).toHaveAttribute("data-size", "large");
   });
 
   it("renders read-only tag badges for file tiles", () => {
@@ -348,6 +348,22 @@ describe("DirectoryGrid", () => {
 
     expect(screen.getByRole("heading", { name: "Folders" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "npc" })).toBeInTheDocument();
+  });
+
+  it("opens the lightbox when the large preview image is clicked", async () => {
+    const user = userEvent.setup();
+    const onOpenLightbox = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+
+    expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 
   it("opens the lightbox on double-click of a file tile", () => {

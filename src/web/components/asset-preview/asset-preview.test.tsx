@@ -143,17 +143,17 @@ describe("AssetPreview", () => {
     expect(screen.getByRole("img", { name: "forest.png" })).not.toHaveAttribute("tabindex");
   });
 
-  it("does not make a large image interactive even when onOpen is given", () => {
-    render(
-      <AssetPreview
-        entry={{ name: "forest.png", type: "file", size: SIZE_UNDER_THRESHOLD }}
-        relativePath="tiles/forest.png"
-        size="large"
-        onOpen={vi.fn()}
-      />,
-    );
+  it("calls onOpen when a large previewable image is clicked", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const entry = { name: "forest.png", type: "file" as const, size: SIZE_UNDER_THRESHOLD };
 
-    expect(screen.getByRole("img", { name: "forest.png" })).not.toHaveAttribute("tabindex");
+    render(
+      <AssetPreview entry={entry} relativePath="tiles/forest.png" size="large" onOpen={onOpen} />,
+    );
+    await user.click(screen.getByRole("button", { name: "forest.png" }));
+
+    expect(onOpen).toHaveBeenCalledWith(entry);
   });
 
   it("does not make an audio preview interactive even when onOpen is given", () => {

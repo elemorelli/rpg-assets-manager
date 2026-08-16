@@ -40,7 +40,7 @@ export const AssetPreview = ({
     const imageUrl = previewSource.useThumbnail
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
-    const isOpenable = !isLarge && onOpen !== undefined;
+    const isOpenable = onOpen !== undefined;
 
     const handleOpenClick = (): void => {
       onOpen?.(entry);

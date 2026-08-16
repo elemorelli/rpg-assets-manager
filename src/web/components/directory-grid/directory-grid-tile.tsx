@@ -174,6 +174,7 @@ export const DirectoryGridTile = ({
         entry={entry}
         relativePath={joinRelativePath(currentPath, entry.name)}
         size="large"
+        onOpen={onOpenLightbox}
       />
       {isRenaming ? (
         <input
