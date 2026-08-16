@@ -1,0 +1,14 @@
+.controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.group {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.active {
+  color: var(--color-accent);
+}

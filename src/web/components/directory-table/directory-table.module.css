@@ -29,6 +29,15 @@
   outline-offset: -2px;
 }
 
+.groupHeader th {
+  background: var(--color-surface);
+  font-weight: bold;
+}
+
+.table tbody tr:nth-of-type(even):not(.groupHeader) {
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .selected {
   background: var(--color-surface);
 }

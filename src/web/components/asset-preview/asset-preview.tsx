@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type { JSX } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
@@ -8,17 +9,31 @@ import styles from "./asset-preview.module.css";
 export interface AssetPreviewProps {
   entry: DirectoryEntry;
   relativePath: string;
+  size?: "small" | "large";
 }
 
-export const AssetPreview = ({ entry, relativePath }: AssetPreviewProps): JSX.Element => {
+export const AssetPreview = ({
+  entry,
+  relativePath,
+  size = "small",
+}: AssetPreviewProps): JSX.Element => {
   const previewSource = resolvePreviewSource(entry);
+  const isLarge = size === "large";
 
   if (previewSource.kind === "image") {
     const imageUrl = previewSource.useThumbnail
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
 
-    return <img src={imageUrl} alt={entry.name} loading="lazy" className={styles.image} />;
+    return (
+      <img
+        src={imageUrl}
+        alt={entry.name}
+        loading="lazy"
+        data-size={size}
+        className={clsx(styles.image, isLarge && styles.imageLarge)}
+      />
+    );
   }
 
   if (previewSource.kind === "audio") {
@@ -27,5 +42,11 @@ export const AssetPreview = ({ entry, relativePath }: AssetPreviewProps): JSX.El
     );
   }
 
-  return <span className={styles.placeholder} aria-label="No preview available" />;
+  return (
+    <span
+      data-size={size}
+      className={clsx(styles.placeholder, isLarge && styles.placeholderLarge)}
+      aria-label="No preview available"
+    />
+  );
 };

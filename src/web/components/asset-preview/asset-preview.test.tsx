@@ -60,4 +60,27 @@ describe("AssetPreview", () => {
 
     expect(screen.getByLabelText("No preview available")).toBeInTheDocument();
   });
+
+  it("marks the rendered image with the requested size", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: SIZE_UNDER_THRESHOLD }}
+        relativePath="tiles/forest.png"
+        size="large"
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "forest.png" })).toHaveAttribute("data-size", "large");
+  });
+
+  it("defaults to the small size when none is given", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: SIZE_UNDER_THRESHOLD }}
+        relativePath="tiles/forest.png"
+      />,
+    );
+
+    expect(screen.getByRole("img", { name: "forest.png" })).toHaveAttribute("data-size", "small");
+  });
 });

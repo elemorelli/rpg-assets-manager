@@ -15,3 +15,13 @@
   height: 32px;
   background: var(--color-border);
 }
+
+.imageLarge {
+  width: 128px;
+  height: 128px;
+}
+
+.placeholderLarge {
+  width: 128px;
+  height: 128px;
+}

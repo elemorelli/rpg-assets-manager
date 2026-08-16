@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 
-import { DirectoryTable } from "./directory-table.tsx";
+import { DirectoryGrid } from "./directory-grid.tsx";
 
 const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };
 const fileEntry: DirectoryEntry = { name: "map.png", type: "file", size: 2048 };
@@ -26,10 +26,10 @@ const baseProps = {
   onSelectRow: vi.fn(),
 };
 
-describe("DirectoryTable", () => {
+describe("DirectoryGrid", () => {
   it("renders a name button for directories and plain text for files", () => {
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         groups={[{ label: null, entries: [directoryEntry, fileEntry] }]}
       />,
@@ -37,18 +37,6 @@ describe("DirectoryTable", () => {
 
     expect(screen.getByRole("button", { name: "tiles" })).toBeInTheDocument();
     expect(screen.getByText("map.png")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "map.png" })).not.toBeInTheDocument();
-  });
-
-  it("shows the formatted size for files, and nothing for directories", () => {
-    render(
-      <DirectoryTable
-        {...baseProps}
-        groups={[{ label: null, entries: [directoryEntry, fileEntry] }]}
-      />,
-    );
-
-    expect(screen.getByText("2 KB")).toBeInTheDocument();
   });
 
   it("opens a directory on click", async () => {
@@ -56,7 +44,7 @@ describe("DirectoryTable", () => {
     const onOpenDirectory = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onOpenDirectory={onOpenDirectory}
         groups={[{ label: null, entries: [directoryEntry] }]}
@@ -74,7 +62,7 @@ describe("DirectoryTable", () => {
     const onDelete = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onRename={onRename}
         onMove={onMove}
@@ -92,50 +80,42 @@ describe("DirectoryTable", () => {
     expect(onDelete).toHaveBeenCalledWith(fileEntry);
   });
 
-  it("calls onDragStart with the source entry, and onDragEnd when the drag ends", () => {
+  it("calls onDragStart and onDragEnd", () => {
     const onDragStart = vi.fn();
     const onDragEnd = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    const row = screen.getByText("map.png").closest("tr");
+    const tile = screen.getByTestId("tile-map.png");
 
-    if (!row) {
-      throw new Error("row not found");
-    }
-
-    fireEvent.dragStart(row);
+    fireEvent.dragStart(tile);
     expect(onDragStart).toHaveBeenCalledWith(fileEntry);
 
-    fireEvent.dragEnd(row);
+    fireEvent.dragEnd(tile);
     expect(onDragEnd).toHaveBeenCalled();
   });
 
-  it("calls onDropEntry when a row canDropEntry approves receives a drop", () => {
+  it("calls onDropEntry when a tile canDropEntry approves receives a drop", () => {
     const onDropEntry = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         canDropEntry={() => true}
         onDropEntry={onDropEntry}
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
+    const tile = screen.getByTestId("tile-tiles");
 
-    if (!row) {
-      throw new Error("row not found");
-    }
-
-    fireEvent.dragOver(row);
-    fireEvent.drop(row);
+    fireEvent.dragOver(tile);
+    fireEvent.drop(tile);
 
     expect(onDropEntry).toHaveBeenCalledWith(directoryEntry);
   });
@@ -144,40 +124,37 @@ describe("DirectoryTable", () => {
     const onDropEntry = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onDropEntry={onDropEntry}
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    const row = screen.getByRole("button", { name: "tiles" }).closest("tr");
+    const tile = screen.getByTestId("tile-tiles");
 
-    if (!row) {
-      throw new Error("row not found");
-    }
-
-    fireEvent.dragOver(row);
-    fireEvent.drop(row);
+    fireEvent.dragOver(tile);
+    fireEvent.drop(tile);
 
     expect(onDropEntry).not.toHaveBeenCalled();
   });
 
-  it("renders a preview using the entry's path joined with the current directory", () => {
-    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
+  it("renders a large preview using the entry's path joined with the current directory", () => {
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
 
     expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute(
       "src",
       "/api/files/raw?path=tiles%2Fmap.png",
     );
+    expect(screen.getByRole("img", { name: "map.png" })).toHaveAttribute("data-size", "large");
   });
 
-  it("renders a tag editor for file rows and calls onTagsChange when a tag is added", async () => {
+  it("renders a tag editor for file tiles and calls onTagsChange when a tag is added", async () => {
     const user = userEvent.setup();
     const onTagsChange = vi.fn();
     const taggedFile: DirectoryEntry = { name: "npc.png", type: "file", size: 10, tags: ["npc"] };
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         availableTags={["npc", "loot"]}
         onTagsChange={onTagsChange}
@@ -192,22 +169,22 @@ describe("DirectoryTable", () => {
     expect(onTagsChange).toHaveBeenCalledWith(taggedFile, ["npc", "loot"]);
   });
 
-  it("does not render a tag editor for directory rows", () => {
-    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
+  it("does not render a tag editor for directory tiles", () => {
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
 
     expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
   });
 
-  it("highlights a row that is in the selected set", () => {
+  it("marks a tile that is in the selected set", () => {
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         selectedNames={new Set(["map.png"])}
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
 
-    expect(screen.getByText("map.png").closest("tr")).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByTestId("tile-map.png")).toHaveAttribute("aria-selected", "true");
   });
 
   it("calls onSelectRow with a replace modifier on a plain click", async () => {
@@ -215,13 +192,13 @@ describe("DirectoryTable", () => {
     const onSelectRow = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onSelectRow={onSelectRow}
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    await user.click(screen.getByText("map.png"));
+    await user.click(screen.getByTestId("tile-map.png"));
 
     expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "replace");
   });
@@ -230,54 +207,20 @@ describe("DirectoryTable", () => {
     const onSelectRow = vi.fn();
 
     render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         onSelectRow={onSelectRow}
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    fireEvent.click(screen.getByText("map.png"), { ctrlKey: true });
+    fireEvent.click(screen.getByTestId("tile-map.png"), { ctrlKey: true });
 
     expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "toggle");
   });
 
-  it("calls onSelectRow with a range modifier on shift+click", () => {
-    const onSelectRow = vi.fn();
-
+  it("renders a heading for each labeled group", () => {
     render(
-      <DirectoryTable
-        {...baseProps}
-        onSelectRow={onSelectRow}
-        groups={[{ label: null, entries: [fileEntry] }]}
-      />,
-    );
-    fireEvent.click(screen.getByText("map.png"), { shiftKey: true });
-
-    expect(onSelectRow).toHaveBeenCalledWith(fileEntry, "range");
-  });
-
-  it("opens the directory on a name click without also calling onSelectRow", async () => {
-    const user = userEvent.setup();
-    const onOpenDirectory = vi.fn();
-    const onSelectRow = vi.fn();
-
-    render(
-      <DirectoryTable
-        {...baseProps}
-        onOpenDirectory={onOpenDirectory}
-        onSelectRow={onSelectRow}
-        groups={[{ label: null, entries: [directoryEntry] }]}
-      />,
-    );
-    await user.click(screen.getByRole("button", { name: "tiles" }));
-
-    expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
-    expect(onSelectRow).not.toHaveBeenCalled();
-  });
-
-  it("renders a header row for each labeled group, in the given order", () => {
-    render(
-      <DirectoryTable
+      <DirectoryGrid
         {...baseProps}
         groups={[
           { label: "Folders", entries: [directoryEntry] },
@@ -286,15 +229,7 @@ describe("DirectoryTable", () => {
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: "Folders" })).toBeInTheDocument();
-    expect(screen.getByRole("columnheader", { name: "npc" })).toBeInTheDocument();
-  });
-
-  it("renders no header row when the group label is null", () => {
-    render(<DirectoryTable {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
-
-    expect(screen.queryAllByRole("columnheader").map((header) => header.textContent)).not.toContain(
-      null,
-    );
+    expect(screen.getByRole("heading", { name: "Folders" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "npc" })).toBeInTheDocument();
   });
 });

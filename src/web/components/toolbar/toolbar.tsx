@@ -1,3 +1,11 @@
+import {
+  faArrowsRotate,
+  faFolderPlus,
+  faHashtag,
+  faRightFromBracket,
+  faUpload,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import { type ChangeEvent, type JSX, useRef, useState } from "react";
 
@@ -45,32 +53,50 @@ export const Toolbar = ({
 
   return (
     <div className={clsx(styles.toolbar, busy && styles.busy)}>
-      <button type="button" disabled={busy} onClick={handleCreateDirectoryClick}>
-        New folder
-      </button>
-      <button type="button" disabled={busy} onClick={handleUploadClick}>
-        Upload file
-      </button>
-      <button type="button" disabled={busy} onClick={() => onRescan(forceRehash)}>
-        Rescan
-      </button>
-      <label className={styles.rehashLabel}>
-        <input
-          type="checkbox"
-          checked={forceRehash}
+      <div className={styles.contentActions}>
+        <button
+          type="button"
           disabled={busy}
-          onChange={(event) => setForceRehash(event.target.checked)}
+          aria-label="New folder"
+          title="New folder"
+          onClick={handleCreateDirectoryClick}>
+          <FontAwesomeIcon icon={faFolderPlus} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Upload file"
+          title="Upload file"
+          onClick={handleUploadClick}>
+          <FontAwesomeIcon icon={faUpload} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Rescan"
+          title="Rescan"
+          onClick={() => onRescan(forceRehash)}>
+          <FontAwesomeIcon icon={faArrowsRotate} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Full rehash"
+          title="Full rehash"
+          aria-pressed={forceRehash}
+          className={clsx(forceRehash && styles.toggleActive)}
+          onClick={() => setForceRehash((current) => !current)}>
+          <FontAwesomeIcon icon={faHashtag} />
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          className={styles.hiddenInput}
+          onChange={handleFileSelected}
         />
-        Full rehash
-      </label>
-      <input
-        ref={fileInputRef}
-        type="file"
-        className={styles.hiddenInput}
-        onChange={handleFileSelected}
-      />
-      <button type="button" disabled={busy} onClick={onLogout}>
-        Log out
+      </div>
+      <button type="button" aria-label="Log out" title="Log out" onClick={onLogout}>
+        <FontAwesomeIcon icon={faRightFromBracket} />
       </button>
     </div>
   );

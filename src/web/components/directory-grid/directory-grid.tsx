@@ -4,10 +4,10 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import type { EntryGroup } from "#web/utils/entry-grouping.ts";
 import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
 
-import styles from "./directory-table.module.css";
-import { DirectoryTableRow } from "./directory-table-row.tsx";
+import styles from "./directory-grid.module.css";
+import { DirectoryGridTile } from "./directory-grid-tile.tsx";
 
-export interface DirectoryTableProps {
+export interface DirectoryGridProps {
   groups: EntryGroup[];
   currentPath: string;
   onOpenDirectory: (name: string) => void;
@@ -26,7 +26,7 @@ export interface DirectoryTableProps {
 
 const UNGROUPED_KEY = "__ungrouped__";
 
-export const DirectoryTable = ({
+export const DirectoryGrid = ({
   groups,
   currentPath,
   onOpenDirectory,
@@ -41,28 +41,14 @@ export const DirectoryTable = ({
   onTagsChange,
   selectedNames,
   onSelectRow,
-}: DirectoryTableProps): JSX.Element => (
-  <table className={styles.table}>
-    <thead>
-      <tr>
-        <th>Preview</th>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Size</th>
-        <th>Tags</th>
-        <th aria-label="Actions" />
-      </tr>
-    </thead>
-    <tbody>
-      {groups.map((group) => (
-        <Fragment key={group.label ?? UNGROUPED_KEY}>
-          {group.label !== null && (
-            <tr className={styles.groupHeader}>
-              <th colSpan={6}>{group.label}</th>
-            </tr>
-          )}
+}: DirectoryGridProps): JSX.Element => (
+  <div>
+    {groups.map((group) => (
+      <Fragment key={group.label ?? UNGROUPED_KEY}>
+        {group.label !== null && <h3 className={styles.groupLabel}>{group.label}</h3>}
+        <div className={styles.grid}>
           {group.entries.map((entry) => (
-            <DirectoryTableRow
+            <DirectoryGridTile
               key={entry.name}
               entry={entry}
               currentPath={currentPath}
@@ -80,8 +66,8 @@ export const DirectoryTable = ({
               onTagsChange={onTagsChange}
             />
           ))}
-        </Fragment>
-      ))}
-    </tbody>
-  </table>
+        </div>
+      </Fragment>
+    ))}
+  </div>
 );

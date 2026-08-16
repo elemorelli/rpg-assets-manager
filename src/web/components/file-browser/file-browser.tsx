@@ -4,6 +4,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router";
 import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { ConversionPanel } from "#components/conversion-panel/conversion-panel.tsx";
+import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
@@ -15,17 +16,21 @@ import { SyncPanel } from "#components/sync-panel/sync-panel.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
+import { ViewControls } from "#components/view-controls/view-controls.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
 import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
+import { groupEntries } from "#web/utils/entry-grouping.ts";
 import {
   applySelectionClick,
   initialSelectionState,
   type SelectionClickModifier,
   type SelectionState,
 } from "#web/utils/row-selection.ts";
+import { sortEntries } from "#web/utils/sort-entries.ts";
+import { useViewPreferences } from "#web/utils/use-view-preferences.ts";
 
 import styles from "./file-browser.module.css";
 
@@ -55,6 +60,17 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
   const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
+
+  const {
+    viewMode,
+    setViewMode,
+    sortCriterion,
+    setSortCriterion,
+    sortDirection,
+    setSortDirection,
+    groupCriterion,
+    setGroupCriterion,
+  } = useViewPreferences(currentPath);
 
   const loadDirectory = useCallback(async (path: string): Promise<void> => {
     setBusy(true);
@@ -231,7 +247,7 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
   };
 
   const handleSelectRow = (entry: DirectoryEntry, modifier: SelectionClickModifier): void => {
-    const orderedNames = entries.map((candidate) => candidate.name);
+    const orderedNames = sortedEntries.map((candidate) => candidate.name);
 
     setSelection((prev) => applySelectionClick(prev, orderedNames, entry.name, modifier));
   };
@@ -321,6 +337,9 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
     handleDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
   };
 
+  const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
+  const groups = groupEntries(sortedEntries, groupCriterion);
+
   return (
     <AppShell
       sidebar={
@@ -372,22 +391,53 @@ export const FileBrowser = ({ onLoggedOut }: FileBrowserProps): JSX.Element => {
           ) : tagFilterResults !== null ? (
             <SearchResults results={tagFilterResults} onOpenResult={handleOpenSearchResult} />
           ) : (
-            <DirectoryTable
-              entries={entries}
-              currentPath={currentPath}
-              onOpenDirectory={handleOpenDirectory}
-              onRename={handleRename}
-              onDelete={handleDelete}
-              onMove={handleMove}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              canDropEntry={canDropOnEntry}
-              onDropEntry={handleDropOnEntry}
-              availableTags={availableTags}
-              onTagsChange={handleTagsChange}
-              selectedNames={selection.selectedNames}
-              onSelectRow={handleSelectRow}
-            />
+            <>
+              <ViewControls
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+                sortCriterion={sortCriterion}
+                onSortCriterionChange={setSortCriterion}
+                sortDirection={sortDirection}
+                onSortDirectionChange={setSortDirection}
+                groupCriterion={groupCriterion}
+                onGroupCriterionChange={setGroupCriterion}
+              />
+              {viewMode === "table" ? (
+                <DirectoryTable
+                  groups={groups}
+                  currentPath={currentPath}
+                  onOpenDirectory={handleOpenDirectory}
+                  onRename={handleRename}
+                  onDelete={handleDelete}
+                  onMove={handleMove}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  canDropEntry={canDropOnEntry}
+                  onDropEntry={handleDropOnEntry}
+                  availableTags={availableTags}
+                  onTagsChange={handleTagsChange}
+                  selectedNames={selection.selectedNames}
+                  onSelectRow={handleSelectRow}
+                />
+              ) : (
+                <DirectoryGrid
+                  groups={groups}
+                  currentPath={currentPath}
+                  onOpenDirectory={handleOpenDirectory}
+                  onRename={handleRename}
+                  onDelete={handleDelete}
+                  onMove={handleMove}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  canDropEntry={canDropOnEntry}
+                  onDropEntry={handleDropOnEntry}
+                  availableTags={availableTags}
+                  onTagsChange={handleTagsChange}
+                  selectedNames={selection.selectedNames}
+                  onSelectRow={handleSelectRow}
+                />
+              )}
+            </>
           )}
         </div>
       }

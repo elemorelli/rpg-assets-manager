@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applySelectionClick,
   initialSelectionState,
+  modifierFromClick,
   type SelectionState,
 } from "../row-selection.ts";
 
@@ -66,5 +67,20 @@ describe("applySelectionClick", () => {
 
     expect([...next.selectedNames]).toEqual(["c"]);
     expect(next.anchorName).toBe("c");
+  });
+});
+
+describe("modifierFromClick", () => {
+  it("returns toggle when ctrlKey or metaKey is pressed", () => {
+    expect(modifierFromClick({ ctrlKey: true, metaKey: false, shiftKey: false })).toBe("toggle");
+    expect(modifierFromClick({ ctrlKey: false, metaKey: true, shiftKey: false })).toBe("toggle");
+  });
+
+  it("returns range when shiftKey is pressed without ctrl or meta", () => {
+    expect(modifierFromClick({ ctrlKey: false, metaKey: false, shiftKey: true })).toBe("range");
+  });
+
+  it("returns replace when no modifier key is pressed", () => {
+    expect(modifierFromClick({ ctrlKey: false, metaKey: false, shiftKey: false })).toBe("replace");
   });
 });

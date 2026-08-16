@@ -4,6 +4,7 @@ import {
   buildRawFileUrl,
   buildThumbnailUrl,
   classifyPreviewKind,
+  extensionOf,
   mimeTypeForFile,
   resolvePreviewSource,
   shouldServeThumbnail,
@@ -112,5 +113,15 @@ describe("buildThumbnailUrl", () => {
     expect(buildThumbnailUrl("tiles/forest night.png")).toBe(
       "/api/files/thumbnail?path=tiles%2Fforest%20night.png",
     );
+  });
+});
+
+describe("extensionOf", () => {
+  it("returns the lowercased extension including the dot", () => {
+    expect(extensionOf("forest.PNG")).toBe(".png");
+  });
+
+  it("returns an empty string when there is no extension", () => {
+    expect(extensionOf("README")).toBe("");
   });
 });

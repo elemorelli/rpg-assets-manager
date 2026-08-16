@@ -15,7 +15,7 @@ const AUDIO_MIME_TYPES: Record<string, string> = {
   ".flac": "audio/flac",
 };
 
-const extensionOf = (fileName: string): string => {
+export const extensionOf = (fileName: string): string => {
   const dotIndex = fileName.lastIndexOf(".");
 
   if (dotIndex === -1) {

@@ -97,7 +97,7 @@ describe("Toolbar", () => {
     expect(onRescan).toHaveBeenCalledWith(false);
   });
 
-  it("triggers a rescan with forceRehash when the Full rehash checkbox is checked", async () => {
+  it("triggers a rescan with forceRehash once Full rehash is toggled on", async () => {
     const user = userEvent.setup();
     const onRescan = vi.fn();
 
@@ -110,13 +110,34 @@ describe("Toolbar", () => {
         onLogout={vi.fn()}
       />,
     );
-    await user.click(screen.getByRole("checkbox", { name: "Full rehash" }));
+    await user.click(screen.getByRole("button", { name: "Full rehash" }));
     await user.click(screen.getByRole("button", { name: "Rescan" }));
 
     expect(onRescan).toHaveBeenCalledWith(true);
   });
 
-  it("disables its buttons and checkbox while busy", () => {
+  it("marks Full rehash as pressed once toggled on, and unpressed by default", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onLogout={vi.fn()}
+      />,
+    );
+    const rehashButton = screen.getByRole("button", { name: "Full rehash" });
+
+    expect(rehashButton).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(rehashButton);
+
+    expect(rehashButton).toHaveAttribute("aria-pressed", "true");
+  });
+
+  it("disables its buttons while busy", () => {
     render(
       <Toolbar
         busy={true}
@@ -130,7 +151,7 @@ describe("Toolbar", () => {
     expect(screen.getByRole("button", { name: "New folder" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Rescan" })).toBeDisabled();
-    expect(screen.getByRole("checkbox", { name: "Full rehash" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Full rehash" })).toBeDisabled();
   });
 
   it("calls onLogout when the Log out button is clicked", async () => {

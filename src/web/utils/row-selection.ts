@@ -63,3 +63,21 @@ export const applySelectionClick = (
 
   return applyRange(state, orderedNames, clickedName);
 };
+
+export interface ClickModifierKeys {
+  ctrlKey: boolean;
+  metaKey: boolean;
+  shiftKey: boolean;
+}
+
+export const modifierFromClick = (event: ClickModifierKeys): SelectionClickModifier => {
+  if (event.ctrlKey || event.metaKey) {
+    return "toggle";
+  }
+
+  if (event.shiftKey) {
+    return "range";
+  }
+
+  return "replace";
+};

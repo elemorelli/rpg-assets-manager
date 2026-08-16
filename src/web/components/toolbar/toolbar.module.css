@@ -1,5 +1,7 @@
 .toolbar {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--spacing-sm);
 }
 
@@ -7,12 +9,16 @@
   opacity: 0.6;
 }
 
+.contentActions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
 .hiddenInput {
   display: none;
 }
 
-.rehashLabel {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
+.toggleActive {
+  color: var(--color-accent);
 }

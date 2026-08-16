@@ -39,6 +39,7 @@ const renderFileBrowser = (
 describe("FileBrowser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     // Path-conditional, not a blanket mockResolvedValue: FileBrowser now
     // mounts TreeView alongside the table, and TreeView prefetches one level
     // ahead of whatever it loads. A blanket "tiles" result would make the
@@ -210,12 +211,12 @@ describe("FileBrowser", () => {
     });
   });
 
-  it("triggers a full rehash when the toolbar checkbox is checked", async () => {
+  it("triggers a full rehash when the toolbar's Full rehash button is toggled on", async () => {
     const user = userEvent.setup();
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await user.click(screen.getByRole("checkbox", { name: "Full rehash" }));
+    await user.click(screen.getByRole("button", { name: "Full rehash" }));
     await user.click(screen.getByRole("button", { name: "Rescan" }));
 
     await waitFor(() => {
@@ -462,5 +463,59 @@ describe("FileBrowser", () => {
     fireEvent.drop(targetRow.closest("tr") as HTMLElement);
 
     expect(await screen.findByText(/locked/)).toBeInTheDocument();
+  });
+
+  it("switches from table to grid rendering when the grid view button is clicked", async () => {
+    const user = userEvent.setup();
+    renderFileBrowser();
+
+    await screen.findByText("map.png");
+    expect(screen.queryByTestId("tile-map.png")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Grid view" }));
+
+    expect(await screen.findByTestId("tile-map.png")).toBeInTheDocument();
+  });
+
+  it("keeps the view preference isolated per folder", async () => {
+    const user = userEvent.setup();
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [{ name: "map.png", type: "file", size: 1024 }]
+          : path === "icons"
+            ? [{ name: "sword.png", type: "file", size: 10 }]
+            : [],
+      ),
+    );
+
+    const { unmount } = renderFileBrowser({ onLoggedOut: vi.fn() }, "/");
+    await screen.findByText("map.png");
+    await user.click(screen.getByRole("button", { name: "Grid view" }));
+    await screen.findByTestId("tile-map.png");
+    unmount();
+
+    renderFileBrowser({ onLoggedOut: vi.fn() }, "/icons");
+    await screen.findByText("sword.png");
+
+    expect(screen.queryByTestId("tile-sword.png")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Table view" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("restores a previously saved per-folder view preference when the folder is revisited", async () => {
+    const user = userEvent.setup();
+    const { unmount } = renderFileBrowser();
+
+    await screen.findByText("map.png");
+    await user.click(screen.getByRole("button", { name: "Grid view" }));
+    await screen.findByTestId("tile-map.png");
+    unmount();
+
+    renderFileBrowser();
+
+    expect(await screen.findByTestId("tile-map.png")).toBeInTheDocument();
   });
 });
