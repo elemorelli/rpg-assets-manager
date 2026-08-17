@@ -1,4 +1,4 @@
-import { type JSX, useCallback, useEffect, useState } from "react";
+import { type DragEvent, type JSX, useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { AppShell } from "#components/app-shell/app-shell.tsx";
@@ -57,6 +57,8 @@ export const FileBrowser = (): JSX.Element => {
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
   const [lightboxEntryName, setLightboxEntryName] = useState<string | null>(null);
+  const [isDropzoneActive, setIsDropzoneActive] = useState<boolean>(false);
+  const externalDragCounterRef = useRef<number>(0);
 
   const {
     viewMode,
@@ -355,6 +357,84 @@ export const FileBrowser = (): JSX.Element => {
     handleDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
   };
 
+  const carriesExternalFiles = (event: DragEvent<HTMLDivElement>): boolean =>
+    Array.from(event.dataTransfer?.types ?? []).includes("Files");
+
+  const runBatchUpload = (files: File[]): void => {
+    setBusy(true);
+    setError(null);
+
+    const performBatchUpload = async (): Promise<void> => {
+      let uploadedCount = 0;
+      let batchErrorMessage: string | null = null;
+
+      for (const file of files) {
+        try {
+          await api.uploadFile(currentPath, file);
+          uploadedCount += 1;
+        } catch (caught) {
+          batchErrorMessage = `Uploaded ${uploadedCount} of ${files.length} before failing on "${file.name}": ${describeError(caught)}`;
+          break;
+        }
+      }
+
+      await loadDirectory(currentPath);
+
+      if (batchErrorMessage) {
+        setError(batchErrorMessage);
+      }
+    };
+
+    performBatchUpload();
+  };
+
+  const handleDropzoneDragEnter = (event: DragEvent<HTMLDivElement>): void => {
+    if (!carriesExternalFiles(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    externalDragCounterRef.current += 1;
+    setIsDropzoneActive(true);
+  };
+
+  const handleDropzoneDragOver = (event: DragEvent<HTMLDivElement>): void => {
+    if (!carriesExternalFiles(event)) {
+      return;
+    }
+
+    event.preventDefault();
+  };
+
+  const handleDropzoneDragLeave = (event: DragEvent<HTMLDivElement>): void => {
+    if (!carriesExternalFiles(event)) {
+      return;
+    }
+
+    externalDragCounterRef.current -= 1;
+
+    if (externalDragCounterRef.current <= 0) {
+      externalDragCounterRef.current = 0;
+      setIsDropzoneActive(false);
+    }
+  };
+
+  const handleDropzoneDrop = (event: DragEvent<HTMLDivElement>): void => {
+    if (!carriesExternalFiles(event)) {
+      return;
+    }
+
+    event.preventDefault();
+    externalDragCounterRef.current = 0;
+    setIsDropzoneActive(false);
+
+    const files = Array.from(event.dataTransfer?.files ?? []);
+
+    if (files.length > 0) {
+      runBatchUpload(files);
+    }
+  };
+
   const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
   const groups = groupEntries(sortedEntries, groupCriterion);
 
@@ -368,137 +448,154 @@ export const FileBrowser = (): JSX.Element => {
   const lightboxEntry = lightboxIndex === -1 ? null : previewableEntries[lightboxIndex];
 
   return (
-    <AppShell
-      sidebar={
-        <TreeView
-          activePath={currentPath}
+    <>
+      <div className={styles.breadcrumbBar}>
+        <Breadcrumbs
+          currentPath={currentPath}
           onNavigate={navigateToPath}
           canDropOnPath={canDropOnDirectory}
           onDropEntry={handleDropOnDirectory}
-          onRename={handleTreeRename}
-          onDelete={handleTreeDelete}
-          availableTags={availableTags}
-          onTagsChange={handleTreeTagsChange}
         />
-      }
-      main={
-        <div className={styles.fileBrowser}>
-          <Breadcrumbs
-            currentPath={currentPath}
+      </div>
+      <AppShell
+        sidebar={
+          <TreeView
+            activePath={currentPath}
             onNavigate={navigateToPath}
             canDropOnPath={canDropOnDirectory}
             onDropEntry={handleDropOnDirectory}
+            onRename={handleTreeRename}
+            onDelete={handleTreeDelete}
+            availableTags={availableTags}
+            onTagsChange={handleTreeTagsChange}
           />
-          <div className={styles.controls}>
-            <div className={styles.controlsGroup}>
-              <Toolbar
-                busy={busy}
-                onCreateDirectory={handleCreateDirectory}
-                onUploadFile={handleUploadFile}
-                onRescan={handleRescan}
-              />
-              {searchResults === null && tagFilterResults === null && (
-                <ViewControls
-                  viewMode={viewMode}
-                  onViewModeChange={setViewMode}
-                  sortCriterion={sortCriterion}
-                  onSortCriterionChange={setSortCriterion}
-                  sortDirection={sortDirection}
-                  onSortDirectionChange={setSortDirection}
-                  groupCriterion={groupCriterion}
-                  onGroupCriterionChange={setGroupCriterion}
+        }
+        main={
+          <div className={styles.fileBrowser}>
+            <div className={styles.controls}>
+              <div className={styles.controlsGroup}>
+                <Toolbar
+                  busy={busy}
+                  onCreateDirectory={handleCreateDirectory}
+                  onUploadFile={handleUploadFile}
+                  onRescan={handleRescan}
                 />
+                {searchResults === null && tagFilterResults === null && (
+                  <ViewControls
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    sortCriterion={sortCriterion}
+                    onSortCriterionChange={setSortCriterion}
+                    sortDirection={sortDirection}
+                    onSortDirectionChange={setSortDirection}
+                    groupCriterion={groupCriterion}
+                    onGroupCriterionChange={setGroupCriterion}
+                  />
+                )}
+              </div>
+              <div className={styles.controlsGroup}>
+                <SearchBox onSearch={handleSearch} />
+                <TagFilter
+                  availableTags={availableTags}
+                  selectedTags={selectedTags}
+                  onToggleTag={handleToggleTag}
+                />
+              </div>
+            </div>
+            {error && (
+              <p className={styles.error}>
+                {error}
+                {currentPath !== "" && (
+                  <>
+                    {" "}
+                    <button type="button" onClick={() => navigateToPath("")}>
+                      Back to root
+                    </button>
+                  </>
+                )}
+              </p>
+            )}
+            <div
+              className={styles.dropzone}
+              data-testid="directory-dropzone"
+              onDragEnter={handleDropzoneDragEnter}
+              onDragOver={handleDropzoneDragOver}
+              onDragLeave={handleDropzoneDragLeave}
+              onDrop={handleDropzoneDrop}>
+              {isDropzoneActive && (
+                <div className={styles.dropzoneOverlay}>
+                  {`Drop files to upload to ${currentPath === "" ? "root" : currentPath}`}
+                </div>
               )}
-            </div>
-            <div className={styles.controlsGroup}>
-              <SearchBox onSearch={handleSearch} />
-              <TagFilter
-                availableTags={availableTags}
-                selectedTags={selectedTags}
-                onToggleTag={handleToggleTag}
-              />
-            </div>
-          </div>
-          {error && (
-            <p className={styles.error}>
-              {error}
-              {currentPath !== "" && (
+              {searchResults !== null ? (
+                <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />
+              ) : tagFilterResults !== null ? (
+                <SearchResults results={tagFilterResults} onOpenResult={handleOpenSearchResult} />
+              ) : (
                 <>
-                  {" "}
-                  <button type="button" onClick={() => navigateToPath("")}>
-                    Back to root
-                  </button>
+                  {viewMode === "table" ? (
+                    <DirectoryTable
+                      groups={groups}
+                      currentPath={currentPath}
+                      onOpenDirectory={handleOpenDirectory}
+                      onRename={handleRename}
+                      onDelete={handleDelete}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      canDropEntry={canDropOnEntry}
+                      onDropEntry={handleDropOnEntry}
+                      availableTags={availableTags}
+                      onTagsChange={handleTagsChange}
+                      selectedNames={selection.selectedNames}
+                      onSelectRow={handleSelectRow}
+                      onOpenLightbox={handleOpenLightbox}
+                    />
+                  ) : (
+                    <DirectoryGrid
+                      groups={groups}
+                      currentPath={currentPath}
+                      onOpenDirectory={handleOpenDirectory}
+                      onRename={handleRename}
+                      onDelete={handleDelete}
+                      onDragStart={handleDragStart}
+                      onDragEnd={handleDragEnd}
+                      canDropEntry={canDropOnEntry}
+                      onDropEntry={handleDropOnEntry}
+                      availableTags={availableTags}
+                      onTagsChange={handleTagsChange}
+                      selectedNames={selection.selectedNames}
+                      onSelectRow={handleSelectRow}
+                      onOpenLightbox={handleOpenLightbox}
+                    />
+                  )}
                 </>
               )}
-            </p>
-          )}
-          {searchResults !== null ? (
-            <SearchResults results={searchResults} onOpenResult={handleOpenSearchResult} />
-          ) : tagFilterResults !== null ? (
-            <SearchResults results={tagFilterResults} onOpenResult={handleOpenSearchResult} />
-          ) : (
-            <>
-              {viewMode === "table" ? (
-                <DirectoryTable
-                  groups={groups}
-                  currentPath={currentPath}
-                  onOpenDirectory={handleOpenDirectory}
-                  onRename={handleRename}
-                  onDelete={handleDelete}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  canDropEntry={canDropOnEntry}
-                  onDropEntry={handleDropOnEntry}
-                  availableTags={availableTags}
-                  onTagsChange={handleTagsChange}
-                  selectedNames={selection.selectedNames}
-                  onSelectRow={handleSelectRow}
-                  onOpenLightbox={handleOpenLightbox}
-                />
-              ) : (
-                <DirectoryGrid
-                  groups={groups}
-                  currentPath={currentPath}
-                  onOpenDirectory={handleOpenDirectory}
-                  onRename={handleRename}
-                  onDelete={handleDelete}
-                  onDragStart={handleDragStart}
-                  onDragEnd={handleDragEnd}
-                  canDropEntry={canDropOnEntry}
-                  onDropEntry={handleDropOnEntry}
-                  availableTags={availableTags}
-                  onTagsChange={handleTagsChange}
-                  selectedNames={selection.selectedNames}
-                  onSelectRow={handleSelectRow}
-                  onOpenLightbox={handleOpenLightbox}
-                />
-              )}
-            </>
-          )}
-          {lightboxEntry && (
-            <Lightbox
-              entry={lightboxEntry}
-              relativePath={joinRelativePath(currentPath, lightboxEntry.name)}
-              hasPrev={lightboxIndex > 0}
-              hasNext={lightboxIndex < previewableEntries.length - 1}
-              onPrev={handleLightboxPrev}
-              onNext={handleLightboxNext}
-              onClose={handleCloseLightbox}
-              onRename={handleLightboxRename}
-              onDelete={handleLightboxDelete}
-              availableTags={availableTags}
-              onTagsChange={handleTagsChange}
-            />
-          )}
-        </div>
-      }
-      drawer={
-        <PanelDrawer expandTrigger={drawerExpandTrigger}>
-          <JobProgress onJobStarted={handleJobStarted} />
-          <ConversionPanel onConverted={() => loadDirectory(currentPath)} />
-          <SyncSection onApplied={() => loadDirectory(currentPath)} />
-        </PanelDrawer>
-      }
-    />
+            </div>
+            {lightboxEntry && (
+              <Lightbox
+                entry={lightboxEntry}
+                relativePath={joinRelativePath(currentPath, lightboxEntry.name)}
+                hasPrev={lightboxIndex > 0}
+                hasNext={lightboxIndex < previewableEntries.length - 1}
+                onPrev={handleLightboxPrev}
+                onNext={handleLightboxNext}
+                onClose={handleCloseLightbox}
+                onRename={handleLightboxRename}
+                onDelete={handleLightboxDelete}
+                availableTags={availableTags}
+                onTagsChange={handleTagsChange}
+              />
+            )}
+          </div>
+        }
+        drawer={
+          <PanelDrawer expandTrigger={drawerExpandTrigger}>
+            <JobProgress onJobStarted={handleJobStarted} />
+            <ConversionPanel onConverted={() => loadDirectory(currentPath)} />
+            <SyncSection onApplied={() => loadDirectory(currentPath)} />
+          </PanelDrawer>
+        }
+      />
+    </>
   );
 };

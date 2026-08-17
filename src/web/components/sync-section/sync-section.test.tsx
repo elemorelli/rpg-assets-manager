@@ -64,7 +64,14 @@ describe("SyncSection", () => {
     const user = userEvent.setup();
     const onApplied = vi.fn();
     fetchDiffMock.mockResolvedValue({ ...EMPTY_DIFF, added: ["icons/goblin.png"] });
-    applyBatchMock.mockResolvedValue(undefined);
+    applyBatchMock.mockResolvedValue({
+      added: 1,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
+      outcome: "applied",
+      syncRunId: 1,
+    });
 
     render(<SyncSection onApplied={onApplied} />);
     await screen.findByRole("button", { name: "Check for changes" });

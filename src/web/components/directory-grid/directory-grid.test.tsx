@@ -396,6 +396,21 @@ describe("DirectoryGrid", () => {
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 
+  it("opens the directory on double-click of a directory tile", () => {
+    const onOpenDirectory = vi.fn();
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenDirectory={onOpenDirectory}
+        groups={[{ label: null, entries: [directoryEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(screen.getByTestId("tile-tiles"));
+
+    expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
+  });
+
   it("does not open the lightbox on double-click of the actions menu button", () => {
     const onOpenLightbox = vi.fn();
 

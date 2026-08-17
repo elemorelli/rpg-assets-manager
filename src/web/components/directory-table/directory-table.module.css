@@ -20,8 +20,27 @@
 }
 
 .preview {
+  width: 44px;
   text-align: center;
   vertical-align: middle;
+}
+
+.nameCell {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.shrink {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.previewCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .actions {
@@ -66,5 +85,6 @@
   border: 1px solid var(--color-border);
   border-radius: 4px;
   padding: 2px var(--spacing-xs);
-  width: 100%;
+  flex: 1;
+  min-width: 80px;
 }

@@ -16,6 +16,7 @@ const createDirectoryMock = vi.mocked(api.createDirectory);
 const deleteEntryMock = vi.mocked(api.deleteEntry);
 const renameEntryMock = vi.mocked(api.renameEntry);
 const moveEntryMock = vi.mocked(api.moveEntry);
+const uploadFileMock = vi.mocked(api.uploadFile);
 const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
@@ -56,6 +57,7 @@ describe("FileBrowser", () => {
     deleteEntryMock.mockResolvedValue(undefined);
     renameEntryMock.mockResolvedValue(undefined);
     moveEntryMock.mockResolvedValue(undefined);
+    uploadFileMock.mockResolvedValue(undefined);
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
     fetchSyncRunsMock.mockResolvedValue([]);
@@ -324,6 +326,68 @@ describe("FileBrowser", () => {
     expect(moveEntryMock).not.toHaveBeenCalled();
   });
 
+  it("shows a dropzone overlay while an external file is dragged over, and hides it on leave", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const dropzone = screen.getByTestId("directory-dropzone");
+
+    fireEvent.dragEnter(dropzone, { dataTransfer: { types: ["Files"] } });
+    expect(screen.getByText("Drop files to upload to root")).toBeInTheDocument();
+
+    fireEvent.dragLeave(dropzone, { dataTransfer: { types: ["Files"] } });
+    expect(screen.queryByText("Drop files to upload to root")).not.toBeInTheDocument();
+  });
+
+  it("ignores an internal row drag as an external file drop", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+    const sourceRow = screen.getByText("map.png").closest("tr");
+
+    if (!sourceRow) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragEnter(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["text/plain"] },
+    });
+
+    expect(screen.queryByText(/Drop files to upload/)).not.toBeInTheDocument();
+  });
+
+  it("uploads files dropped from outside the browser to the current directory", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const file = new File(["content"], "new-map.png", { type: "image/png" });
+    const dropzone = screen.getByTestId("directory-dropzone");
+
+    fireEvent.dragEnter(dropzone, { dataTransfer: { types: ["Files"] } });
+    fireEvent.drop(dropzone, { dataTransfer: { types: ["Files"], files: [file] } });
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledWith("", file);
+    });
+    expect(screen.queryByText(/Drop files to upload/)).not.toBeInTheDocument();
+  });
+
+  it("stops uploading dropped files on the first failure and reports how many succeeded", async () => {
+    const fileA = new File(["a"], "a.png", { type: "image/png" });
+    const fileB = new File(["b"], "b.png", { type: "image/png" });
+    uploadFileMock.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("disk full"));
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], files: [fileA, fileB] },
+    });
+
+    expect(
+      await screen.findByText('Uploaded 1 of 2 before failing on "b.png": disk full'),
+    ).toBeInTheDocument();
+  });
+
   it("fetches the tag list on mount and renders it as filter chips", async () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
@@ -543,6 +607,23 @@ describe("FileBrowser", () => {
     fireEvent.doubleClick(row);
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("navigates into a directory on double-click of its row", async () => {
+    renderFileBrowser();
+    await screen.findByText("map.png");
+
+    listDirectoryMock.mockResolvedValueOnce([{ name: "legacy-pack", type: "directory" }]);
+    const row = within(screen.getByRole("table")).getByText("tiles").closest("tr");
+
+    if (!row) {
+      throw new Error("row not found");
+    }
+
+    fireEvent.doubleClick(row);
+
+    await screen.findAllByText("legacy-pack");
+    expect(listDirectoryMock).toHaveBeenLastCalledWith("tiles");
   });
 
   it("steps to the next previewable entry and disables Next at the end", async () => {

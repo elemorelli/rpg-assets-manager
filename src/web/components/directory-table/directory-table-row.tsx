@@ -109,7 +109,13 @@ export const DirectoryTableRow = ({
       return;
     }
 
-    if (entry.type !== "file" || resolvePreviewSource(entry).kind === "none") {
+    if (entry.type === "directory") {
+      onOpenDirectory(entry.name);
+
+      return;
+    }
+
+    if (resolvePreviewSource(entry).kind === "none") {
       return;
     }
 
@@ -169,35 +175,41 @@ export const DirectoryTableRow = ({
       onDrop={handleDrop}
       onContextMenu={contextMenu.open}>
       <td className={styles.preview}>
-        <AssetPreview
-          entry={entry}
-          relativePath={joinRelativePath(currentPath, entry.name)}
-          onOpen={onOpenLightbox}
-        />
+        <span className={styles.previewCell}>
+          <AssetPreview
+            entry={entry}
+            relativePath={joinRelativePath(currentPath, entry.name)}
+            onOpen={onOpenLightbox}
+          />
+        </span>
       </td>
       <td>
-        {isRenaming ? (
-          <input
-            ref={renameInputRef}
-            type="text"
-            className={styles.renameInput}
-            aria-label={`Rename ${entry.name}`}
-            value={renameDraft}
-            onChange={handleRenameDraftChange}
-            onKeyDown={handleRenameKeyDown}
-            onBlur={commitRename}
-          />
-        ) : entry.type === "directory" ? (
-          <button type="button" className={styles.nameButton} onClick={handleNameClick}>
-            {entry.name}
-          </button>
-        ) : (
-          entry.name
-        )}
+        <span className={styles.nameCell}>
+          {isRenaming ? (
+            <input
+              ref={renameInputRef}
+              type="text"
+              className={styles.renameInput}
+              aria-label={`Rename ${entry.name}`}
+              value={renameDraft}
+              onChange={handleRenameDraftChange}
+              onKeyDown={handleRenameKeyDown}
+              onBlur={commitRename}
+            />
+          ) : entry.type === "directory" ? (
+            <button type="button" className={styles.nameButton} onClick={handleNameClick}>
+              {entry.name}
+            </button>
+          ) : (
+            entry.name
+          )}
+          {entry.type === "file" && entry.tags && entry.tags.length > 0 && (
+            <TagBadgeList tags={entry.tags} />
+          )}
+        </span>
       </td>
-      <td>{entry.type}</td>
-      <td>{sizeLabel}</td>
-      <td>{entry.type === "file" && <TagBadgeList tags={entry.tags ?? []} />}</td>
+      <td className={styles.shrink}>{entry.type}</td>
+      <td className={styles.shrink}>{sizeLabel}</td>
       <td className={styles.actions}>
         <button
           type="button"

@@ -7,6 +7,7 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
 
 import styles from "./asset-preview.module.css";
+import { AudioPreviewButton } from "./audio-preview-button.tsx";
 
 export interface AssetPreviewProps {
   entry: DirectoryEntry;
@@ -84,9 +85,7 @@ export const AssetPreview = ({
   }
 
   if (previewSource.kind === "audio") {
-    return (
-      <audio controls preload="none" src={buildRawFileUrl(relativePath)} className={styles.audio} />
-    );
+    return <AudioPreviewButton relativePath={relativePath} />;
   }
 
   return (

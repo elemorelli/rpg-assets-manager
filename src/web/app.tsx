@@ -1,5 +1,3 @@
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router";
 
@@ -69,13 +67,8 @@ export const App = (): JSX.Element | null => {
         <div className={styles.titleBar}>
           <AppTitle linkToRoot={authenticated} />
           {authenticated && (
-            <button
-              type="button"
-              className={styles.logoutButton}
-              aria-label="Log out"
-              title="Log out"
-              onClick={handleLogout}>
-              <FontAwesomeIcon icon={faRightFromBracket} />
+            <button type="button" className={styles.logoutButton} onClick={handleLogout}>
+              Log out
             </button>
           )}
         </div>

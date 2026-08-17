@@ -106,7 +106,13 @@ export const DirectoryGridTile = ({
       return;
     }
 
-    if (entry.type !== "file" || resolvePreviewSource(entry).kind === "none") {
+    if (entry.type === "directory") {
+      onOpenDirectory(entry.name);
+
+      return;
+    }
+
+    if (resolvePreviewSource(entry).kind === "none") {
       return;
     }
 
@@ -170,12 +176,21 @@ export const DirectoryGridTile = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onContextMenu={contextMenu.open}>
-      <AssetPreview
-        entry={entry}
-        relativePath={joinRelativePath(currentPath, entry.name)}
-        size="large"
-        onOpen={onOpenLightbox}
-      />
+      <div className={styles.previewArea}>
+        <AssetPreview
+          entry={entry}
+          relativePath={joinRelativePath(currentPath, entry.name)}
+          size="large"
+          onOpen={onOpenLightbox}
+        />
+        <button
+          type="button"
+          className={styles.menuButtonOverlay}
+          aria-label={`Actions for ${entry.name}`}
+          onClick={handleMenuButtonClick}>
+          <FontAwesomeIcon icon={faEllipsisVertical} />
+        </button>
+      </div>
       {isRenaming ? (
         <input
           ref={renameInputRef}
@@ -195,15 +210,6 @@ export const DirectoryGridTile = ({
         <span className={styles.name}>{entry.name}</span>
       )}
       {entry.type === "file" && <TagBadgeList tags={entry.tags ?? []} />}
-      <div className={styles.actions}>
-        <button
-          type="button"
-          className={styles.menuButton}
-          aria-label={`Actions for ${entry.name}`}
-          onClick={handleMenuButtonClick}>
-          <FontAwesomeIcon icon={faEllipsisVertical} />
-        </button>
-      </div>
       <EntryContextMenu
         entry={entry}
         position={contextMenu.position}

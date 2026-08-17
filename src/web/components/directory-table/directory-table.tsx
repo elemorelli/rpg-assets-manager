@@ -45,11 +45,10 @@ export const DirectoryTable = ({
   <table className={styles.table}>
     <thead>
       <tr>
-        <th className={styles.preview}>Preview</th>
+        <th className={styles.preview} aria-label="Preview" />
         <th>Name</th>
-        <th>Type</th>
-        <th>Size</th>
-        <th>Tags</th>
+        <th className={styles.shrink}>Type</th>
+        <th className={styles.shrink}>Size</th>
         <th className={styles.actions} aria-label="Actions" />
       </tr>
     </thead>
@@ -58,7 +57,7 @@ export const DirectoryTable = ({
         <Fragment key={group.label ?? UNGROUPED_KEY}>
           {group.label !== null && (
             <tr className={styles.groupHeader}>
-              <th colSpan={6}>{group.label}</th>
+              <th colSpan={5}>{group.label}</th>
             </tr>
           )}
           {group.entries.map((entry) => (

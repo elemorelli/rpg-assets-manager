@@ -472,6 +472,23 @@ describe("DirectoryTable", () => {
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 
+  it("opens the directory on double-click of a directory row", () => {
+    const onOpenDirectory = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onOpenDirectory={onOpenDirectory}
+        groups={[{ label: null, entries: [directoryEntry] }]}
+      />,
+    );
+    fireEvent.doubleClick(
+      screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement,
+    );
+
+    expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
+  });
+
   it("does not open the lightbox on double-click of the actions menu button", () => {
     const onOpenLightbox = vi.fn();
 
