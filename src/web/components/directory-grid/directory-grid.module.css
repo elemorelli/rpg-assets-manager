@@ -43,6 +43,15 @@
   text-align: center;
 }
 
+.pending {
+  color: var(--color-sync-pending);
+}
+
+.deleted {
+  color: var(--color-danger);
+  text-decoration: line-through;
+}
+
 .previewArea {
   position: relative;
   display: inline-flex;

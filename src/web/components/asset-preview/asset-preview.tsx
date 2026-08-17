@@ -35,6 +35,16 @@ export const AssetPreview = ({
     );
   }
 
+  if (entry.syncStatus === "deleted") {
+    return (
+      <span
+        data-size={size}
+        className={clsx(styles.placeholder, isLarge && styles.placeholderLarge)}
+        aria-label="Deleted file, no preview available"
+      />
+    );
+  }
+
   const previewSource = resolvePreviewSource(entry);
 
   if (previewSource.kind === "image") {

@@ -61,6 +61,8 @@ export const DirectoryGridTile = ({
   const [renameDraft, setRenameDraft] = useState<string>(entry.name);
   const renameInputRef = useRef<HTMLInputElement | null>(null);
   const contextMenu = useContextMenu();
+  const isDeleted = entry.syncStatus === "deleted";
+  const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
 
   useEffect(() => {
     if (isRenaming) {
@@ -102,6 +104,10 @@ export const DirectoryGridTile = ({
   };
 
   const handleTileDoubleClick = (event: MouseEvent<HTMLDivElement>): void => {
+    if (isDeleted) {
+      return;
+    }
+
     if (event.target instanceof HTMLElement && event.target.closest("button, input")) {
       return;
     }
@@ -160,7 +166,7 @@ export const DirectoryGridTile = ({
 
   return (
     <div
-      draggable
+      draggable={!isDeleted}
       data-testid={`tile-${entry.name}`}
       aria-selected={isSelected}
       className={clsx(
@@ -168,14 +174,14 @@ export const DirectoryGridTile = ({
         isDropTarget && dragOver && styles.dragOver,
         isSelected && styles.selected,
       )}
-      onClick={handleTileClick}
+      onClick={isDeleted ? undefined : handleTileClick}
       onDoubleClick={handleTileDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onContextMenu={contextMenu.open}>
+      onContextMenu={isDeleted ? undefined : contextMenu.open}>
       <div className={styles.previewArea}>
         <AssetPreview
           entry={entry}
@@ -183,13 +189,15 @@ export const DirectoryGridTile = ({
           size="large"
           onOpen={onOpenLightbox}
         />
-        <button
-          type="button"
-          className={styles.menuButtonOverlay}
-          aria-label={`Actions for ${entry.name}`}
-          onClick={handleMenuButtonClick}>
-          <FontAwesomeIcon icon={faEllipsisVertical} />
-        </button>
+        {!isDeleted && (
+          <button
+            type="button"
+            className={styles.menuButtonOverlay}
+            aria-label={`Actions for ${entry.name}`}
+            onClick={handleMenuButtonClick}>
+            <FontAwesomeIcon icon={faEllipsisVertical} />
+          </button>
+        )}
       </div>
       {isRenaming ? (
         <input
@@ -203,23 +211,31 @@ export const DirectoryGridTile = ({
           onBlur={commitRename}
         />
       ) : entry.type === "directory" ? (
-        <button type="button" className={styles.nameButton} onClick={handleNameClick}>
+        <button
+          type="button"
+          className={clsx(styles.nameButton, isPending && styles.pending)}
+          onClick={handleNameClick}>
           {entry.name}
         </button>
       ) : (
-        <span className={styles.name}>{entry.name}</span>
+        <span
+          className={clsx(styles.name, isPending && styles.pending, isDeleted && styles.deleted)}>
+          {entry.name}
+        </span>
       )}
       {entry.type === "file" && <TagBadgeList tags={entry.tags ?? []} />}
-      <EntryContextMenu
-        entry={entry}
-        position={contextMenu.position}
-        onClose={contextMenu.close}
-        onView={onOpenLightbox}
-        onRenameRequested={startRenaming}
-        onDelete={onDelete}
-        availableTags={availableTags}
-        onTagsChange={onTagsChange}
-      />
+      {!isDeleted && (
+        <EntryContextMenu
+          entry={entry}
+          position={contextMenu.position}
+          onClose={contextMenu.close}
+          onView={onOpenLightbox}
+          onRenameRequested={startRenaming}
+          onDelete={onDelete}
+          availableTags={availableTags}
+          onTagsChange={onTagsChange}
+        />
+      )}
     </div>
   );
 };

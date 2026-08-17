@@ -426,6 +426,64 @@ describe("DirectoryGrid", () => {
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 
+  it("does not render an actions menu for a deleted file tile", () => {
+    const deletedFile: DirectoryEntry = {
+      name: "gone.png",
+      type: "file",
+      size: 10,
+      syncStatus: "deleted",
+    };
+
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [deletedFile] }]} />);
+
+    expect(screen.queryByRole("button", { name: "Actions for gone.png" })).not.toBeInTheDocument();
+  });
+
+  it("is not draggable and does not open the lightbox on double-click for a deleted file tile", () => {
+    const onOpenLightbox = vi.fn();
+    const deletedFile: DirectoryEntry = {
+      name: "gone.png",
+      type: "file",
+      size: 10,
+      syncStatus: "deleted",
+    };
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onOpenLightbox={onOpenLightbox}
+        groups={[{ label: null, entries: [deletedFile] }]}
+      />,
+    );
+    const tile = screen.getByTestId("tile-gone.png");
+
+    expect(tile).toHaveAttribute("draggable", "false");
+
+    fireEvent.doubleClick(tile);
+    expect(onOpenLightbox).not.toHaveBeenCalled();
+  });
+
+  it("does not call onSelectRow when clicking a deleted file tile", () => {
+    const onSelectRow = vi.fn();
+    const deletedFile: DirectoryEntry = {
+      name: "gone.png",
+      type: "file",
+      size: 10,
+      syncStatus: "deleted",
+    };
+
+    render(
+      <DirectoryGrid
+        {...baseProps}
+        onSelectRow={onSelectRow}
+        groups={[{ label: null, entries: [deletedFile] }]}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("tile-gone.png"));
+
+    expect(onSelectRow).not.toHaveBeenCalled();
+  });
+
   it("opens the lightbox via View in the context menu", async () => {
     const user = userEvent.setup();
     const onOpenLightbox = vi.fn();

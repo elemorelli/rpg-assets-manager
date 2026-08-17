@@ -5,6 +5,7 @@ import type { Kysely } from "kysely";
 import type { DB } from "#server/db/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
+import { computeDirectorySyncStatus, type RemoteIndexRecord } from "#utils/sync-status.ts";
 
 const fetchTagsForPaths = async (
   db: Kysely<DB>,
@@ -21,6 +22,18 @@ const fetchTagsForPaths = async (
     .execute();
 
   return new Map(rows.map((row) => [row.path, row.tags]));
+};
+
+const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, string>> => {
+  const rows = await db.selectFrom("assets").select(["path", "hash"]).execute();
+
+  return new Map(rows.map((row) => [row.path, row.hash]));
+};
+
+const fetchRemoteHashIndex = async (db: Kysely<DB>): Promise<Map<string, RemoteIndexRecord>> => {
+  const rows = await db.selectFrom("remote_assets").select(["path", "hash", "size"]).execute();
+
+  return new Map(rows.map((row) => [row.path, { hash: row.hash, size: Number(row.size) }]));
 };
 
 export const listDirectory = async (
@@ -59,10 +72,14 @@ export const listDirectory = async (
     });
   }
 
-  const tagsByPath = await fetchTagsForPaths(
-    db,
-    fileEntries.map((file) => file.relativePath),
-  );
+  const [tagsByPath, localIndex, remoteIndex] = await Promise.all([
+    fetchTagsForPaths(
+      db,
+      fileEntries.map((file) => file.relativePath),
+    ),
+    fetchLocalHashIndex(db),
+    fetchRemoteHashIndex(db),
+  ]);
 
   for (const file of fileEntries) {
     const tags = tagsByPath.get(file.relativePath);
@@ -72,5 +89,36 @@ export const listDirectory = async (
     }
   }
 
-  return sortDirectoryEntries([...directoryEntries, ...fileEntries.map((file) => file.entry)]);
+  const syncStatus = computeDirectorySyncStatus({
+    relativeDir,
+    fileNames: fileEntries.map((file) => file.entry.name),
+    directoryNames: directoryEntries.map((entry) => entry.name),
+    localIndex,
+    remoteIndex,
+  });
+
+  for (const file of fileEntries) {
+    if (syncStatus.pendingFileNames.has(file.entry.name)) {
+      file.entry.syncStatus = "pending";
+    }
+  }
+
+  for (const directory of directoryEntries) {
+    if (syncStatus.pendingDirectoryNames.has(directory.name)) {
+      directory.hasPendingSync = true;
+    }
+  }
+
+  const deletedEntries: DirectoryEntry[] = syncStatus.deletedFiles.map((deletedFile) => ({
+    name: deletedFile.name,
+    type: "file",
+    size: deletedFile.size,
+    syncStatus: "deleted",
+  }));
+
+  return sortDirectoryEntries([
+    ...directoryEntries,
+    ...fileEntries.map((file) => file.entry),
+    ...deletedEntries,
+  ]);
 };

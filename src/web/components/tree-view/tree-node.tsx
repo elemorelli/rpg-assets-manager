@@ -38,6 +38,7 @@ export interface TreeNodeProps {
   path: string;
   name: string;
   depth: number;
+  hasPendingSync: boolean;
   activePath: string;
   expandedPaths: Set<string>;
   childrenByPath: Record<string, TreeChildrenState>;
@@ -56,6 +57,7 @@ export const TreeNode = ({
   path,
   name,
   depth,
+  hasPendingSync,
   activePath,
   expandedPaths,
   childrenByPath,
@@ -192,7 +194,11 @@ export const TreeNode = ({
         ) : (
           <button
             type="button"
-            className={clsx(styles.nameButton, isActive && styles.active)}
+            className={clsx(
+              styles.nameButton,
+              isActive && styles.active,
+              hasPendingSync && styles.pending,
+            )}
             aria-current={isActive ? "true" : undefined}
             onClick={() => onNavigate(path)}>
             {name}
@@ -232,6 +238,7 @@ export const TreeNode = ({
               path={joinRelativePath(path, child.name)}
               name={child.name}
               depth={depth + 1}
+              hasPendingSync={child.hasPendingSync === true}
               activePath={activePath}
               expandedPaths={expandedPaths}
               childrenByPath={childrenByPath}

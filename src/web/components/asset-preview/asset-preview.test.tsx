@@ -56,6 +56,19 @@ describe("AssetPreview", () => {
     expect(screen.getByLabelText("No preview available")).toBeInTheDocument();
   });
 
+  it("renders a placeholder without hitting the network for a deleted file", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: 100, syncStatus: "deleted" }}
+        relativePath="tiles/forest.png"
+      />,
+    );
+
+    expect(screen.getByLabelText("Deleted file, no preview available")).toBeInTheDocument();
+    expect(document.querySelector("img")).not.toBeInTheDocument();
+    expect(document.querySelector("audio")).not.toBeInTheDocument();
+  });
+
   it("renders a folder icon for a directory", () => {
     render(<AssetPreview entry={{ name: "tiles", type: "directory" }} relativePath="tiles" />);
 

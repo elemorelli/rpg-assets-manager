@@ -64,6 +64,8 @@ export const DirectoryTableRow = ({
   const contextMenu = useContextMenu();
   const sizeLabel =
     entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
+  const isDeleted = entry.syncStatus === "deleted";
+  const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
 
   useEffect(() => {
     if (isRenaming) {
@@ -105,6 +107,10 @@ export const DirectoryTableRow = ({
   };
 
   const handleRowDoubleClick = (event: MouseEvent<HTMLTableRowElement>): void => {
+    if (isDeleted) {
+      return;
+    }
+
     if (event.target instanceof HTMLElement && event.target.closest("button, input")) {
       return;
     }
@@ -163,17 +169,17 @@ export const DirectoryTableRow = ({
 
   return (
     <tr
-      draggable
+      draggable={!isDeleted}
       aria-selected={isSelected}
       className={clsx(isDropTarget && dragOver && styles.dragOver, isSelected && styles.selected)}
-      onClick={handleRowClick}
+      onClick={isDeleted ? undefined : handleRowClick}
       onDoubleClick={handleRowDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      onContextMenu={contextMenu.open}>
+      onContextMenu={isDeleted ? undefined : contextMenu.open}>
       <td className={styles.preview}>
         <span className={styles.previewCell}>
           <AssetPreview
@@ -184,7 +190,12 @@ export const DirectoryTableRow = ({
         </span>
       </td>
       <td>
-        <span className={styles.nameCell}>
+        <span
+          className={clsx(
+            styles.nameCell,
+            isPending && styles.pending,
+            isDeleted && styles.deleted,
+          )}>
           {isRenaming ? (
             <input
               ref={renameInputRef}
@@ -197,7 +208,10 @@ export const DirectoryTableRow = ({
               onBlur={commitRename}
             />
           ) : entry.type === "directory" ? (
-            <button type="button" className={styles.nameButton} onClick={handleNameClick}>
+            <button
+              type="button"
+              className={clsx(styles.nameButton, isPending && styles.pending)}
+              onClick={handleNameClick}>
               {entry.name}
             </button>
           ) : (
@@ -211,23 +225,27 @@ export const DirectoryTableRow = ({
       <td className={styles.shrink}>{entry.type}</td>
       <td className={styles.shrink}>{sizeLabel}</td>
       <td className={styles.actions}>
-        <button
-          type="button"
-          className={styles.menuButton}
-          aria-label={`Actions for ${entry.name}`}
-          onClick={handleMenuButtonClick}>
-          <FontAwesomeIcon icon={faEllipsisVertical} />
-        </button>
-        <EntryContextMenu
-          entry={entry}
-          position={contextMenu.position}
-          onClose={contextMenu.close}
-          onView={onOpenLightbox}
-          onRenameRequested={startRenaming}
-          onDelete={onDelete}
-          availableTags={availableTags}
-          onTagsChange={onTagsChange}
-        />
+        {!isDeleted && (
+          <>
+            <button
+              type="button"
+              className={styles.menuButton}
+              aria-label={`Actions for ${entry.name}`}
+              onClick={handleMenuButtonClick}>
+              <FontAwesomeIcon icon={faEllipsisVertical} />
+            </button>
+            <EntryContextMenu
+              entry={entry}
+              position={contextMenu.position}
+              onClose={contextMenu.close}
+              onView={onOpenLightbox}
+              onRenameRequested={startRenaming}
+              onDelete={onDelete}
+              availableTags={availableTags}
+              onTagsChange={onTagsChange}
+            />
+          </>
+        )}
       </td>
     </tr>
   );

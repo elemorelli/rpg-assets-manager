@@ -4,6 +4,8 @@ export interface DirectoryEntry {
   size?: number;
   mtimeMs?: number;
   tags?: string[];
+  syncStatus?: "pending" | "deleted";
+  hasPendingSync?: boolean;
 }
 
 const byNameCaseInsensitive = (a: DirectoryEntry, b: DirectoryEntry): number =>

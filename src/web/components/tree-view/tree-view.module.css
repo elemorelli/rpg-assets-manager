@@ -57,6 +57,10 @@
   color: var(--color-accent);
 }
 
+.pending {
+  color: var(--color-sync-pending);
+}
+
 .error {
   color: var(--color-danger);
   font-size: var(--font-size-sm);

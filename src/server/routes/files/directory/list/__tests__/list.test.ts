@@ -84,4 +84,60 @@ describe("listDirectory", () => {
     expect(tagged?.tags).toEqual(["npc"]);
     expect(untagged?.tags).toBeUndefined();
   });
+
+  it("marks a file as pending when its local hash differs from the remote hash", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-sync-test-"));
+
+    await fs.writeFile(path.join(tempDir, "changed.png"), "x");
+    await fs.writeFile(path.join(tempDir, "unchanged.png"), "x");
+
+    db.seed("assets", [
+      { id: "1", path: "changed.png", size: 1, hash: "local-hash" },
+      { id: "2", path: "unchanged.png", size: 1, hash: "same-hash" },
+    ]);
+    db.seed("remote_assets", [
+      { id: "1", path: "changed.png", size: 1, hash: "remote-hash" },
+      { id: "2", path: "unchanged.png", size: 1, hash: "same-hash" },
+    ]);
+
+    const entries = await listDirectory(db, tempDir, "");
+    const changed = entries.find((entry) => entry.name === "changed.png");
+    const unchanged = entries.find((entry) => entry.name === "unchanged.png");
+
+    expect(changed?.syncStatus).toBe("pending");
+    expect(unchanged?.syncStatus).toBeUndefined();
+  });
+
+  it("includes a synthetic entry for a file that was deleted locally but still exists remotely", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-deleted-test-"));
+
+    db.seed("remote_assets", [{ id: "1", path: "gone.png", size: 42, hash: "remote-hash" }]);
+
+    const entries = await listDirectory(db, tempDir, "");
+
+    expect(entries).toEqual([{ name: "gone.png", type: "file", size: 42, syncStatus: "deleted" }]);
+  });
+
+  it("marks a directory as having pending sync when a nested descendant changed", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-nested-sync-test-"));
+
+    await fs.mkdir(path.join(tempDir, "tiles", "forests"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "tiles", "forests", "leaf.png"), "x");
+
+    db.seed("assets", [{ id: "1", path: "tiles/forests/leaf.png", size: 1, hash: "local-hash" }]);
+    db.seed("remote_assets", [
+      { id: "1", path: "tiles/forests/leaf.png", size: 1, hash: "remote-hash" },
+    ]);
+
+    const entries = await listDirectory(db, tempDir, "");
+    const tiles = entries.find((entry) => entry.name === "tiles");
+
+    expect(tiles?.hasPendingSync).toBe(true);
+  });
 });

@@ -149,6 +149,7 @@ export const TreeView = ({
             path={joinRelativePath(ROOT_PATH, child.name)}
             name={child.name}
             depth={0}
+            hasPendingSync={child.hasPendingSync === true}
             activePath={activePath}
             expandedPaths={expandedPaths}
             childrenByPath={childrenByPath}
