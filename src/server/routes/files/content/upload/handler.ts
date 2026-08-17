@@ -1,3 +1,4 @@
+import { db } from "#server/db/index.ts";
 import { HTTP_STATUS, withHttpErrorHandling } from "#server/errors/index.ts";
 
 import { uploadFile } from "./upload-file.ts";
@@ -30,7 +31,7 @@ export const uploadFileHandler = (assetTreeRoot: string) =>
     const targetDir = extractTargetDir(uploadedFile.fields);
     const content = await uploadedFile.toBuffer();
 
-    await uploadFile(assetTreeRoot, targetDir, uploadedFile.filename, content);
+    await uploadFile(db, assetTreeRoot, targetDir, uploadedFile.filename, content);
 
     return { uploaded: uploadedFile.filename };
   });

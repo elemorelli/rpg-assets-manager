@@ -1,3 +1,4 @@
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 
 import { moveEntry } from "./move-entry.ts";
@@ -11,7 +12,7 @@ export const moveEntryHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const body = request.body as MoveBody | undefined;
 
-    await moveEntry(assetTreeRoot, body?.fromPath ?? "", body?.toPath ?? "");
+    await moveEntry(db, assetTreeRoot, body?.fromPath ?? "", body?.toPath ?? "");
 
     return { moved: true };
   });

@@ -1,3 +1,4 @@
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 
 import { renameEntry } from "./rename-entry.ts";
@@ -11,7 +12,7 @@ export const renameEntryHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const body = request.body as RenameBody | undefined;
 
-    await renameEntry(assetTreeRoot, body?.path ?? "", body?.newName ?? "");
+    await renameEntry(db, assetTreeRoot, body?.path ?? "", body?.newName ?? "");
 
     return { renamed: true };
   });
