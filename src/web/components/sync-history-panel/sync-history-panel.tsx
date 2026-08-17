@@ -2,15 +2,13 @@ import { type JSX, useEffect, useState } from "react";
 
 import * as api from "#web/requests/index.ts";
 import type { SyncRun } from "#web/requests/sync-runs/list.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./sync-history-panel.module.css";
 
 export interface SyncHistoryPanelProps {
   refreshToken: number;
 }
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 const describeRun = (run: SyncRun): string =>
   `${new Date(run.startedAt).toLocaleString()} — ${run.outcome}: ${run.addedCount} added, ${run.modifiedCount} modified, ${run.deletedCount} deleted, ${run.renamedCount} renamed`;

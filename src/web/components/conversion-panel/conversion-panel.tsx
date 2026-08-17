@@ -2,15 +2,13 @@ import { type JSX, useState } from "react";
 
 import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./conversion-panel.module.css";
 
 export interface ConversionPanelProps {
   onConverted: () => void;
 }
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 export const ConversionPanel = ({ onConverted }: ConversionPanelProps): JSX.Element => {
   const [plan, setPlan] = useState<ConversionPlan | null>(null);

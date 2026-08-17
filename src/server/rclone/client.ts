@@ -1,12 +1,10 @@
-import { execFile } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { promisify } from "node:util";
+
+import { execFileAsync } from "#server/utils/exec.ts";
 
 import { parseCombinedReport, type RcloneCheckResult } from "./combined-report.ts";
-
-const execFileAsync = promisify(execFile);
 
 const writeRelativePathsListFile = async (relativePaths: string[]): Promise<string> => {
   const listDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-list-"));

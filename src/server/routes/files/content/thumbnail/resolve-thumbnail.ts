@@ -3,20 +3,11 @@ import path from "node:path";
 
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
+import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { classifyPreviewKind, thumbnailCacheFileName } from "#utils/preview.ts";
 
 import { generateThumbnail } from "./generate.ts";
-
-const cacheFileExists = async (filePath: string): Promise<boolean> => {
-  try {
-    await fs.access(filePath);
-
-    return true;
-  } catch {
-    return false;
-  }
-};
 
 export const resolveThumbnail = async (
   assetTreeRoot: string,
@@ -34,7 +25,7 @@ export const resolveThumbnail = async (
   const hash = await hashBuffer(sourceContent);
   const cachePath = path.join(thumbnailCacheDir, thumbnailCacheFileName(hash));
 
-  if (await cacheFileExists(cachePath)) {
+  if (await pathExists(cachePath)) {
     return cachePath;
   }
 

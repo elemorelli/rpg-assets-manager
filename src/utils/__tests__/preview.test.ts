@@ -5,6 +5,7 @@ import {
   buildThumbnailUrl,
   classifyPreviewKind,
   extensionOf,
+  isPreviewableEntry,
   mimeTypeForFile,
   resolvePreviewSource,
   shouldServeThumbnail,
@@ -91,6 +92,24 @@ describe("resolvePreviewSource", () => {
     ).toEqual({
       kind: "none",
     });
+  });
+});
+
+describe("isPreviewableEntry", () => {
+  it("is false for directories", () => {
+    expect(isPreviewableEntry({ type: "directory", name: "tiles" })).toBe(false);
+  });
+
+  it("is true for image files", () => {
+    expect(isPreviewableEntry({ type: "file", name: "forest.png" })).toBe(true);
+  });
+
+  it("is true for audio files", () => {
+    expect(isPreviewableEntry({ type: "file", name: "ambient-forest.wav" })).toBe(true);
+  });
+
+  it("is false for unsupported file types", () => {
+    expect(isPreviewableEntry({ type: "file", name: "sketch.xcf" })).toBe(false);
   });
 });
 

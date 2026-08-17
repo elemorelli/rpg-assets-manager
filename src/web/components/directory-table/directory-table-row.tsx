@@ -17,7 +17,7 @@ import { EntryContextMenu } from "#components/entry-context-menu/entry-context-m
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
-import { resolvePreviewSource } from "#utils/preview.ts";
+import { isPreviewableEntry } from "#utils/preview.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
 import { modifierFromClick, type SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
@@ -123,7 +123,7 @@ export const DirectoryTableRow = ({
       return;
     }
 
-    if (resolvePreviewSource(entry).kind === "none") {
+    if (!isPreviewableEntry(entry)) {
       return;
     }
 

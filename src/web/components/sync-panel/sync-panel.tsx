@@ -3,6 +3,7 @@ import { type JSX, useMemo, useRef, useState } from "react";
 
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./sync-panel.module.css";
 
@@ -17,9 +18,6 @@ interface ChangeRow {
 
 const ROW_HEIGHT_PX = 28;
 const LIST_HEIGHT_PX = 300;
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 const buildChangeRows = (diff: BatchDiff): ChangeRow[] => [
   ...diff.added.map((relativePath) => ({

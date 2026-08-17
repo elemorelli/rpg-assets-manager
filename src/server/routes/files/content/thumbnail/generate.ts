@@ -1,7 +1,4 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "#server/utils/exec.ts";
 
 const THUMBNAIL_MAX_WIDTH_PX = 256;
 const THUMBNAIL_QUALITY = 80;

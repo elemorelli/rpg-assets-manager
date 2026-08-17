@@ -1,14 +1,13 @@
 import { type JSX, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Routes } from "react-router";
 
+import { describeError } from "#web/utils/describe-error.ts";
+
 import styles from "./app.module.css";
 import logoUrl from "./assets/logo.png";
 import { FileBrowser } from "./components/file-browser/file-browser.tsx";
 import { LoginForm } from "./components/login-form/login-form.tsx";
 import * as api from "./requests/index.ts";
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 const APP_TITLE = "rpg-assets-manager";
 

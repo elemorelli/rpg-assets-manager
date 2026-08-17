@@ -1,10 +1,12 @@
 import { joinUrl } from "#server/utils/url.ts";
 
+import type { RenamePair } from "../diff/rename-resolution.ts";
+
 interface BatchChangeSet {
   added: string[];
   deleted: string[];
   modified: string[];
-  renamed: { oldPath: string; newPath: string }[];
+  renamed: RenamePair[];
 }
 
 export const buildPurgeUrls = (changeSet: BatchChangeSet, baseUrl: string): string[] => {

@@ -2,7 +2,12 @@ import { type Kysely, sql } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
 
-import { buildHashGroups, type OrphanCandidate, resolveRenames } from "./rename-resolution.ts";
+import {
+  buildHashGroups,
+  type OrphanCandidate,
+  type RenamePair,
+  resolveRenames,
+} from "./rename-resolution.ts";
 
 interface PairedRow {
   local_path: string | null;
@@ -15,7 +20,7 @@ export interface BatchDiffResult {
   added: string[];
   deleted: string[];
   modified: string[];
-  renamed: { oldPath: string; newPath: string }[];
+  renamed: RenamePair[];
   ambiguousWarnings: { hash: string; localPaths: string[]; remotePaths: string[] }[];
 }
 
@@ -36,11 +41,9 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
   const orphanRemote: OrphanCandidate[] = [];
 
   for (const row of rows) {
-    const bothPresent = row.local_path !== null && row.remote_path !== null;
-
-    if (bothPresent) {
+    if (row.local_path !== null && row.remote_path !== null) {
       if (row.local_hash !== row.remote_hash) {
-        modified.push(row.local_path as string);
+        modified.push(row.local_path);
       }
 
       continue;

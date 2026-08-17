@@ -5,7 +5,7 @@ export interface ApplyBatchSummary {
   modified: number;
   deleted: number;
   renamed: number;
-  outcome: string;
+  outcome: "applied" | "dry_run";
   syncRunId: number;
 }
 

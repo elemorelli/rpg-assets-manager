@@ -1,31 +1,6 @@
-import fs from "node:fs/promises";
-import path from "node:path";
+import { walkDirectory } from "#server/utils/walk-directory.ts";
 
 import { type SearchableEntry, searchEntriesByName } from "./searchable-entries.ts";
-
-const walkAllEntries = async (
-  rootDir: string,
-  currentDir: string,
-  results: SearchableEntry[],
-): Promise<void> => {
-  const dirents = await fs.readdir(currentDir, { withFileTypes: true });
-
-  for (const dirent of dirents) {
-    const entryPath = path.join(currentDir, dirent.name);
-    const relativePath = path.relative(rootDir, entryPath).split(path.sep).join("/");
-
-    if (dirent.isDirectory()) {
-      results.push({ relativePath, type: "directory" });
-      await walkAllEntries(rootDir, entryPath, results);
-
-      continue;
-    }
-
-    if (dirent.isFile()) {
-      results.push({ relativePath, type: "file" });
-    }
-  }
-};
 
 export const searchEntries = async (rootDir: string, query: string): Promise<SearchableEntry[]> => {
   const normalizedQuery = query.trim();
@@ -34,9 +9,16 @@ export const searchEntries = async (rootDir: string, query: string): Promise<Sea
     return [];
   }
 
+  const walked = await walkDirectory(rootDir);
   const allEntries: SearchableEntry[] = [];
 
-  await walkAllEntries(rootDir, rootDir, allEntries);
+  for (const entry of walked) {
+    if (entry.dirent.isDirectory()) {
+      allEntries.push({ relativePath: entry.relativePath, type: "directory" });
+    } else if (entry.dirent.isFile()) {
+      allEntries.push({ relativePath: entry.relativePath, type: "file" });
+    }
+  }
 
   return searchEntriesByName(allEntries, normalizedQuery);
 };

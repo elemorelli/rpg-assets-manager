@@ -1,10 +1,7 @@
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+import type { FilesPathQuery } from "#server/routes/files/path-body.ts";
 
 import { readRawFile } from "./read-raw-file.ts";
-
-interface FilesPathQuery {
-  path?: string;
-}
 
 export const rawFileHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request, reply) => {

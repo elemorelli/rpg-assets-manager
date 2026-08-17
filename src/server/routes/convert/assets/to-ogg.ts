@@ -1,7 +1,4 @@
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-
-const execFileAsync = promisify(execFile);
+import { execFileAsync } from "#server/utils/exec.ts";
 
 export const convertToOgg = async (sourcePath: string, destinationPath: string): Promise<void> => {
   await execFileAsync("ffmpeg", ["-y", "-i", sourcePath, "-c:a", "libvorbis", destinationPath]);

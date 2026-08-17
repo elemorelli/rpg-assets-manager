@@ -1,11 +1,14 @@
 import type { BatchDiffResult } from "../diff/index.ts";
+import type { SyncRunOutcome } from "./sync-run.ts";
+
+export type SyncRunWorldAcknowledgements = Record<string, boolean>;
 
 export const buildFinishSyncRunUpdate = (
-  outcome: "applied" | "dry_run",
+  outcome: Exclude<SyncRunOutcome, "in_progress" | "failed">,
   diff: BatchDiffResult,
   purgeUrls: string[],
   generatedMacro: string | null,
-  worldAcknowledgements: Record<string, boolean>,
+  worldAcknowledgements: SyncRunWorldAcknowledgements,
   finishedAt: Date,
 ) => ({
   finished_at: finishedAt,

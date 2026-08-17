@@ -84,6 +84,9 @@ export const resolvePreviewSource = (entry: PreviewableEntry): PreviewSource => 
   return { kind: "none" };
 };
 
+export const isPreviewableEntry = (entry: PreviewableEntry): boolean =>
+  resolvePreviewSource(entry).kind !== "none";
+
 export const thumbnailCacheFileName = (hash: string): string => `${hash}.webp`;
 
 export const buildRawFileUrl = (relativePath: string): string =>

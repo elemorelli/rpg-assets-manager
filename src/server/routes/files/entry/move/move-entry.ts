@@ -4,6 +4,7 @@ import { type Kysely, sql } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
+import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 
 export const moveEntry = async (
@@ -26,10 +27,7 @@ export const moveEntry = async (
   const absoluteFrom = path.join(rootDir, relativeFrom);
   const absoluteTo = path.join(rootDir, relativeTo);
 
-  const destinationExists = await fs
-    .access(absoluteTo)
-    .then(() => true)
-    .catch(() => false);
+  const destinationExists = await pathExists(absoluteTo);
 
   if (destinationExists) {
     throw new HttpError(`Destination already exists: ${relativeTo}`, HTTP_STATUS.conflict);

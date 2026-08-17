@@ -18,9 +18,10 @@ import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { ViewControls } from "#components/view-controls/view-controls.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
-import { resolvePreviewSource } from "#utils/preview.ts";
+import { isPreviewableEntry } from "#utils/preview.ts";
 import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
 import {
@@ -29,13 +30,11 @@ import {
   type SelectionClickModifier,
   type SelectionState,
 } from "#web/utils/row-selection.ts";
+import { runBatchOperation } from "#web/utils/run-batch-operation.ts";
 import { sortEntries } from "#web/utils/sort-entries.ts";
 import { useViewPreferences } from "#web/utils/use-view-preferences.ts";
 
 import styles from "./file-browser.module.css";
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 export const FileBrowser = (): JSX.Element => {
   const params = useParams();
@@ -305,35 +304,30 @@ export const FileBrowser = (): JSX.Element => {
     setError(null);
 
     const performBatchMove = async (): Promise<void> => {
-      let movedCount = 0;
-      let batchErrorMessage: string | null = null;
-
-      for (const entry of entriesToMove) {
-        const sourcePath = joinRelativePath(currentPath, entry.name);
-        const destinationPath = joinRelativePath(targetDirectoryPath, entry.name);
-
-        try {
-          await api.moveEntry(sourcePath, destinationPath);
-          movedCount += 1;
-        } catch (caught) {
-          batchErrorMessage = `Moved ${movedCount} of ${entriesToMove.length} before failing on "${entry.name}": ${describeError(caught)}`;
-          break;
-        }
-      }
+      const { errorMessage } = await runBatchOperation(
+        entriesToMove,
+        (entry) =>
+          api.moveEntry(
+            joinRelativePath(currentPath, entry.name),
+            joinRelativePath(targetDirectoryPath, entry.name),
+          ),
+        (entry) => entry.name,
+        "Moved",
+      );
 
       // Refresh the listing before surfacing the outcome: loadDirectory
       // clears the error state on entry, so setting it beforehand would
       // have the refresh immediately wipe out a batch-move failure message.
       await loadDirectory(currentPath);
 
-      if (batchErrorMessage) {
-        setError(batchErrorMessage);
+      if (errorMessage) {
+        setError(errorMessage);
       } else {
         setSelection(initialSelectionState);
       }
     };
 
-    performBatchMove();
+    void performBatchMove();
   };
 
   const handleDropOnDirectory = (targetDirectoryPath: string): void => {
@@ -365,27 +359,21 @@ export const FileBrowser = (): JSX.Element => {
     setError(null);
 
     const performBatchUpload = async (): Promise<void> => {
-      let uploadedCount = 0;
-      let batchErrorMessage: string | null = null;
-
-      for (const file of files) {
-        try {
-          await api.uploadFile(currentPath, file);
-          uploadedCount += 1;
-        } catch (caught) {
-          batchErrorMessage = `Uploaded ${uploadedCount} of ${files.length} before failing on "${file.name}": ${describeError(caught)}`;
-          break;
-        }
-      }
+      const { errorMessage } = await runBatchOperation(
+        files,
+        (file) => api.uploadFile(currentPath, file),
+        (file) => file.name,
+        "Uploaded",
+      );
 
       await loadDirectory(currentPath);
 
-      if (batchErrorMessage) {
-        setError(batchErrorMessage);
+      if (errorMessage) {
+        setError(errorMessage);
       }
     };
 
-    performBatchUpload();
+    void performBatchUpload();
   };
 
   const handleDropzoneDragEnter = (event: DragEvent<HTMLDivElement>): void => {
@@ -438,9 +426,7 @@ export const FileBrowser = (): JSX.Element => {
   const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
   const groups = groupEntries(sortedEntries, groupCriterion);
 
-  const previewableEntries = sortedEntries.filter(
-    (entry) => entry.type === "file" && resolvePreviewSource(entry).kind !== "none",
-  );
+  const previewableEntries = sortedEntries.filter((entry) => isPreviewableEntry(entry));
   const lightboxIndex =
     lightboxEntryName === null
       ? -1

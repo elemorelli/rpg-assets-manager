@@ -3,7 +3,7 @@ import { type JSX, useEffect, useState } from "react";
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { resolvePreviewSource } from "#utils/preview.ts";
+import { isPreviewableEntry } from "#utils/preview.ts";
 
 import styles from "./entry-context-menu.module.css";
 
@@ -36,7 +36,7 @@ export const EntryContextMenu = ({
     }
   }, [position]);
 
-  const isPreviewable = entry.type === "file" && resolvePreviewSource(entry).kind !== "none";
+  const isPreviewable = isPreviewableEntry(entry);
 
   const handleView = (): void => {
     onView(entry);

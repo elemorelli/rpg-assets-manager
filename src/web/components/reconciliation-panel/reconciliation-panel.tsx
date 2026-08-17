@@ -2,6 +2,7 @@ import { type JSX, useState } from "react";
 
 import * as api from "#web/requests/index.ts";
 import type { RcloneCheckResult } from "#web/requests/reconcile/check.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./reconciliation-panel.module.css";
 
@@ -9,9 +10,6 @@ interface ResultSection {
   label: string;
   paths: string[];
 }
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 const buildResultSections = (result: RcloneCheckResult): ResultSection[] =>
   [

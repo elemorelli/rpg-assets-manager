@@ -3,18 +3,19 @@ import type { Kysely } from "kysely";
 import type { DB } from "#server/db/index.ts";
 
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
+import type { SyncRunWorldAcknowledgements } from "./build-finish-sync-run-update.ts";
 import { generateMacro } from "./macro/generate-macro.ts";
 import { mirrorRemoteAssets } from "./mirror-remote-assets.ts";
 import { buildPurgeUrls } from "./purge-urls.ts";
 import { countRcloneSteps, runRcloneOperations } from "./run-rclone-operations.ts";
-import { failSyncRun, finishSyncRun, startSyncRun } from "./sync-run.ts";
+import { failSyncRun, finishSyncRun, type SyncRunOutcome, startSyncRun } from "./sync-run.ts";
 
 export interface ApplyProgress {
   done: number;
   total: number;
 }
 
-export type ApplyOutcome = "applied" | "dry_run";
+export type ApplyOutcome = Exclude<SyncRunOutcome, "in_progress" | "failed">;
 
 export interface ApplyBatchSummary {
   added: number;
@@ -34,7 +35,7 @@ export interface ApplyBatchDependencies {
   foundryWorldNames: string[];
 }
 
-const buildInitialWorldAcknowledgements = (worldNames: string[]): Record<string, boolean> =>
+const buildInitialWorldAcknowledgements = (worldNames: string[]): SyncRunWorldAcknowledgements =>
   Object.fromEntries(worldNames.map((worldName) => [worldName, false]));
 
 const summaryFor = (

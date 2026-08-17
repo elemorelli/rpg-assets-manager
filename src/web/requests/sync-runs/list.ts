@@ -8,7 +8,7 @@ export interface SyncRun {
   modifiedCount: number;
   deletedCount: number;
   renamedCount: number;
-  outcome: string;
+  outcome: "in_progress" | "applied" | "dry_run" | "failed";
   generatedMacro: string | null;
   worldAcknowledgements: Record<string, boolean>;
 }

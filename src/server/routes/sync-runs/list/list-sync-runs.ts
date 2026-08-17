@@ -2,6 +2,9 @@ import type { Kysely } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
 
+import type { SyncRunWorldAcknowledgements } from "../../apply/build-finish-sync-run-update.ts";
+import type { SyncRunOutcome } from "../../apply/sync-run.ts";
+
 export interface SyncRunSummary {
   id: number;
   startedAt: Date;
@@ -10,9 +13,9 @@ export interface SyncRunSummary {
   modifiedCount: number;
   deletedCount: number;
   renamedCount: number;
-  outcome: string;
+  outcome: SyncRunOutcome;
   generatedMacro: string | null;
-  worldAcknowledgements: Record<string, boolean>;
+  worldAcknowledgements: SyncRunWorldAcknowledgements;
 }
 
 export const listSyncRuns = async (db: Kysely<DB>): Promise<SyncRunSummary[]> => {
@@ -26,8 +29,8 @@ export const listSyncRuns = async (db: Kysely<DB>): Promise<SyncRunSummary[]> =>
     modifiedCount: row.modified_count,
     deletedCount: row.deleted_count,
     renamedCount: row.renamed_count,
-    outcome: row.outcome,
+    outcome: row.outcome as SyncRunOutcome,
     generatedMacro: row.generated_macro,
-    worldAcknowledgements: row.world_acknowledgements as Record<string, boolean>,
+    worldAcknowledgements: row.world_acknowledgements as SyncRunWorldAcknowledgements,
   }));
 };

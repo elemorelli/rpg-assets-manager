@@ -1,15 +1,13 @@
 import { type FormEvent, type JSX, useState } from "react";
 
 import * as api from "#web/requests/index.ts";
+import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./login-form.module.css";
 
 export interface LoginFormProps {
   onLoggedIn: () => void;
 }
-
-const describeError = (caught: unknown): string =>
-  caught instanceof Error ? caught.message : "Something went wrong";
 
 export const LoginForm = ({ onLoggedIn }: LoginFormProps): JSX.Element => {
   const [password, setPassword] = useState<string>("");

@@ -1,12 +1,9 @@
 import fs from "node:fs/promises";
 
 import { withHttpErrorHandling } from "#server/errors/index.ts";
+import type { FilesPathQuery } from "#server/routes/files/path-body.ts";
 
 import { resolveThumbnail } from "./resolve-thumbnail.ts";
-
-interface FilesPathQuery {
-  path?: string;
-}
 
 export const thumbnailHandler = (assetTreeRoot: string, thumbnailCacheDir: string) =>
   withHttpErrorHandling(async (request, reply) => {
