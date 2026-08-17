@@ -18,13 +18,36 @@ const describeRun = (run: SyncRun): string =>
 export const SyncHistoryPanel = ({ refreshToken }: SyncHistoryPanelProps): JSX.Element => {
   const [runs, setRuns] = useState<SyncRun[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRunIds, setExpandedRunIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     api
       .fetchSyncRuns()
-      .then(setRuns)
+      .then((fetchedRuns) => {
+        setRuns(fetchedRuns);
+
+        const mostRecentRunWithMacro = fetchedRuns.find((run) => run.generatedMacro !== null);
+
+        setExpandedRunIds(
+          mostRecentRunWithMacro ? new Set([mostRecentRunWithMacro.id]) : new Set(),
+        );
+      })
       .catch((caught: unknown) => setError(describeError(caught)));
   }, [refreshToken]);
+
+  const handleToggleExpand = (runId: number): void => {
+    setExpandedRunIds((previous) => {
+      const next = new Set(previous);
+
+      if (next.has(runId)) {
+        next.delete(runId);
+      } else {
+        next.add(runId);
+      }
+
+      return next;
+    });
+  };
 
   const handleAcknowledge = (syncRunId: number, world: string, acknowledged: boolean): void => {
     api
@@ -55,29 +78,39 @@ export const SyncHistoryPanel = ({ refreshToken }: SyncHistoryPanelProps): JSX.E
             <li key={run.id} className={styles.run}>
               <p className={styles.summary}>{describeRun(run)}</p>
               {run.generatedMacro && (
-                <div className={styles.macroSection}>
-                  <p>Foundry migration macro:</p>
-                  <textarea
-                    className={styles.macroText}
-                    readOnly
-                    value={run.generatedMacro}
-                    onFocus={(event) => event.currentTarget.select()}
-                  />
-                  <div className={styles.worldChecks}>
-                    {Object.entries(run.worldAcknowledgements).map(([world, acknowledged]) => (
-                      <label key={world} className={styles.worldCheck}>
-                        <input
-                          type="checkbox"
-                          checked={acknowledged}
-                          onChange={(event) =>
-                            handleAcknowledge(run.id, world, event.target.checked)
-                          }
-                        />
-                        {world}
-                      </label>
-                    ))}
-                  </div>
-                </div>
+                <>
+                  <button
+                    type="button"
+                    className={styles.toggleButton}
+                    onClick={() => handleToggleExpand(run.id)}>
+                    {expandedRunIds.has(run.id) ? "Hide macro" : "Show macro"}
+                  </button>
+                  {expandedRunIds.has(run.id) && (
+                    <div className={styles.macroSection}>
+                      <p>Foundry migration macro:</p>
+                      <textarea
+                        className={styles.macroText}
+                        readOnly
+                        value={run.generatedMacro}
+                        onFocus={(event) => event.currentTarget.select()}
+                      />
+                      <div className={styles.worldChecks}>
+                        {Object.entries(run.worldAcknowledgements).map(([world, acknowledged]) => (
+                          <label key={world} className={styles.worldCheck}>
+                            <input
+                              type="checkbox"
+                              checked={acknowledged}
+                              onChange={(event) =>
+                                handleAcknowledge(run.id, world, event.target.checked)
+                              }
+                            />
+                            {world}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </li>
           ))}

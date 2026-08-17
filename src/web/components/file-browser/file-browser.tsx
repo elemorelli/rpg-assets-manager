@@ -9,11 +9,9 @@ import { DirectoryTable } from "#components/directory-table/directory-table.tsx"
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
-import { ReconciliationPanel } from "#components/reconciliation-panel/reconciliation-panel.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
-import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
-import { SyncPanel } from "#components/sync-panel/sync-panel.tsx";
+import { SyncSection } from "#components/sync-section/sync-section.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
@@ -55,7 +53,6 @@ export const FileBrowser = (): JSX.Element => {
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [draggedEntries, setDraggedEntries] = useState<DirectoryEntry[]>([]);
-  const [syncHistoryRefreshToken, setSyncHistoryRefreshToken] = useState<number>(0);
   const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
@@ -499,14 +496,7 @@ export const FileBrowser = (): JSX.Element => {
         <PanelDrawer expandTrigger={drawerExpandTrigger}>
           <JobProgress onJobStarted={handleJobStarted} />
           <ConversionPanel onConverted={() => loadDirectory(currentPath)} />
-          <SyncPanel
-            onApplied={() => {
-              loadDirectory(currentPath);
-              setSyncHistoryRefreshToken((token) => token + 1);
-            }}
-          />
-          <SyncHistoryPanel refreshToken={syncHistoryRefreshToken} />
-          <ReconciliationPanel />
+          <SyncSection onApplied={() => loadDirectory(currentPath)} />
         </PanelDrawer>
       }
     />
