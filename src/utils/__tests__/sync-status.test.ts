@@ -27,7 +27,7 @@ describe("computeDirectorySyncStatus", () => {
     expect(result.pendingFileNames).toEqual(new Set(["forest.png"]));
   });
 
-  it("marks a file pending when it has no remote counterpart yet (newly added)", () => {
+  it("marks a file new when it has no remote counterpart yet and no matching deleted hash", () => {
     const result = computeDirectorySyncStatus({
       relativeDir: "",
       fileNames: ["forest.png"],
@@ -36,7 +36,8 @@ describe("computeDirectorySyncStatus", () => {
       remoteIndex: new Map(),
     });
 
-    expect(result.pendingFileNames).toEqual(new Set(["forest.png"]));
+    expect(result.newFileNames).toEqual(new Set(["forest.png"]));
+    expect(result.pendingFileNames).toEqual(new Set());
   });
 
   it("does not mark a file pending when it has never been scanned locally", () => {
@@ -151,5 +152,68 @@ describe("computeDirectorySyncStatus", () => {
     });
 
     expect(result.pendingDirectoryNames).toEqual(new Set());
+  });
+
+  it("treats a file with the same hash as a missing remote file as renamed, not new or pending", () => {
+    const result = computeDirectorySyncStatus({
+      relativeDir: "",
+      fileNames: ["forest-renamed.png"],
+      directoryNames: [],
+      localIndex: new Map([["forest-renamed.png", "hash-a"]]),
+      remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
+    });
+
+    expect(result.renamedFileNames).toEqual(new Set(["forest-renamed.png"]));
+    expect(result.pendingFileNames).toEqual(new Set());
+    expect(result.newFileNames).toEqual(new Set());
+  });
+
+  it("does not report the old path of a renamed file as deleted", () => {
+    const result = computeDirectorySyncStatus({
+      relativeDir: "",
+      fileNames: ["forest-renamed.png"],
+      directoryNames: [],
+      localIndex: new Map([["forest-renamed.png", "hash-a"]]),
+      remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
+    });
+
+    expect(result.deletedFiles).toEqual([]);
+  });
+
+  it("does not treat unrelated new and deleted files with different hashes as a rename", () => {
+    const result = computeDirectorySyncStatus({
+      relativeDir: "",
+      fileNames: ["new.png"],
+      directoryNames: [],
+      localIndex: new Map([["new.png", "hash-b"]]),
+      remoteIndex: new Map([["gone.png", { hash: "hash-a", size: 100 }]]),
+    });
+
+    expect(result.newFileNames).toEqual(new Set(["new.png"]));
+    expect(result.deletedFiles).toEqual([{ name: "gone.png", size: 100 }]);
+  });
+
+  it("matches at most one renamed file per deleted hash, leaving extras new and deleted", () => {
+    const result = computeDirectorySyncStatus({
+      relativeDir: "",
+      fileNames: ["copy-a.png", "copy-b.png"],
+      directoryNames: [],
+      localIndex: new Map([
+        ["copy-a.png", "hash-a"],
+        ["copy-b.png", "hash-a"],
+      ]),
+      remoteIndex: new Map([["original.png", { hash: "hash-a", size: 100 }]]),
+    });
+
+    const renamedCount = ["copy-a.png", "copy-b.png"].filter((name) =>
+      result.renamedFileNames.has(name),
+    ).length;
+    const newCount = ["copy-a.png", "copy-b.png"].filter((name) =>
+      result.newFileNames.has(name),
+    ).length;
+
+    expect(renamedCount).toBe(1);
+    expect(newCount).toBe(1);
+    expect(result.deletedFiles).toEqual([]);
   });
 });

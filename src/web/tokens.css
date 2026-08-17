@@ -8,6 +8,8 @@
   --color-danger: #ff6b6b;
   --color-folder: #f0c419;
   --color-sync-pending: #e08a3c;
+  --color-sync-new: #4caf7d;
+  --color-sync-renamed: #a374db;
 
   --spacing-xs: 4px;
   --spacing-sm: 8px;

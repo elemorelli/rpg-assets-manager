@@ -122,6 +122,39 @@ describe("listDirectory", () => {
     expect(entries).toEqual([{ name: "gone.png", type: "file", size: 42, syncStatus: "deleted" }]);
   });
 
+  it("marks a file as new when it has no remote counterpart", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-new-test-"));
+
+    await fs.writeFile(path.join(tempDir, "brand-new.png"), "x");
+
+    db.seed("assets", [{ id: "1", path: "brand-new.png", size: 1, hash: "local-hash" }]);
+
+    const entries = await listDirectory(db, tempDir, "");
+    const brandNew = entries.find((entry) => entry.name === "brand-new.png");
+
+    expect(brandNew?.syncStatus).toBe("new");
+  });
+
+  it("treats a renamed file as renamed rather than new, and hides its old remote path", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-rename-test-"));
+
+    await fs.writeFile(path.join(tempDir, "renamed.png"), "x");
+
+    db.seed("assets", [{ id: "1", path: "renamed.png", size: 1, hash: "shared-hash" }]);
+    db.seed("remote_assets", [{ id: "1", path: "old-name.png", size: 1, hash: "shared-hash" }]);
+
+    const entries = await listDirectory(db, tempDir, "");
+    const renamed = entries.find((entry) => entry.name === "renamed.png");
+    const oldEntry = entries.find((entry) => entry.name === "old-name.png");
+
+    expect(renamed?.syncStatus).toBe("renamed");
+    expect(oldEntry).toBeUndefined();
+  });
+
   it("marks a directory as having pending sync when a nested descendant changed", async () => {
     const db = createFakeDb();
 

@@ -65,6 +65,8 @@ export const DirectoryTableRow = ({
   const sizeLabel =
     entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
   const isDeleted = entry.syncStatus === "deleted";
+  const isNew = entry.syncStatus === "new";
+  const isRenamed = entry.syncStatus === "renamed";
   const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
 
   useEffect(() => {
@@ -194,6 +196,8 @@ export const DirectoryTableRow = ({
           className={clsx(
             styles.nameCell,
             isPending && styles.pending,
+            isNew && styles.new,
+            isRenamed && styles.renamed,
             isDeleted && styles.deleted,
           )}>
           {isRenaming ? (

@@ -4,7 +4,7 @@ export interface DirectoryEntry {
   size?: number;
   mtimeMs?: number;
   tags?: string[];
-  syncStatus?: "pending" | "deleted";
+  syncStatus?: "pending" | "new" | "renamed" | "deleted";
   hasPendingSync?: boolean;
 }
 

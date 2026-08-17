@@ -47,6 +47,14 @@
   color: var(--color-sync-pending);
 }
 
+.new {
+  color: var(--color-sync-new);
+}
+
+.renamed {
+  color: var(--color-sync-renamed);
+}
+
 .deleted {
   color: var(--color-danger);
   text-decoration: line-through;

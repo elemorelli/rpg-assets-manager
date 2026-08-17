@@ -62,6 +62,8 @@ export const DirectoryGridTile = ({
   const renameInputRef = useRef<HTMLInputElement | null>(null);
   const contextMenu = useContextMenu();
   const isDeleted = entry.syncStatus === "deleted";
+  const isNew = entry.syncStatus === "new";
+  const isRenamed = entry.syncStatus === "renamed";
   const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
 
   useEffect(() => {
@@ -219,7 +221,13 @@ export const DirectoryGridTile = ({
         </button>
       ) : (
         <span
-          className={clsx(styles.name, isPending && styles.pending, isDeleted && styles.deleted)}>
+          className={clsx(
+            styles.name,
+            isPending && styles.pending,
+            isNew && styles.new,
+            isRenamed && styles.renamed,
+            isDeleted && styles.deleted,
+          )}>
           {entry.name}
         </span>
       )}

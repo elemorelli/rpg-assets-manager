@@ -100,6 +100,10 @@ export const listDirectory = async (
   for (const file of fileEntries) {
     if (syncStatus.pendingFileNames.has(file.entry.name)) {
       file.entry.syncStatus = "pending";
+    } else if (syncStatus.renamedFileNames.has(file.entry.name)) {
+      file.entry.syncStatus = "renamed";
+    } else if (syncStatus.newFileNames.has(file.entry.name)) {
+      file.entry.syncStatus = "new";
     }
   }
 

@@ -18,8 +18,15 @@ export interface DeletedFileEntry {
 
 export interface DirectorySyncStatus {
   pendingFileNames: Set<string>;
+  newFileNames: Set<string>;
+  renamedFileNames: Set<string>;
   deletedFiles: DeletedFileEntry[];
   pendingDirectoryNames: Set<string>;
+}
+
+interface RenameMatches {
+  renamedLocalPaths: Set<string>;
+  consumedRemotePaths: Set<string>;
 }
 
 const buildDirectoryPrefix = (relativeDir: string): string =>
@@ -44,35 +51,100 @@ const findChangedPaths = (
   return changedPaths;
 };
 
-const findPendingFileNames = (
-  fileNames: string[],
-  directoryPrefix: string,
+const findRenameMatches = (
   changedPaths: Set<string>,
   localIndex: Map<string, string>,
-): Set<string> => {
+  remoteIndex: Map<string, RemoteIndexRecord>,
+): RenameMatches => {
+  const localOnlyPaths = [...changedPaths]
+    .filter((path) => localIndex.has(path) && !remoteIndex.has(path))
+    .sort();
+  const remoteOnlyPaths = [...changedPaths]
+    .filter((path) => remoteIndex.has(path) && !localIndex.has(path))
+    .sort();
+
+  const availableRemotePathsByHash = new Map<string, string[]>();
+
+  for (const remotePath of remoteOnlyPaths) {
+    const remoteHash = remoteIndex.get(remotePath)?.hash;
+
+    if (remoteHash === undefined) {
+      continue;
+    }
+
+    const bucket = availableRemotePathsByHash.get(remoteHash) ?? [];
+    bucket.push(remotePath);
+    availableRemotePathsByHash.set(remoteHash, bucket);
+  }
+
+  const renamedLocalPaths = new Set<string>();
+  const consumedRemotePaths = new Set<string>();
+
+  for (const localPath of localOnlyPaths) {
+    const localHash = localIndex.get(localPath);
+    const availableMatches =
+      localHash === undefined ? undefined : availableRemotePathsByHash.get(localHash);
+    const matchedRemotePath = availableMatches?.shift();
+
+    if (matchedRemotePath !== undefined) {
+      renamedLocalPaths.add(localPath);
+      consumedRemotePaths.add(matchedRemotePath);
+    }
+  }
+
+  return { renamedLocalPaths, consumedRemotePaths };
+};
+
+const findFileSyncStatuses = (
+  fileNames: string[],
+  directoryPrefix: string,
+  localIndex: Map<string, string>,
+  remoteIndex: Map<string, RemoteIndexRecord>,
+  renamedLocalPaths: Set<string>,
+): { pendingFileNames: Set<string>; newFileNames: Set<string>; renamedFileNames: Set<string> } => {
   const pendingFileNames = new Set<string>();
+  const newFileNames = new Set<string>();
+  const renamedFileNames = new Set<string>();
 
   for (const fileName of fileNames) {
     const filePath = `${directoryPrefix}${fileName}`;
+    const localHash = localIndex.get(filePath);
 
-    if (localIndex.has(filePath) && changedPaths.has(filePath)) {
+    if (localHash === undefined) {
+      continue;
+    }
+
+    const remoteRecord = remoteIndex.get(filePath);
+
+    if (remoteRecord === undefined) {
+      if (renamedLocalPaths.has(filePath)) {
+        renamedFileNames.add(fileName);
+      } else {
+        newFileNames.add(fileName);
+      }
+
+      continue;
+    }
+
+    if (remoteRecord.hash !== localHash) {
       pendingFileNames.add(fileName);
     }
   }
 
-  return pendingFileNames;
+  return { pendingFileNames, newFileNames, renamedFileNames };
 };
 
 const findDeletedFiles = (
   fileNames: string[],
   directoryPrefix: string,
   remoteIndex: Map<string, RemoteIndexRecord>,
+  consumedRemotePaths: Set<string>,
 ): DeletedFileEntry[] => {
   const fileNamesOnDisk = new Set(fileNames);
   const deletedFiles: DeletedFileEntry[] = [];
 
   for (const [remotePath, remoteRecord] of remoteIndex) {
-    if (!remotePath.startsWith(directoryPrefix)) {
+    if (!remotePath.startsWith(directoryPrefix) || consumedRemotePaths.has(remotePath)) {
       continue;
     }
 
@@ -117,10 +189,24 @@ export const computeDirectorySyncStatus = ({
 }: ComputeDirectorySyncStatusInput): DirectorySyncStatus => {
   const directoryPrefix = buildDirectoryPrefix(relativeDir);
   const changedPaths = findChangedPaths(localIndex, remoteIndex);
+  const { renamedLocalPaths, consumedRemotePaths } = findRenameMatches(
+    changedPaths,
+    localIndex,
+    remoteIndex,
+  );
+  const { pendingFileNames, newFileNames, renamedFileNames } = findFileSyncStatuses(
+    fileNames,
+    directoryPrefix,
+    localIndex,
+    remoteIndex,
+    renamedLocalPaths,
+  );
 
   return {
-    pendingFileNames: findPendingFileNames(fileNames, directoryPrefix, changedPaths, localIndex),
-    deletedFiles: findDeletedFiles(fileNames, directoryPrefix, remoteIndex),
+    pendingFileNames,
+    newFileNames,
+    renamedFileNames,
+    deletedFiles: findDeletedFiles(fileNames, directoryPrefix, remoteIndex, consumedRemotePaths),
     pendingDirectoryNames: findPendingDirectoryNames(directoryNames, directoryPrefix, changedPaths),
   };
 };
