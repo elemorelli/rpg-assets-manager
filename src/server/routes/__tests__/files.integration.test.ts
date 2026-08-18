@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildApp } from "../../app.ts";
 import { db } from "../../db/index.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
+import { buildTestApp } from "../../test-utils/build-test-app.ts";
 import { destroyDbAfterAll, useTempDir } from "../../test-utils/integration-lifecycle.ts";
 import { loginTestSession } from "../../test-utils/login-test-session.ts";
 
@@ -25,11 +25,7 @@ describe("file routes", () => {
 
   it("lists a directory via GET /api/files", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -45,11 +41,7 @@ describe("file routes", () => {
   });
 
   it("rejects an unsafe path with 400", async () => {
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -62,11 +54,7 @@ describe("file routes", () => {
   });
 
   it("creates a directory via POST /api/files/mkdir", async () => {
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -82,11 +70,7 @@ describe("file routes", () => {
 
   it("deletes an entry via DELETE /api/files", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -102,11 +86,7 @@ describe("file routes", () => {
 
   it("renames an entry via POST /api/files/rename", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -122,11 +102,7 @@ describe("file routes", () => {
 
   it("moves an entry via POST /api/files/move", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -141,11 +117,7 @@ describe("file routes", () => {
   });
 
   it("uploads a file via POST /api/files/upload", async () => {
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
 
     await app.ready();
 
@@ -171,11 +143,7 @@ describe("file routes", () => {
   it("searches for entries by name via GET /api/files/search", async () => {
     await fs.mkdir(path.join(tempDir.path, "tiles"));
     await fs.writeFile(path.join(tempDir.path, "tiles", "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -190,11 +158,7 @@ describe("file routes", () => {
 
   it("serves the raw file content via GET /api/files/raw", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -215,11 +179,7 @@ describe("file routes", () => {
       path.join(tempDir.path, "forest.png"),
       Buffer.from(minimalPngBase64, "base64"),
     );
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({

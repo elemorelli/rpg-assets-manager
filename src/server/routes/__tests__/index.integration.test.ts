@@ -2,9 +2,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { buildApp } from "../../app.ts";
 import { db } from "../../db/index.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
+import { buildTestApp } from "../../test-utils/build-test-app.ts";
 import {
   cleanupAssetsByPrefix,
   destroyDbAfterAll,
@@ -26,11 +26,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("bootstraps the asset tree via POST /api/bootstrap", async () => {
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -54,11 +50,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("rescans the asset tree via POST /api/rescan, defaulting forceRehash to false", async () => {
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const firstRun = await app.inject({
@@ -82,11 +74,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("re-hashes every file via POST /api/rescan when forceRehash is true", async () => {
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     await app.inject({
@@ -108,11 +96,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("publishes rescan progress to the job store and clears it on completion via POST /api/rescan", async () => {
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
@@ -132,11 +116,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   it("reports files missing from the (unconfigured) destination via POST /api/reconcile", async () => {
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "a.png"), "fake-bytes-a");
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
@@ -162,11 +142,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       path.join(tempDir.path, "core-routes-test", "forest.png"),
       "fake-bytes-forest",
     );
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
@@ -195,11 +171,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     );
     await fs.mkdir(path.join(tempDir.path, "core-routes-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir.path, "core-routes-test", "forest.png"), minimalPng);
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
     const observedJobs: unknown[] = [];
     const unsubscribe = subscribeToJobChanges((job) => observedJobs.push(job));
@@ -218,11 +190,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("reports the batch diff via GET /api/diff", async () => {
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     await db
@@ -257,11 +225,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       ])
       .execute();
 
-    const app = buildApp({
-      webDistDir: null,
-      assetTreeRoot: tempDir.path,
-      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
-    });
+    const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({

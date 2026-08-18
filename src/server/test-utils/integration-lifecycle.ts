@@ -13,7 +13,7 @@ import { db } from "#server/db/index.ts";
 // applies to and which stay fully custom (raw SQL assertions, full-app
 // wiring, external binaries).
 
-interface TempDirHandle {
+export interface TempDirHandle {
   path: string;
 }
 
