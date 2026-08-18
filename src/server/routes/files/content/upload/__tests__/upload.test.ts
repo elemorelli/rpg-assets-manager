@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
@@ -91,5 +92,14 @@ describe("uploadFile", () => {
       .executeTakeFirstOrThrow();
 
     expect(row.hash).not.toEqual("stale-hash");
+  });
+
+  it("invalidates the cached local hash index so the next read reflects the upload", async () => {
+    await getLocalHashIndex(db);
+
+    await uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("fake-png-bytes"));
+    const index = await getLocalHashIndex(db);
+
+    expect(index.has(`${PREFIX}forest.png`)).toBe(true);
   });
 });

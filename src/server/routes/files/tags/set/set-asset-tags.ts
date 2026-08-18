@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
@@ -49,6 +50,8 @@ export const setAssetTags = async (
     .values({ path: relativePath, size: stat.size, mtime: new Date(stat.mtimeMs), hash, tags })
     .onConflict((oc) => oc.column("path").doUpdateSet({ tags }))
     .execute();
+
+  invalidateLocalHashIndex(db);
 
   return tags;
 };

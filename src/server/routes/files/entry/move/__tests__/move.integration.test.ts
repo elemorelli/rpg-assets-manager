@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
 
+import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
 import {
@@ -120,5 +121,20 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       `${PREFIX}sprites/a.png`,
       `${PREFIX}sprites/forest/b.png`,
     ]);
+  });
+
+  it("invalidates the cached local hash index so a renamed path is reflected immediately", async () => {
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "forest.png"), "fake-png-bytes");
+    await db
+      .insertInto("assets")
+      .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
+      .execute();
+
+    await getLocalHashIndex(db);
+    await moveEntry(db, tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
+    const index = await getLocalHashIndex(db);
+
+    expect(index.has(`${PREFIX}forest.png`)).toBe(false);
+    expect(index.has(`${PREFIX}forest-renamed.png`)).toBe(true);
   });
 });

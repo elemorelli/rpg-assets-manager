@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { type Kysely, sql } from "kysely";
 
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { pathExists } from "#server/utils/path-exists.ts";
@@ -52,4 +53,6 @@ export const moveEntry = async (
     END
     WHERE path = ${relativeFrom} OR path LIKE ${descendantLikePattern}
   `.execute(db);
+
+  invalidateLocalHashIndex(db);
 };

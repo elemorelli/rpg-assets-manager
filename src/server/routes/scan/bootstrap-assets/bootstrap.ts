@@ -2,6 +2,10 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import {
+  invalidateLocalHashIndex,
+  invalidateRemoteHashIndex,
+} from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
@@ -50,6 +54,9 @@ export const bootstrapAssets = async (
 
     inserted += 1;
   }
+
+  invalidateLocalHashIndex(db);
+  invalidateRemoteHashIndex(db);
 
   return { inserted, skipped };
 };

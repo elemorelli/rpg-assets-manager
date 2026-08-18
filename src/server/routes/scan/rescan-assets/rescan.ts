@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
@@ -101,6 +102,8 @@ export const rescanAssets = async (
   for (const removedPath of removedPaths) {
     await db.deleteFrom("assets").where("path", "=", removedPath).execute();
   }
+
+  invalidateLocalHashIndex(db);
 
   return {
     hashed: plan.toHash.length,

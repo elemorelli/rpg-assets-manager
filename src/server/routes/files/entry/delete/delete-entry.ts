@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
@@ -31,4 +32,6 @@ export const deleteEntry = async (
       eb.or([eb("path", "=", relativePath), eb("path", "like", descendantLikePattern)]),
     )
     .execute();
+
+  invalidateLocalHashIndex(db);
 };

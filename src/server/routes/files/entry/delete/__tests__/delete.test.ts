@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import { HttpError } from "#server/errors/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
@@ -96,5 +97,20 @@ describe("deleteEntry", () => {
       .execute();
 
     expect(remainingRows).toEqual([]);
+  });
+
+  it("invalidates the cached local hash index so a deleted path is no longer present", async () => {
+    await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
+    await db
+      .insertInto("assets")
+      .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
+      .execute();
+
+    await getLocalHashIndex(db);
+    await deleteEntry(db, tempDir, `${PREFIX}forest.png`);
+    const index = await getLocalHashIndex(db);
+
+    expect(index.has(`${PREFIX}forest.png`)).toBe(false);
   });
 });

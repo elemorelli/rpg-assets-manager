@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
+import { getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import { db } from "#server/db/index.ts";
 import {
   cleanupAssetsByPrefix,
@@ -164,5 +165,29 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       '["https://assets.example.com/apply-batch-test/old.png", "https://assets.example.com/apply-batch-test/new.png"]',
     );
     expect(syncRun.world_acknowledgements).toEqual({ kingmaker: false, "stolen-fate": false });
+  });
+
+  it("invalidates the cached remote hash index after mirroring changes", async () => {
+    await fs.mkdir(path.join(rootDir.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(rootDir.path, `${PREFIX}added.png`), "added-bytes");
+    await fs.writeFile(path.join(destinationRoot.path, "placeholder"), "");
+    await db
+      .insertInto("assets")
+      .values([{ path: `${PREFIX}added.png`, size: 11, mtime: new Date(), hash: "hash-added" }])
+      .execute();
+
+    await getRemoteHashIndex(db);
+    const summary = await applyBatch(db, {
+      rootDir: rootDir.path,
+      destinationRoot: destinationRoot.path,
+      baseUrl: "https://assets.example.com",
+      dryRun: false,
+      purge: vi.fn().mockResolvedValue(undefined),
+      foundryWorldNames: [],
+    });
+    createdSyncRunIds.push(summary.syncRunId);
+
+    const remoteIndex = await getRemoteHashIndex(db);
+    expect(remoteIndex.get(`${PREFIX}added.png`)?.hash).toBe("hash-added");
   });
 });

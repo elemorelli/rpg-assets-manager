@@ -1,5 +1,6 @@
 import type { Kysely } from "kysely";
 
+import { invalidateRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
@@ -73,6 +74,7 @@ export const applyBatch = async (
   try {
     await runRcloneOperations(deps.rootDir, deps.destinationRoot, diff, onProgress);
     await db.transaction().execute((trx) => mirrorRemoteAssets(trx, diff));
+    invalidateRemoteHashIndex(db);
     await deps.purge(purgeUrls);
 
     const generatedMacro = generateMacro(diff.renamed, deps.baseUrl, deps.foundryWorldNames);

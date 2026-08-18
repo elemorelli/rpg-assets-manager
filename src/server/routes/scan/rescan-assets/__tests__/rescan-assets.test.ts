@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
 import { rescanAssets } from "../rescan.ts";
@@ -107,5 +108,19 @@ describe("rescanAssets", () => {
 
     expect(progressUpdates[0]).toEqual({ done: 0, total: 2 });
     expect(progressUpdates.at(-1)).toEqual({ done: 2, total: 2 });
+  });
+
+  it("invalidates the cached local hash index after a rescan removes a deleted file", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
+    await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
+    await rescanAssets(db, tempDir);
+
+    await getLocalHashIndex(db);
+    await fs.rm(path.join(tempDir, "rescan-test", "removed.png"));
+    await rescanAssets(db, tempDir);
+    const index = await getLocalHashIndex(db);
+
+    expect(index.has(`${PREFIX}removed.png`)).toBe(false);
+    expect(index.has(`${PREFIX}stays.png`)).toBe(true);
   });
 });

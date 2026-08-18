@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
@@ -35,4 +36,6 @@ export const uploadFile = async (
       }),
     )
     .execute();
+
+  invalidateLocalHashIndex(db);
 };

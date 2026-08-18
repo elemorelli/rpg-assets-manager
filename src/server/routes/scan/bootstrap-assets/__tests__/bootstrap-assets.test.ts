@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { getLocalHashIndex, getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
 import { bootstrapAssets } from "../bootstrap.ts";
@@ -56,5 +57,18 @@ describe("bootstrapAssets", () => {
     const secondSummary = await bootstrapAssets(db, tempDir);
 
     expect(secondSummary).toEqual({ inserted: 1, skipped: 1 });
+  });
+
+  it("invalidates both cached hash indexes after writing the snapshot", async () => {
+    await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
+
+    await getLocalHashIndex(db);
+    await getRemoteHashIndex(db);
+    await bootstrapAssets(db, tempDir);
+    const localIndex = await getLocalHashIndex(db);
+    const remoteIndex = await getRemoteHashIndex(db);
+
+    expect(localIndex.has(`${PREFIX}a.png`)).toBe(true);
+    expect(remoteIndex.has(`${PREFIX}a.png`)).toBe(true);
   });
 });
