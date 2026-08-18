@@ -1,9 +1,10 @@
-import { type ChangeEvent, type JSX, type KeyboardEvent, useEffect, useRef, useState } from "react";
+import { type JSX, useState } from "react";
 
 import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
+import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
 import styles from "./lightbox-details.module.css";
 
@@ -22,46 +23,16 @@ export const LightboxDetails = ({
   availableTags,
   onTagsChange,
 }: LightboxDetailsProps): JSX.Element => {
-  const [isRenaming, setIsRenaming] = useState<boolean>(false);
-  const [renameDraft, setRenameDraft] = useState<string>(entry.name);
+  const {
+    isRenaming,
+    renameDraft,
+    renameInputRef,
+    startRenaming,
+    commitRename,
+    handleRenameKeyDown,
+    handleRenameDraftChange,
+  } = useInlineRename(entry.name, (newName) => onRename(entry, newName));
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
-  const renameInputRef = useRef<HTMLInputElement | null>(null);
-
-  useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [isRenaming]);
-
-  const startRenaming = (): void => {
-    setRenameDraft(entry.name);
-    setIsRenaming(true);
-  };
-
-  const commitRename = (): void => {
-    const trimmed = renameDraft.trim();
-
-    if (trimmed && trimmed !== entry.name) {
-      onRename(entry, trimmed);
-    }
-
-    setIsRenaming(false);
-  };
-
-  const handleRenameKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      commitRename();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setIsRenaming(false);
-    }
-  };
-
-  const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setRenameDraft(event.target.value);
-  };
 
   const handleConfirmDelete = (): void => {
     onDelete(entry);

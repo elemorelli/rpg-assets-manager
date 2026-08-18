@@ -1,20 +1,13 @@
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import {
-  type ChangeEvent,
-  type DragEvent,
-  type JSX,
-  type KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type DragEvent, type JSX, useEffect, useRef, useState } from "react";
 
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
+import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
 import styles from "./tree-view.module.css";
 
@@ -72,9 +65,15 @@ export const TreeNode = ({
   onTagsChange,
 }: TreeNodeProps): JSX.Element => {
   const [dragOver, setDragOver] = useState<boolean>(false);
-  const [isRenaming, setIsRenaming] = useState<boolean>(false);
-  const [renameDraft, setRenameDraft] = useState<string>(name);
-  const renameInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    isRenaming,
+    renameDraft,
+    renameInputRef,
+    startRenaming,
+    commitRename,
+    handleRenameKeyDown,
+    handleRenameDraftChange,
+  } = useInlineRename(name, (newName) => onRename(path, newName));
   const dragExpandTimerRef = useRef<number | null>(null);
   const contextMenu = useContextMenu();
   const isExpanded = expandedPaths.has(path);
@@ -82,13 +81,6 @@ export const TreeNode = ({
   const isDropTarget = canDropOnPath(path);
   const state = childrenByPath[path];
   const nodeEntry: DirectoryEntry = { name, type: "directory" };
-
-  useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [isRenaming]);
 
   const clearDragExpandTimer = (): void => {
     if (dragExpandTimerRef.current !== null) {
@@ -136,35 +128,6 @@ export const TreeNode = ({
     setDragOver(false);
     clearDragExpandTimer();
     onDropEntry(path);
-  };
-
-  const startRenaming = (): void => {
-    setRenameDraft(name);
-    setIsRenaming(true);
-  };
-
-  const commitRename = (): void => {
-    const trimmed = renameDraft.trim();
-
-    if (trimmed && trimmed !== name) {
-      onRename(path, trimmed);
-    }
-
-    setIsRenaming(false);
-  };
-
-  const handleRenameKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      commitRename();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setIsRenaming(false);
-    }
-  };
-
-  const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setRenameDraft(event.target.value);
   };
 
   return (

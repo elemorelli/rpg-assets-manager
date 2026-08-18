@@ -1,16 +1,7 @@
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import {
-  type ChangeEvent,
-  type DragEvent,
-  type JSX,
-  type KeyboardEvent,
-  type MouseEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { type DragEvent, type JSX, type MouseEvent, useState } from "react";
 
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
@@ -21,6 +12,7 @@ import { isPreviewableEntry } from "#utils/preview.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
 import { modifierFromClick, type SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
+import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
 import styles from "./directory-table.module.css";
 
@@ -58,9 +50,15 @@ export const DirectoryTableRow = ({
   onOpenLightbox,
 }: DirectoryTableRowProps): JSX.Element => {
   const [dragOver, setDragOver] = useState<boolean>(false);
-  const [isRenaming, setIsRenaming] = useState<boolean>(false);
-  const [renameDraft, setRenameDraft] = useState<string>(entry.name);
-  const renameInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    isRenaming,
+    renameDraft,
+    renameInputRef,
+    startRenaming,
+    commitRename,
+    handleRenameKeyDown,
+    handleRenameDraftChange,
+  } = useInlineRename(entry.name, (newName) => onRename(entry, newName));
   const contextMenu = useContextMenu();
   const sizeLabel =
     entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
@@ -68,13 +66,6 @@ export const DirectoryTableRow = ({
   const isNew = entry.syncStatus === "new";
   const isRenamed = entry.syncStatus === "renamed";
   const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
-
-  useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
-    }
-  }, [isRenaming]);
 
   const handleDragOver = (event: DragEvent<HTMLTableRowElement>): void => {
     if (!isDropTarget) {
@@ -138,35 +129,6 @@ export const DirectoryTableRow = ({
   const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     contextMenu.open(event);
-  };
-
-  const startRenaming = (): void => {
-    setRenameDraft(entry.name);
-    setIsRenaming(true);
-  };
-
-  const commitRename = (): void => {
-    const trimmed = renameDraft.trim();
-
-    if (trimmed && trimmed !== entry.name) {
-      onRename(entry, trimmed);
-    }
-
-    setIsRenaming(false);
-  };
-
-  const handleRenameKeyDown = (event: KeyboardEvent<HTMLInputElement>): void => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      commitRename();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setIsRenaming(false);
-    }
-  };
-
-  const handleRenameDraftChange = (event: ChangeEvent<HTMLInputElement>): void => {
-    setRenameDraft(event.target.value);
   };
 
   return (
