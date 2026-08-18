@@ -11,6 +11,7 @@ import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
+import { SyncModal } from "#components/sync-modal/sync-modal.tsx";
 import { SyncSection } from "#components/sync-section/sync-section.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
@@ -42,6 +43,8 @@ export const FileBrowser = (): JSX.Element => {
 
   const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
+  const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
+  const [syncHistoryRefreshTrigger, setSyncHistoryRefreshTrigger] = useState<number>(0);
 
   const {
     viewMode,
@@ -193,6 +196,7 @@ export const FileBrowser = (): JSX.Element => {
                   onUploadFile={handleUploadFile}
                   onRescan={handleRescan}
                   onConvert={() => setConvertModalOpen(true)}
+                  onSync={() => setSyncModalOpen(true)}
                 />
                 {searchResults === null && tagFilterResults === null && (
                   <ViewControls
@@ -307,12 +311,21 @@ export const FileBrowser = (): JSX.Element => {
                 onConverted={() => loadDirectory(currentPath)}
               />
             )}
+            {isSyncModalOpen && (
+              <SyncModal
+                onClose={() => setSyncModalOpen(false)}
+                onApplied={() => {
+                  loadDirectory(currentPath);
+                  setSyncHistoryRefreshTrigger((trigger) => trigger + 1);
+                }}
+              />
+            )}
           </div>
         }
         drawer={
           <PanelDrawer expandTrigger={drawerExpandTrigger}>
             <JobProgress onJobStarted={handleJobStarted} />
-            <SyncSection onApplied={() => loadDirectory(currentPath)} />
+            <SyncSection historyRefreshTrigger={syncHistoryRefreshTrigger} />
           </PanelDrawer>
         }
       />

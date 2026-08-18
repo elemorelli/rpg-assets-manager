@@ -28,6 +28,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -47,6 +48,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -66,6 +68,7 @@ describe("Toolbar", () => {
         onUploadFile={onUploadFile}
         onRescan={vi.fn()}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     const hiddenInput = document.querySelector('input[type="file"]');
@@ -90,6 +93,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={onRescan}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -108,6 +112,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={onRescan}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
@@ -126,6 +131,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
     const rehashButton = screen.getByRole("button", { name: "Full rehash" });
@@ -145,6 +151,7 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
         onConvert={vi.fn()}
+        onSync={vi.fn()}
       />,
     );
 
@@ -153,6 +160,7 @@ describe("Toolbar", () => {
     expect(screen.getByRole("button", { name: "Rescan" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Full rehash" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Convert" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Sync" })).toBeDisabled();
   });
 
   it("triggers onConvert when Convert is clicked", async () => {
@@ -166,10 +174,30 @@ describe("Toolbar", () => {
         onUploadFile={vi.fn()}
         onRescan={vi.fn()}
         onConvert={onConvert}
+        onSync={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Convert" }));
 
     expect(onConvert).toHaveBeenCalled();
+  });
+
+  it("triggers onSync when Sync is clicked", async () => {
+    const user = userEvent.setup();
+    const onSync = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onConvert={vi.fn()}
+        onSync={onSync}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Sync" }));
+
+    expect(onSync).toHaveBeenCalled();
   });
 });

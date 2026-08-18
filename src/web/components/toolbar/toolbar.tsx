@@ -1,5 +1,6 @@
 import {
   faArrowsRotate,
+  faCloudArrowUp,
   faFolderPlus,
   faHashtag,
   faRightLeft,
@@ -17,6 +18,7 @@ export interface ToolbarProps {
   onUploadFile: (file: File) => void;
   onRescan: (forceRehash: boolean) => void;
   onConvert: () => void;
+  onSync: () => void;
 }
 
 export const Toolbar = ({
@@ -25,6 +27,7 @@ export const Toolbar = ({
   onUploadFile,
   onRescan,
   onConvert,
+  onSync,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -95,6 +98,9 @@ export const Toolbar = ({
           title="Convert"
           onClick={onConvert}>
           <FontAwesomeIcon icon={faRightLeft} />
+        </button>
+        <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
+          <FontAwesomeIcon icon={faCloudArrowUp} />
         </button>
         <input
           ref={fileInputRef}

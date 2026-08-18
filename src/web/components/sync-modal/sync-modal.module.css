@@ -1,13 +1,11 @@
-.panel {
+.section {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
 }
 
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
+.section + .section {
+  margin-top: var(--spacing-md);
 }
 
 .list {

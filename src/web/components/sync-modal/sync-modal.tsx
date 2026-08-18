@@ -1,13 +1,15 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { type JSX, useMemo, useRef, useState } from "react";
+import { type JSX, useEffect, useMemo, useRef, useState } from "react";
 
+import { Modal } from "#components/modal/modal.tsx";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
 
-import styles from "./sync-panel.module.css";
+import styles from "./sync-modal.module.css";
 
-export interface SyncPanelProps {
+export interface SyncModalProps {
+  onClose: () => void;
   onApplied: () => void;
 }
 
@@ -38,11 +40,18 @@ const buildChangeRows = (diff: BatchDiff): ChangeRow[] => [
   })),
 ];
 
-export const SyncPanel = ({ onApplied }: SyncPanelProps): JSX.Element => {
+export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element => {
   const [diff, setDiff] = useState<BatchDiff | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    api
+      .fetchDiff()
+      .then(setDiff)
+      .catch((caught: unknown) => setError(describeError(caught)));
+  }, []);
 
   const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
 
@@ -52,17 +61,6 @@ export const SyncPanel = ({ onApplied }: SyncPanelProps): JSX.Element => {
     estimateSize: () => ROW_HEIGHT_PX,
   });
 
-  const handleCheck = (): void => {
-    setBusy(true);
-    setError(null);
-
-    api
-      .fetchDiff()
-      .then(setDiff)
-      .catch((caught: unknown) => setError(describeError(caught)))
-      .finally(() => setBusy(false));
-  };
-
   const handleApply = (): void => {
     setBusy(true);
     setError(null);
@@ -70,28 +68,42 @@ export const SyncPanel = ({ onApplied }: SyncPanelProps): JSX.Element => {
     api
       .applyBatch()
       .then(() => {
-        setDiff(null);
         onApplied();
+        onClose();
       })
       .catch((caught: unknown) => setError(describeError(caught)))
       .finally(() => setBusy(false));
   };
 
-  const hasNoChanges =
+  const hasNothingToSync =
     diff !== null &&
     diff.added.length === 0 &&
     diff.modified.length === 0 &&
     diff.deleted.length === 0 &&
     diff.renamed.length === 0;
 
-  return (
-    <div className={styles.panel}>
-      <button type="button" disabled={busy} onClick={handleCheck}>
-        Check for changes
+  const footer =
+    diff && !hasNothingToSync ? (
+      <>
+        <button type="button" disabled={busy} onClick={onClose}>
+          Cancel
+        </button>
+        <button type="button" disabled={busy} onClick={handleApply}>
+          Apply changes
+        </button>
+      </>
+    ) : (
+      <button type="button" disabled={busy} onClick={onClose}>
+        Close
       </button>
+    );
+
+  return (
+    <Modal title="Sync changes" onClose={onClose} footer={footer}>
       {error && <p className={styles.error}>{error}</p>}
-      {hasNoChanges && <p>Nothing to sync.</p>}
-      {diff && !hasNoChanges && (
+      {!diff && !error && <p>Checking for changes...</p>}
+      {hasNothingToSync && <p>Nothing to sync.</p>}
+      {diff && !hasNothingToSync && (
         <div className={styles.section}>
           <p>
             {`${diff.added.length} added, ${diff.modified.length} modified, ${diff.deleted.length} deleted, ${diff.renamed.length} renamed`}
@@ -140,11 +152,8 @@ export const SyncPanel = ({ onApplied }: SyncPanelProps): JSX.Element => {
               ))}
             </div>
           </div>
-          <button type="button" disabled={busy} onClick={handleApply}>
-            Apply changes
-          </button>
         </div>
       )}
-    </div>
+    </Modal>
   );
 };
