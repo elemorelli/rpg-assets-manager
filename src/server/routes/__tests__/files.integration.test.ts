@@ -1,9 +1,10 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../app.ts";
+import { db } from "../../db/index.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
 import { loginTestSession } from "../../test-utils/login-test-session.ts";
 
@@ -18,7 +19,15 @@ describe("file routes", () => {
   });
 
   afterEach(async () => {
+    // uploadFile() upserts into the assets table as a side effect, so the upload
+    // test below leaves a real row behind even though the rest of this file is
+    // filesystem-only.
+    await db.deleteFrom("assets").where("path", "=", "tiles/forest.png").execute();
     await fs.rm(tempDir, { recursive: true, force: true });
+  });
+
+  afterAll(async () => {
+    await db.destroy();
   });
 
   it("lists a directory via GET /api/files", async () => {

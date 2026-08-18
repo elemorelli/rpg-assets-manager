@@ -13,6 +13,7 @@ const PREFIX = "core-routes-test/";
 
 describe("core routes (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
+  let createdSyncRunIds: number[] = [];
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "core-routes-test-"));
@@ -21,6 +22,10 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   afterEach(async () => {
     await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
     await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
+    for (const syncRunId of createdSyncRunIds) {
+      await db.deleteFrom("sync_runs").where("id", "=", String(syncRunId)).execute();
+    }
+    createdSyncRunIds = [];
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
@@ -273,7 +278,9 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect(response.json()).toMatchObject({ outcome: "dry_run", added: 1 });
+    const body = response.json();
+    createdSyncRunIds.push(body.syncRunId);
+    expect(body).toMatchObject({ outcome: "dry_run", added: 1 });
 
     const remoteRow = await db
       .selectFrom("remote_assets")

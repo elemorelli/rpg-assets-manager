@@ -11,6 +11,7 @@ const PREFIX = "apply-batch-test/";
 
 let rootDir = "";
 let destinationRoot = "";
+let createdSyncRunIds: number[] = [];
 
 beforeEach(async () => {
   rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
@@ -20,6 +21,10 @@ beforeEach(async () => {
 afterEach(async () => {
   await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
   await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
+  for (const syncRunId of createdSyncRunIds) {
+    await db.deleteFrom("sync_runs").where("id", "=", String(syncRunId)).execute();
+  }
+  createdSyncRunIds = [];
   await fs.rm(rootDir, { recursive: true, force: true });
   await fs.rm(destinationRoot, { recursive: true, force: true });
 });
@@ -46,6 +51,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       purge,
       foundryWorldNames: [],
     });
+
+    createdSyncRunIds.push(summary.syncRunId);
 
     expect(summary.outcome).toBe("dry_run");
     expect(summary.added).toBeGreaterThanOrEqual(1);
@@ -100,6 +107,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       onProgress,
     );
 
+    createdSyncRunIds.push(summary.syncRunId);
+
     expect(summary.outcome).toBe("applied");
     expect(await fs.readFile(path.join(destinationRoot, `${PREFIX}added.png`), "utf8")).toBe(
       "added-bytes",
@@ -150,6 +159,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       purge: vi.fn().mockResolvedValue(undefined),
       foundryWorldNames: ["kingmaker", "stolen-fate"],
     });
+
+    createdSyncRunIds.push(summary.syncRunId);
 
     expect(summary.renamed).toBe(1);
 

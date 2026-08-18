@@ -10,6 +10,12 @@ describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres
   });
 
   it("returns the distinct tags in use, alphabetically", async () => {
+    // listDistinctTags() reads across the whole table by design, so scope the
+    // assertion to the tags this test introduces rather than the full result:
+    // any tag already in the table (another suite's leftover row, real dev
+    // data) must not make this test flaky.
+    const tagsBeforeInsert = await listDistinctTags();
+
     await db
       .insertInto("assets")
       .values([
@@ -24,6 +30,9 @@ describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres
       ])
       .execute();
 
-    expect(await listDistinctTags()).toEqual(["loot", "npc"]);
+    const tagsAfterInsert = await listDistinctTags();
+    const introducedTags = tagsAfterInsert.filter((tag) => !tagsBeforeInsert.includes(tag));
+
+    expect(introducedTags).toEqual(["loot", "npc"]);
   });
 });
