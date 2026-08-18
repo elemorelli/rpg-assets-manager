@@ -1,5 +1,5 @@
-import { type DragEvent, type JSX, useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { type JSX, useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
 
 import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
@@ -16,48 +16,31 @@ import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { ViewControls } from "#components/view-controls/view-controls.tsx";
-import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
-import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
-import { isValidDropTarget } from "#web/utils/drag-drop.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
-import {
-  applySelectionClick,
-  initialSelectionState,
-  type SelectionClickModifier,
-  type SelectionState,
-} from "#web/utils/row-selection.ts";
+import { initialSelectionState } from "#web/utils/row-selection.ts";
 import { runBatchOperation } from "#web/utils/run-batch-operation.ts";
 import { sortEntries } from "#web/utils/sort-entries.ts";
 import { useViewPreferences } from "#web/utils/use-view-preferences.ts";
 
 import styles from "./file-browser.module.css";
+import { useAvailableTags } from "./use-available-tags.ts";
+import { useDirectoryActions } from "./use-directory-actions.ts";
+import { useDirectoryListing } from "./use-directory-listing.ts";
+import { useEntrySelectionAndDrag } from "./use-entry-selection-and-drag.ts";
+import { useFileDropzone } from "./use-file-dropzone.ts";
+import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
+import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 
 export const FileBrowser = (): JSX.Element => {
   const params = useParams();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
   const currentPath = params["*"] ?? "";
-  const query = searchParams.get("q") ?? "";
-  const tagsParam = searchParams.get("tags") ?? "";
-  const selectedTags = tagsParam ? tagsParam.split(",") : [];
 
-  const [entries, setEntries] = useState<DirectoryEntry[]>([]);
-  const [searchResults, setSearchResults] = useState<SearchResultEntry[] | null>(null);
-  const [tagFilterResults, setTagFilterResults] = useState<SearchResultEntry[] | null>(null);
-  const [busy, setBusy] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-  const [draggedEntries, setDraggedEntries] = useState<DirectoryEntry[]>([]);
   const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
-  const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
-  const [lightboxEntryName, setLightboxEntryName] = useState<string | null>(null);
-  const [isDropzoneActive, setIsDropzoneActive] = useState<boolean>(false);
-  const externalDragCounterRef = useRef<number>(0);
 
   const {
     viewMode,
@@ -70,80 +53,9 @@ export const FileBrowser = (): JSX.Element => {
     setGroupCriterion,
   } = useViewPreferences(currentPath);
 
-  const loadDirectory = useCallback(async (path: string): Promise<void> => {
-    setBusy(true);
-    setError(null);
-
-    try {
-      const listed = await api.listDirectory(path);
-
-      setEntries(listed);
-    } catch (caught) {
-      setError(describeError(caught));
-    } finally {
-      setBusy(false);
-    }
-  }, []);
-
-  const refreshTags = useCallback(async (): Promise<void> => {
-    const tags = await api.fetchTags();
-
-    setAvailableTags(tags);
-  }, []);
-
-  const handleJobStarted = useCallback((): void => {
-    setDrawerExpandTrigger((previous) => (previous ?? 0) + 1);
-  }, []);
-
-  useEffect(() => {
-    loadDirectory(currentPath);
-    setSelection(initialSelectionState);
-  }, [currentPath, loadDirectory]);
-
-  useEffect(() => {
-    refreshTags();
-  }, [refreshTags]);
-
-  useEffect(() => {
-    const trimmedQuery = query.trim();
-
-    if (!trimmedQuery) {
-      setSearchResults(null);
-
-      return;
-    }
-
-    api
-      .searchEntries(trimmedQuery)
-      .then(setSearchResults)
-      .catch((caught: unknown) => setError(describeError(caught)));
-  }, [query]);
-
-  useEffect(() => {
-    if (selectedTags.length === 0) {
-      setTagFilterResults(null);
-
-      return;
-    }
-
-    api
-      .fetchFilesByTag(selectedTags)
-      .then(setTagFilterResults)
-      .catch((caught: unknown) => setError(describeError(caught)));
-    // selectedTags is a fresh array every render; depend on tagsParam instead to avoid refetching on every render.
-  }, [tagsParam]);
-
-  const runAction = (action: () => Promise<void>): void => {
-    setBusy(true);
-    setError(null);
-
-    action()
-      .then(() => loadDirectory(currentPath))
-      .catch((caught: unknown) => {
-        setError(describeError(caught));
-        setBusy(false);
-      });
-  };
+  const { entries, busy, error, setBusy, setError, loadDirectory, runAction } =
+    useDirectoryListing(currentPath);
+  const { availableTags, refreshTags } = useAvailableTags();
 
   const navigateToPath = (path: string): void => {
     navigate(`/${path}`);
@@ -153,206 +65,69 @@ export const FileBrowser = (): JSX.Element => {
     navigateToPath(joinRelativePath(currentPath, name));
   };
 
-  const handleCreateDirectory = (name: string): void => {
-    runAction(() => api.createDirectory(joinRelativePath(currentPath, name)));
-  };
+  const {
+    handleCreateDirectory,
+    handleUploadFile,
+    handleRescan,
+    handleRename,
+    handleDelete,
+    handleTreeRename,
+    handleTreeDelete,
+    handleTreeTagsChange,
+    handleTagsChange,
+  } = useDirectoryActions({ currentPath, runAction, refreshTags });
 
-  const handleUploadFile = (file: File): void => {
-    runAction(() => api.uploadFile(currentPath, file));
-  };
+  const {
+    selectedTags,
+    searchResults,
+    tagFilterResults,
+    handleSearch,
+    handleToggleTag,
+    handleOpenSearchResult,
+  } = useSearchAndTagFilter({ onNavigate: navigateToPath, onError: setError });
 
-  const handleRescan = (forceRehash: boolean): void => {
-    runAction(() => api.rescan(forceRehash).then(() => undefined));
-  };
+  const handleJobStarted = useCallback((): void => {
+    setDrawerExpandTrigger((previous) => (previous ?? 0) + 1);
+  }, []);
 
-  const handleRename = (entry: DirectoryEntry, newName: string): void => {
-    runAction(() => api.renameEntry(joinRelativePath(currentPath, entry.name), newName));
-  };
+  const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
+  const groups = groupEntries(sortedEntries, groupCriterion);
 
-  const handleDelete = (entry: DirectoryEntry): void => {
-    runAction(() => api.deleteEntry(joinRelativePath(currentPath, entry.name)));
-  };
+  const {
+    selection,
+    setSelection,
+    handleSelectRow,
+    handleDragStart,
+    handleDragEnd,
+    canDropOnDirectory,
+    canDropOnEntry,
+    handleDropOnDirectory,
+    handleDropOnEntry,
+  } = useEntrySelectionAndDrag({
+    entries,
+    sortedEntries,
+    currentPath,
+    setBusy,
+    setError,
+    loadDirectory,
+  });
 
-  const handleTreeRename = (path: string, newName: string): void => {
-    runAction(() => api.renameEntry(path, newName));
-  };
+  useEffect(() => {
+    setSelection(initialSelectionState);
+  }, [currentPath, setSelection]);
 
-  const handleTreeDelete = (path: string): void => {
-    runAction(() => api.deleteEntry(path));
-  };
+  const previewableEntries = sortedEntries.filter((entry) => isPreviewableEntry(entry));
 
-  const handleTreeTagsChange = (path: string, tags: string[]): void => {
-    runAction(() => api.setAssetTags(path, tags).then(() => refreshTags()));
-  };
-
-  const handleSearch = (nextQuery: string): void => {
-    const trimmed = nextQuery.trim();
-
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-
-      if (trimmed) {
-        next.set("q", trimmed);
-      } else {
-        next.delete("q");
-      }
-
-      return next;
-    });
-  };
-
-  const handleTagsChange = (entry: DirectoryEntry, tags: string[]): void => {
-    const entryPath = joinRelativePath(currentPath, entry.name);
-
-    runAction(() => api.setAssetTags(entryPath, tags).then(() => refreshTags()));
-  };
-
-  const handleOpenLightbox = (entry: DirectoryEntry): void => {
-    setLightboxEntryName(entry.name);
-  };
-
-  const handleCloseLightbox = (): void => {
-    setLightboxEntryName(null);
-  };
-
-  const handleLightboxPrev = (): void => {
-    if (lightboxIndex > 0) {
-      setLightboxEntryName(previewableEntries[lightboxIndex - 1].name);
-    }
-  };
-
-  const handleLightboxNext = (): void => {
-    if (lightboxIndex !== -1 && lightboxIndex < previewableEntries.length - 1) {
-      setLightboxEntryName(previewableEntries[lightboxIndex + 1].name);
-    }
-  };
-
-  const handleLightboxRename = (entry: DirectoryEntry, newName: string): void => {
-    handleRename(entry, newName);
-    setLightboxEntryName(newName);
-  };
-
-  const handleLightboxDelete = (entry: DirectoryEntry): void => {
-    const fallbackEntry =
-      previewableEntries[lightboxIndex + 1] ?? previewableEntries[lightboxIndex - 1];
-
-    handleDelete(entry);
-    setLightboxEntryName(fallbackEntry?.name ?? null);
-  };
-
-  const handleToggleTag = (tag: string): void => {
-    const nextSelectedTags = selectedTags.includes(tag)
-      ? selectedTags.filter((selected) => selected !== tag)
-      : [...selectedTags, tag];
-
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-
-      if (nextSelectedTags.length > 0) {
-        next.set("tags", nextSelectedTags.join(","));
-      } else {
-        next.delete("tags");
-      }
-
-      return next;
-    });
-  };
-
-  const handleOpenSearchResult = (entry: SearchResultEntry): void => {
-    const targetDirectory =
-      entry.type === "directory" ? entry.relativePath : parentDirectory(entry.relativePath);
-
-    navigateToPath(targetDirectory);
-  };
-
-  const handleSelectRow = (entry: DirectoryEntry, modifier: SelectionClickModifier): void => {
-    const orderedNames = sortedEntries.map((candidate) => candidate.name);
-
-    setSelection((prev) => applySelectionClick(prev, orderedNames, entry.name, modifier));
-  };
-
-  const handleDragStart = (entry: DirectoryEntry): void => {
-    const isPartOfSelection = selection.selectedNames.has(entry.name);
-    const namesToDrag = isPartOfSelection ? selection.selectedNames : new Set([entry.name]);
-
-    if (!isPartOfSelection) {
-      setSelection({ selectedNames: namesToDrag, anchorName: entry.name });
-    }
-
-    setDraggedEntries(entries.filter((candidate) => namesToDrag.has(candidate.name)));
-  };
-
-  const handleDragEnd = (): void => {
-    setDraggedEntries([]);
-  };
-
-  const canDropOnDirectory = (targetDirectoryPath: string): boolean => {
-    if (draggedEntries.length === 0) {
-      return false;
-    }
-
-    return draggedEntries.every((entry) =>
-      isValidDropTarget(
-        { relativePath: joinRelativePath(currentPath, entry.name), type: entry.type },
-        targetDirectoryPath,
-      ),
-    );
-  };
-
-  const runBatchMove = (entriesToMove: DirectoryEntry[], targetDirectoryPath: string): void => {
-    setBusy(true);
-    setError(null);
-
-    const performBatchMove = async (): Promise<void> => {
-      const { errorMessage } = await runBatchOperation(
-        entriesToMove,
-        (entry) =>
-          api.moveEntry(
-            joinRelativePath(currentPath, entry.name),
-            joinRelativePath(targetDirectoryPath, entry.name),
-          ),
-        (entry) => entry.name,
-        "Moved",
-      );
-
-      // Refresh the listing before surfacing the outcome: loadDirectory
-      // clears the error state on entry, so setting it beforehand would
-      // have the refresh immediately wipe out a batch-move failure message.
-      await loadDirectory(currentPath);
-
-      if (errorMessage) {
-        setError(errorMessage);
-      } else {
-        setSelection(initialSelectionState);
-      }
-    };
-
-    void performBatchMove();
-  };
-
-  const handleDropOnDirectory = (targetDirectoryPath: string): void => {
-    if (!canDropOnDirectory(targetDirectoryPath)) {
-      setDraggedEntries([]);
-
-      return;
-    }
-
-    const entriesToMove = draggedEntries;
-
-    setDraggedEntries([]);
-    runBatchMove(entriesToMove, targetDirectoryPath);
-  };
-
-  const canDropOnEntry = (targetEntry: DirectoryEntry): boolean =>
-    targetEntry.type === "directory" &&
-    canDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
-
-  const handleDropOnEntry = (targetEntry: DirectoryEntry): void => {
-    handleDropOnDirectory(joinRelativePath(currentPath, targetEntry.name));
-  };
-
-  const carriesExternalFiles = (event: DragEvent<HTMLDivElement>): boolean =>
-    Array.from(event.dataTransfer?.types ?? []).includes("Files");
+  const {
+    lightboxEntry,
+    lightboxIndex,
+    handleOpenLightbox,
+    handleCloseLightbox,
+    handleLightboxPrev,
+    handleLightboxNext,
+    handleLightboxRename,
+    handleLightboxDelete,
+  } = useLightboxNavigation({ previewableEntries, onRename: handleRename, onDelete: handleDelete });
 
   const runBatchUpload = (files: File[]): void => {
     setBusy(true);
@@ -376,62 +151,13 @@ export const FileBrowser = (): JSX.Element => {
     void performBatchUpload();
   };
 
-  const handleDropzoneDragEnter = (event: DragEvent<HTMLDivElement>): void => {
-    if (!carriesExternalFiles(event)) {
-      return;
-    }
-
-    event.preventDefault();
-    externalDragCounterRef.current += 1;
-    setIsDropzoneActive(true);
-  };
-
-  const handleDropzoneDragOver = (event: DragEvent<HTMLDivElement>): void => {
-    if (!carriesExternalFiles(event)) {
-      return;
-    }
-
-    event.preventDefault();
-  };
-
-  const handleDropzoneDragLeave = (event: DragEvent<HTMLDivElement>): void => {
-    if (!carriesExternalFiles(event)) {
-      return;
-    }
-
-    externalDragCounterRef.current -= 1;
-
-    if (externalDragCounterRef.current <= 0) {
-      externalDragCounterRef.current = 0;
-      setIsDropzoneActive(false);
-    }
-  };
-
-  const handleDropzoneDrop = (event: DragEvent<HTMLDivElement>): void => {
-    if (!carriesExternalFiles(event)) {
-      return;
-    }
-
-    event.preventDefault();
-    externalDragCounterRef.current = 0;
-    setIsDropzoneActive(false);
-
-    const files = Array.from(event.dataTransfer?.files ?? []);
-
-    if (files.length > 0) {
-      runBatchUpload(files);
-    }
-  };
-
-  const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
-  const groups = groupEntries(sortedEntries, groupCriterion);
-
-  const previewableEntries = sortedEntries.filter((entry) => isPreviewableEntry(entry));
-  const lightboxIndex =
-    lightboxEntryName === null
-      ? -1
-      : previewableEntries.findIndex((entry) => entry.name === lightboxEntryName);
-  const lightboxEntry = lightboxIndex === -1 ? null : previewableEntries[lightboxIndex];
+  const {
+    isDropzoneActive,
+    handleDropzoneDragEnter,
+    handleDropzoneDragOver,
+    handleDropzoneDragLeave,
+    handleDropzoneDrop,
+  } = useFileDropzone({ onFilesDropped: runBatchUpload });
 
   return (
     <>
