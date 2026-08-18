@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { db } from "#server/db/index.ts";
 
@@ -9,9 +9,19 @@ import { applyBatch } from "../batch.ts";
 
 const PREFIX = "apply-batch-test/";
 
+let rootDir = "";
+let destinationRoot = "";
+
+beforeEach(async () => {
+  rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
+  destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-dest-"));
+});
+
 afterEach(async () => {
   await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
   await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
+  await fs.rm(rootDir, { recursive: true, force: true });
+  await fs.rm(destinationRoot, { recursive: true, force: true });
 });
 
 afterAll(async () => {
@@ -58,8 +68,6 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
 
   it("applies for real: runs rclone against a local destination, updates remote_assets, and purges", async () => {
     const now = new Date();
-    const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
-    const destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-dest-"));
 
     await fs.mkdir(path.join(rootDir, PREFIX.replace(/\/$/, "")), { recursive: true });
     await fs.writeFile(path.join(rootDir, `${PREFIX}added.png`), "added-bytes");
@@ -119,15 +127,9 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       ]),
     );
     expect(onProgress).toHaveBeenCalledWith({ done: 2, total: 2 });
-
-    await fs.rm(rootDir, { recursive: true, force: true });
-    await fs.rm(destinationRoot, { recursive: true, force: true });
   });
 
   it("on a real apply with renames, stores a macro and initial world acknowledgements", async () => {
-    const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
-    const destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-dest-"));
-
     await fs.mkdir(path.join(destinationRoot, PREFIX.replace(/\/$/, "")), { recursive: true });
     await fs.writeFile(path.join(destinationRoot, `${PREFIX}old.png`), "renamed-bytes");
 
@@ -161,8 +163,5 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       '["https://assets.example.com/apply-batch-test/old.png", "https://assets.example.com/apply-batch-test/new.png"]',
     );
     expect(syncRun.world_acknowledgements).toEqual({ kingmaker: false, "stolen-fate": false });
-
-    await fs.rm(rootDir, { recursive: true, force: true });
-    await fs.rm(destinationRoot, { recursive: true, force: true });
   });
 });

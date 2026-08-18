@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../app.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
@@ -13,15 +13,15 @@ const WEBP_MAGIC_END = 12;
 describe("file routes", () => {
   let tempDir = "";
 
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
+  });
+
   afterEach(async () => {
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      tempDir = "";
-    }
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   it("lists a directory via GET /api/files", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
@@ -43,7 +43,6 @@ describe("file routes", () => {
   });
 
   it("rejects an unsafe path with 400", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
       webDistDir: null,
       assetTreeRoot: tempDir,
@@ -61,7 +60,6 @@ describe("file routes", () => {
   });
 
   it("creates a directory via POST /api/files/mkdir", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
       webDistDir: null,
       assetTreeRoot: tempDir,
@@ -81,7 +79,6 @@ describe("file routes", () => {
   });
 
   it("deletes an entry via DELETE /api/files", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
@@ -102,7 +99,6 @@ describe("file routes", () => {
   });
 
   it("renames an entry via POST /api/files/rename", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
@@ -123,7 +119,6 @@ describe("file routes", () => {
   });
 
   it("moves an entry via POST /api/files/move", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
@@ -144,7 +139,6 @@ describe("file routes", () => {
   });
 
   it("uploads a file via POST /api/files/upload", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const app = buildApp({
       webDistDir: null,
       assetTreeRoot: tempDir,
@@ -173,7 +167,6 @@ describe("file routes", () => {
   });
 
   it("searches for entries by name via GET /api/files/search", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.mkdir(path.join(tempDir, "tiles"));
     await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
     const app = buildApp({
@@ -194,7 +187,6 @@ describe("file routes", () => {
   });
 
   it("serves the raw file content via GET /api/files/raw", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
@@ -215,7 +207,6 @@ describe("file routes", () => {
   });
 
   it("generates a thumbnail via GET /api/files/thumbnail", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
     const minimalPngBase64 =
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
     await fs.writeFile(path.join(tempDir, "forest.png"), Buffer.from(minimalPngBase64, "base64"));

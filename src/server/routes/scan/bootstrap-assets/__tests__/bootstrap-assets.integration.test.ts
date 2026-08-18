@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
 
@@ -12,14 +12,15 @@ const PREFIX = "bootstrap-test/";
 describe("bootstrapAssets (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
 
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bootstrap-test-"));
+    await fs.mkdir(path.join(tempDir, "bootstrap-test"), { recursive: true });
+  });
+
   afterEach(async () => {
     await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
     await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
-
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      tempDir = "";
-    }
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   afterAll(async () => {
@@ -27,8 +28,6 @@ describe("bootstrapAssets (requires DATABASE_URL pointing at a running Postgres)
   });
 
   it("writes a matching snapshot to assets and remote_assets", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bootstrap-test-"));
-    await fs.mkdir(path.join(tempDir, "bootstrap-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "b.png"), "fake-bytes-b");
 
@@ -54,8 +53,6 @@ describe("bootstrapAssets (requires DATABASE_URL pointing at a running Postgres)
   });
 
   it("skips paths already present, so a second run is resumable", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bootstrap-test-"));
-    await fs.mkdir(path.join(tempDir, "bootstrap-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
 
     await bootstrapAssets(db, tempDir);

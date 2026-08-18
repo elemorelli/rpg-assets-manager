@@ -1,12 +1,17 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { rcloneCheck, rcloneCopy, rcloneDelete, rcloneMoveTo } from "../client.ts";
 
 let sourceDir: string;
 let destinationDir: string;
+
+beforeEach(async () => {
+  sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
+  destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
+});
 
 afterEach(async () => {
   await fs.rm(sourceDir, { recursive: true, force: true });
@@ -15,8 +20,6 @@ afterEach(async () => {
 
 describe("rclone client (requires the real rclone binary)", () => {
   it("copies listed files from source to destination, preserving relative paths", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     await fs.mkdir(path.join(sourceDir, "tiles"), { recursive: true });
     await fs.writeFile(path.join(sourceDir, "tiles", "forest.png"), "forest-bytes");
     await fs.writeFile(path.join(sourceDir, "top.png"), "top-bytes");
@@ -30,8 +33,6 @@ describe("rclone client (requires the real rclone binary)", () => {
   });
 
   it("deletes listed files from the destination", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     await fs.writeFile(path.join(destinationDir, "gone.png"), "gone-bytes");
 
     await rcloneDelete(destinationDir, ["gone.png"]);
@@ -40,8 +41,6 @@ describe("rclone client (requires the real rclone binary)", () => {
   });
 
   it("moves a file within the destination to a new relative path", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     await fs.writeFile(path.join(destinationDir, "old.png"), "moved-bytes");
 
     await rcloneMoveTo(destinationDir, "old.png", "renamed/new.png");
@@ -53,8 +52,6 @@ describe("rclone client (requires the real rclone binary)", () => {
   });
 
   it("reports matches, one-sided files and content differences between source and destination", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     await fs.writeFile(path.join(sourceDir, "matching.png"), "same-bytes");
     await fs.writeFile(path.join(destinationDir, "matching.png"), "same-bytes");
     await fs.writeFile(path.join(sourceDir, "only-on-source.png"), "source-only-bytes");
@@ -72,8 +69,6 @@ describe("rclone client (requires the real rclone binary)", () => {
   });
 
   it("reports no differences when source and destination match exactly", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     await fs.writeFile(path.join(sourceDir, "matching.png"), "same-bytes");
     await fs.writeFile(path.join(destinationDir, "matching.png"), "same-bytes");
 
@@ -86,8 +81,6 @@ describe("rclone client (requires the real rclone binary)", () => {
   });
 
   it("cleans up its temp report directory even when rclone check fails unexpectedly", async () => {
-    sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-source-"));
-    destinationDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-dest-"));
     const missingSourceDir = path.join(sourceDir, "does-not-exist");
 
     const tempDirsBefore = await fs.readdir(os.tmpdir());

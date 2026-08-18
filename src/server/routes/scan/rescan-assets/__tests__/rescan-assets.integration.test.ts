@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
 
@@ -12,13 +12,14 @@ const PREFIX = "rescan-test/";
 describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
 
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
+    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
+  });
+
   afterEach(async () => {
     await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      tempDir = "";
-    }
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   afterAll(async () => {
@@ -26,8 +27,6 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
   });
 
   it("hashes new files, leaves unchanged files alone, and removes deleted ones", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
-    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
     await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
 
@@ -56,8 +55,6 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
   });
 
   it("re-hashes every file when forceRehash is set", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
-    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
 
     await rescanAssets(db, tempDir);
@@ -68,8 +65,6 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
   });
 
   it("keeps the same id and reports a rename when a file is renamed", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
-    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rescan-test", "before.png"), "same-content");
 
     await rescanAssets(db, tempDir);
@@ -107,8 +102,6 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
   });
 
   it("reports progress via the onProgress callback", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
-    await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
     await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");
 

@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
@@ -14,13 +14,13 @@ const PREFIX = "rename-entry-test/";
 describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
 
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
+  });
+
   afterEach(async () => {
     await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      tempDir = "";
-    }
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   afterAll(async () => {
@@ -28,7 +28,6 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("renames a file within its own directory", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
     await fs.mkdir(path.join(tempDir, "rename-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rename-entry-test", "forest.png"), "fake-png-bytes");
 
@@ -41,7 +40,6 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("renames an entry nested in a subdirectory, keeping it in that directory", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
     await fs.mkdir(path.join(tempDir, "rename-entry-test", "tiles"), { recursive: true });
     await fs.writeFile(
       path.join(tempDir, "rename-entry-test", "tiles", "forest.png"),
@@ -58,7 +56,6 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("rejects when the new name already exists in that directory", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
     await fs.mkdir(path.join(tempDir, "rename-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rename-entry-test", "a.png"), "a");
     await fs.writeFile(path.join(tempDir, "rename-entry-test", "b.png"), "b");
@@ -67,7 +64,6 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("rejects a new name that tries to escape the current directory", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
     await fs.mkdir(path.join(tempDir, "rename-entry-test", "tiles"), { recursive: true });
     await fs.writeFile(
       path.join(tempDir, "rename-entry-test", "tiles", "forest.png"),
@@ -80,15 +76,12 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("rejects an unsafe current path", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
-
     await expect(renameEntry(db, tempDir, "../escaped.png", "renamed.png")).rejects.toThrow(
       UnsafePathError,
     );
   });
 
   it("carries the assets row over to the renamed path", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rename-entry-"));
     await fs.mkdir(path.join(tempDir, "rename-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "rename-entry-test", "forest.png"), "fake-png-bytes");
     await db

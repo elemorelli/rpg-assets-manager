@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
@@ -14,13 +14,13 @@ const PREFIX = "delete-entry-test/";
 describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", () => {
   let tempDir = "";
 
+  beforeEach(async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
+  });
+
   afterEach(async () => {
     await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-
-    if (tempDir) {
-      await fs.rm(tempDir, { recursive: true, force: true });
-      tempDir = "";
-    }
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   afterAll(async () => {
@@ -28,7 +28,6 @@ describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("deletes a file", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
     await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
 
@@ -38,7 +37,6 @@ describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("deletes a directory and its contents", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
     await fs.mkdir(path.join(tempDir, "delete-entry-test", "tiles"), { recursive: true });
     await fs.writeFile(
       path.join(tempDir, "delete-entry-test", "tiles", "forest.png"),
@@ -51,19 +49,14 @@ describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("rejects deleting the tree root", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
-
     await expect(deleteEntry(db, tempDir, "")).rejects.toThrow(HttpError);
   });
 
   it("rejects a path that escapes the tree root", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
-
     await expect(deleteEntry(db, tempDir, "../escaped")).rejects.toThrow(UnsafePathError);
   });
 
   it("removes the assets row for a deleted file", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
     await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
     await db
@@ -83,7 +76,6 @@ describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", (
   });
 
   it("removes the assets rows for every file nested under a deleted directory", async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
     await fs.mkdir(path.join(tempDir, "delete-entry-test", "tiles", "forest"), {
       recursive: true,
     });
