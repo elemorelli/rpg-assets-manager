@@ -1,9 +1,9 @@
-import { requestJson } from "../http-client.ts";
+import { jsonInit, requestJson } from "../http-client.ts";
 
 export interface ConversionSummary {
   converted: number;
   conflicts: number;
 }
 
-export const convert = (): Promise<ConversionSummary> =>
-  requestJson<ConversionSummary>("/api/convert", { method: "POST" });
+export const convert = (path: string): Promise<ConversionSummary> =>
+  requestJson<ConversionSummary>("/api/convert", jsonInit("POST", { path }));

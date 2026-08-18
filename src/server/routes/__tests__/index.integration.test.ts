@@ -164,6 +164,32 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
   });
 
+  it("scopes GET /api/convert/plan to the folder given via ?path", async () => {
+    await fs.mkdir(path.join(tempDir.path, "core-routes-test", "tiles"), { recursive: true });
+    await fs.writeFile(
+      path.join(tempDir.path, "core-routes-test", "outside.png"),
+      "fake-bytes-outside",
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "core-routes-test", "tiles", "forest.png"),
+      "fake-bytes-forest",
+    );
+    const app = buildTestApp(tempDir);
+    const sessionCookie = await loginTestSession(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/convert/plan?path=core-routes-test/tiles",
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual({
+      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
+      conflicts: [],
+    });
+  });
+
   it("converts eligible files and publishes progress via POST /api/convert", async () => {
     const minimalPng = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -187,6 +213,37 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     expect(response.json()).toEqual({ converted: 1, conflicts: 0 });
     expect(observedJobs[0]).toMatchObject({ type: "convert", done: 0 });
     expect(getCurrentJob()).toBeNull();
+  });
+
+  it("scopes POST /api/convert to the folder given via the path body, leaving other folders untouched", async () => {
+    const minimalPng = Buffer.from(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "base64",
+    );
+    await fs.mkdir(path.join(tempDir.path, "core-routes-test", "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir.path, "core-routes-test", "outside.png"), minimalPng);
+    await fs.writeFile(
+      path.join(tempDir.path, "core-routes-test", "tiles", "forest.png"),
+      minimalPng,
+    );
+    const app = buildTestApp(tempDir);
+    const sessionCookie = await loginTestSession(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/convert",
+      headers: { cookie: sessionCookie },
+      payload: { path: "core-routes-test/tiles" },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual({ converted: 1, conflicts: 0 });
+    await expect(
+      fs.access(path.join(tempDir.path, "core-routes-test", "tiles", "forest.webp")),
+    ).resolves.toBeUndefined();
+    await expect(
+      fs.access(path.join(tempDir.path, "core-routes-test", "outside.png")),
+    ).resolves.toBeUndefined();
   });
 
   it("reports the batch diff via GET /api/diff", async () => {

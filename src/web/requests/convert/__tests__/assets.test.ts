@@ -9,9 +9,13 @@ describe("convert", () => {
     const summary = { converted: 3, conflicts: 1 };
     const fetchMock = stubFetch(new Response(JSON.stringify(summary)));
 
-    const result = await convert();
+    const result = await convert("tiles");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/convert", { method: "POST" });
+    expect(fetchMock).toHaveBeenCalledWith("/api/convert", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: "tiles" }),
+    });
     expect(result).toEqual(summary);
   });
 });

@@ -13,5 +13,5 @@ export interface ConversionPlan {
   conflicts: ConversionCandidate[];
 }
 
-export const fetchConversionPlan = (): Promise<ConversionPlan> =>
-  requestJson<ConversionPlan>("/api/convert/plan");
+export const fetchConversionPlan = (path: string): Promise<ConversionPlan> =>
+  requestJson<ConversionPlan>(`/api/convert/plan?path=${encodeURIComponent(path)}`);

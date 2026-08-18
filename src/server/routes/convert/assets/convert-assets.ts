@@ -1,5 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { Kysely } from "kysely";
+
+import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
+import type { DB } from "#server/db/index.ts";
+import { hashBuffer } from "#server/utils/hash.ts";
 
 import { getConversionPlan } from "../plan/index.ts";
 import { convertToOgg } from "./to-ogg.ts";
@@ -15,8 +20,16 @@ export interface ConversionProgress {
   total: number;
 }
 
+// Candidate paths are relative to the (possibly folder-scoped) rootDir used for
+// I/O, but the assets table always keys rows by path from the asset tree root,
+// so callers pass dbPathPrefix to translate between the two.
+const toDbPath = (dbPathPrefix: string, relativePath: string): string =>
+  path.posix.join(dbPathPrefix, relativePath);
+
 export const convertAssets = async (
+  db: Kysely<DB>,
   rootDir: string,
+  dbPathPrefix: string,
   onProgress?: (progress: ConversionProgress) => void,
 ): Promise<ConversionSummary> => {
   const plan = await getConversionPlan(rootDir);
@@ -36,7 +49,39 @@ export const convertAssets = async (
 
     await fs.rm(sourcePath);
 
+    const [destinationStat, destinationContent] = await Promise.all([
+      fs.stat(destinationPath),
+      fs.readFile(destinationPath),
+    ]);
+    const destinationHash = await hashBuffer(destinationContent);
+
+    await db
+      .deleteFrom("assets")
+      .where("path", "=", toDbPath(dbPathPrefix, candidate.relativePath))
+      .execute();
+    await db
+      .insertInto("assets")
+      .values({
+        path: toDbPath(dbPathPrefix, candidate.destinationPath),
+        size: destinationStat.size,
+        mtime: destinationStat.mtime,
+        hash: destinationHash,
+      })
+      .onConflict((oc) =>
+        oc.column("path").doUpdateSet({
+          size: destinationStat.size,
+          mtime: destinationStat.mtime,
+          hash: destinationHash,
+          scanned_at: new Date(),
+        }),
+      )
+      .execute();
+
     onProgress?.({ done: index + 1, total });
+  }
+
+  if (plan.candidates.length > 0) {
+    invalidateLocalHashIndex(db);
   }
 
   return { converted: plan.candidates.length, conflicts: plan.conflicts.length };

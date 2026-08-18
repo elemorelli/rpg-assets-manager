@@ -2,6 +2,7 @@ import {
   faArrowsRotate,
   faFolderPlus,
   faHashtag,
+  faRightLeft,
   faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -15,6 +16,7 @@ export interface ToolbarProps {
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
   onRescan: (forceRehash: boolean) => void;
+  onConvert: () => void;
 }
 
 export const Toolbar = ({
@@ -22,6 +24,7 @@ export const Toolbar = ({
   onCreateDirectory,
   onUploadFile,
   onRescan,
+  onConvert,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -84,6 +87,14 @@ export const Toolbar = ({
           className={clsx(forceRehash && styles.toggleActive)}
           onClick={() => setForceRehash((current) => !current)}>
           <FontAwesomeIcon icon={faHashtag} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Convert"
+          title="Convert"
+          onClick={onConvert}>
+          <FontAwesomeIcon icon={faRightLeft} />
         </button>
         <input
           ref={fileInputRef}

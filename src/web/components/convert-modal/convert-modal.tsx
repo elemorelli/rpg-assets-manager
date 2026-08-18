@@ -1,54 +1,72 @@
-import { type JSX, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 
+import { Modal } from "#components/modal/modal.tsx";
 import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
 
-import styles from "./conversion-panel.module.css";
+import styles from "./convert-modal.module.css";
 
-export interface ConversionPanelProps {
+export interface ConvertModalProps {
+  currentPath: string;
+  onClose: () => void;
   onConverted: () => void;
 }
 
-export const ConversionPanel = ({ onConverted }: ConversionPanelProps): JSX.Element => {
+export const ConvertModal = ({
+  currentPath,
+  onClose,
+  onConverted,
+}: ConvertModalProps): JSX.Element => {
   const [plan, setPlan] = useState<ConversionPlan | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleCheck = (): void => {
-    setBusy(true);
-    setError(null);
-
+  useEffect(() => {
     api
-      .fetchConversionPlan()
+      .fetchConversionPlan(currentPath)
       .then(setPlan)
-      .catch((caught: unknown) => setError(describeError(caught)))
-      .finally(() => setBusy(false));
-  };
+      .catch((caught: unknown) => setError(describeError(caught)));
+  }, [currentPath]);
 
   const handleConvert = (): void => {
     setBusy(true);
     setError(null);
 
     api
-      .convert()
+      .convert(currentPath)
       .then(() => {
-        setPlan(null);
         onConverted();
+        onClose();
       })
       .catch((caught: unknown) => setError(describeError(caught)))
       .finally(() => setBusy(false));
   };
 
+  const folderLabel = currentPath === "" ? "root" : currentPath;
   const hasNothingToConvert =
     plan !== null && plan.candidates.length === 0 && plan.conflicts.length === 0;
 
-  return (
-    <div className={styles.panel}>
-      <button type="button" disabled={busy} onClick={handleCheck}>
-        Check for conversions
+  const footer =
+    plan && plan.candidates.length > 0 ? (
+      <>
+        <button type="button" disabled={busy} onClick={onClose}>
+          Cancel
+        </button>
+        <button type="button" disabled={busy} onClick={handleConvert}>
+          {`Convert ${plan.candidates.length} file(s)`}
+        </button>
+      </>
+    ) : (
+      <button type="button" disabled={busy} onClick={onClose}>
+        Close
       </button>
+    );
+
+  return (
+    <Modal title={`Convert assets in ${folderLabel}`} onClose={onClose} footer={footer}>
       {error && <p className={styles.error}>{error}</p>}
+      {!plan && !error && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}
       {plan && plan.candidates.length > 0 && (
         <div className={styles.section}>
@@ -60,9 +78,6 @@ export const ConversionPanel = ({ onConverted }: ConversionPanelProps): JSX.Elem
               </li>
             ))}
           </ul>
-          <button type="button" disabled={busy} onClick={handleConvert}>
-            {`Convert ${plan.candidates.length} file(s)`}
-          </button>
         </div>
       )}
       {plan && plan.conflicts.length > 0 && (
@@ -77,6 +92,6 @@ export const ConversionPanel = ({ onConverted }: ConversionPanelProps): JSX.Elem
           </ul>
         </div>
       )}
-    </div>
+    </Modal>
   );
 };

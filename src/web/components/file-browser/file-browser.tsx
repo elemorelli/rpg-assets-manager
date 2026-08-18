@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router";
 
 import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
-import { ConversionPanel } from "#components/conversion-panel/conversion-panel.tsx";
+import { ConvertModal } from "#components/convert-modal/convert-modal.tsx";
 import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
@@ -41,6 +41,7 @@ export const FileBrowser = (): JSX.Element => {
   const currentPath = params["*"] ?? "";
 
   const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
+  const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
 
   const {
     viewMode,
@@ -191,6 +192,7 @@ export const FileBrowser = (): JSX.Element => {
                   onCreateDirectory={handleCreateDirectory}
                   onUploadFile={handleUploadFile}
                   onRescan={handleRescan}
+                  onConvert={() => setConvertModalOpen(true)}
                 />
                 {searchResults === null && tagFilterResults === null && (
                   <ViewControls
@@ -298,12 +300,18 @@ export const FileBrowser = (): JSX.Element => {
                 onTagsChange={handleTagsChange}
               />
             )}
+            {isConvertModalOpen && (
+              <ConvertModal
+                currentPath={currentPath}
+                onClose={() => setConvertModalOpen(false)}
+                onConverted={() => loadDirectory(currentPath)}
+              />
+            )}
           </div>
         }
         drawer={
           <PanelDrawer expandTrigger={drawerExpandTrigger}>
             <JobProgress onJobStarted={handleJobStarted} />
-            <ConversionPanel onConverted={() => loadDirectory(currentPath)} />
             <SyncSection onApplied={() => loadDirectory(currentPath)} />
           </PanelDrawer>
         }

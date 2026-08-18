@@ -9,9 +9,9 @@ describe("fetchConversionPlan", () => {
     const plan = { candidates: [], conflicts: [] };
     const fetchMock = stubFetch(new Response(JSON.stringify(plan)));
 
-    const result = await fetchConversionPlan();
+    const result = await fetchConversionPlan("tiles");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/convert/plan", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/convert/plan?path=tiles", undefined);
     expect(result).toEqual(plan);
   });
 });
