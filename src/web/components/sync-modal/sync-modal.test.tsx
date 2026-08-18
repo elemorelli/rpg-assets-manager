@@ -35,7 +35,7 @@ describe("SyncModal", () => {
     expect(fetchDiffMock).toHaveBeenCalled();
   });
 
-  it("shows counts, full deletions, and ambiguous warnings once the diff resolves", async () => {
+  it("shows colored counts, the change list, and ambiguous warnings once the diff resolves", async () => {
     fetchDiffMock.mockResolvedValue({
       added: ["a.png"],
       modified: ["b.png"],
@@ -46,11 +46,14 @@ describe("SyncModal", () => {
 
     render(<SyncModal onClose={vi.fn()} onApplied={vi.fn()} />);
 
-    expect(
-      await screen.findByText("1 added, 1 modified, 2 deleted, 0 renamed"),
-    ).toBeInTheDocument();
-    expect(screen.getByText("c.png")).toBeInTheDocument();
-    expect(screen.getByText("d.png")).toBeInTheDocument();
+    expect(await screen.findByText("1 added")).toBeInTheDocument();
+    expect(screen.getByText("1 modified")).toBeInTheDocument();
+    expect(screen.getByText("2 deleted")).toBeInTheDocument();
+    expect(screen.getByText("0 renamed")).toBeInTheDocument();
+    expect(screen.getByText("+ a.png")).toBeInTheDocument();
+    expect(screen.getByText("~ b.png")).toBeInTheDocument();
+    expect(screen.getByText("- c.png")).toBeInTheDocument();
+    expect(screen.getByText("- d.png")).toBeInTheDocument();
     expect(screen.getByText("x.png <-> y.png")).toBeInTheDocument();
   });
 
@@ -90,7 +93,7 @@ describe("SyncModal", () => {
     });
 
     render(<SyncModal onClose={onClose} onApplied={onApplied} />);
-    await screen.findByText("1 added, 0 modified, 0 deleted, 0 renamed");
+    await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Apply changes" }));
 
     await waitFor(() => {
@@ -112,7 +115,7 @@ describe("SyncModal", () => {
     });
 
     render(<SyncModal onClose={onClose} onApplied={vi.fn()} />);
-    await screen.findByText("1 added, 0 modified, 0 deleted, 0 renamed");
+    await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(applyBatchMock).not.toHaveBeenCalled();
@@ -132,7 +135,7 @@ describe("SyncModal", () => {
     applyBatchMock.mockRejectedValue(new Error("disk full"));
 
     render(<SyncModal onClose={onClose} onApplied={vi.fn()} />);
-    await screen.findByText("1 added, 0 modified, 0 deleted, 0 renamed");
+    await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Apply changes" }));
 
     expect(await screen.findByText("disk full")).toBeInTheDocument();

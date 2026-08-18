@@ -29,7 +29,7 @@ describe("ConvertModal", () => {
     expect(fetchConversionPlanMock).toHaveBeenCalledWith("tiles");
   });
 
-  it("shows candidates, calling out the ones that will overwrite an existing destination", async () => {
+  it("shows a colored list of candidates", async () => {
     fetchConversionPlanMock.mockResolvedValue({
       candidates: [
         {
@@ -49,11 +49,10 @@ describe("ConvertModal", () => {
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
 
-    expect(await screen.findByText("forest.png -> forest.webp")).toBeInTheDocument();
+    expect(await screen.findByText("2 file(s) to convert:")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Convert 2 file(s)" })).toBeInTheDocument();
+    expect(screen.getByText("forest.png -> forest.webp")).toBeInTheDocument();
     expect(screen.getByText("theme.wav -> theme.ogg")).toBeInTheDocument();
-    expect(
-      screen.getByText("1 file(s) will overwrite an existing destination:"),
-    ).toBeInTheDocument();
   });
 
   it("shows a message when there is nothing to convert", async () => {
@@ -82,7 +81,7 @@ describe("ConvertModal", () => {
     convertMock.mockResolvedValue({ converted: 1, overwritten: 0 });
 
     render(<ConvertModal currentPath="tiles" onClose={onClose} onConverted={onConverted} />);
-    await screen.findByText("forest.png -> forest.webp");
+    await screen.findByText("1 file(s) to convert:");
     await user.click(screen.getByRole("button", { name: "Convert 1 file(s)" }));
 
     await waitFor(() => {
@@ -107,7 +106,7 @@ describe("ConvertModal", () => {
     });
 
     render(<ConvertModal currentPath="tiles" onClose={onClose} onConverted={vi.fn()} />);
-    await screen.findByText("forest.png -> forest.webp");
+    await screen.findByText("1 file(s) to convert:");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(convertMock).not.toHaveBeenCalled();
@@ -130,7 +129,7 @@ describe("ConvertModal", () => {
     convertMock.mockRejectedValue(new Error("disk full"));
 
     render(<ConvertModal currentPath="tiles" onClose={onClose} onConverted={vi.fn()} />);
-    await screen.findByText("forest.png -> forest.webp");
+    await screen.findByText("1 file(s) to convert:");
     await user.click(screen.getByRole("button", { name: "Convert 1 file(s)" }));
 
     expect(await screen.findByText("disk full")).toBeInTheDocument();

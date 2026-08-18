@@ -1,7 +1,8 @@
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
-import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
+import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
+import type { ConversionCandidate, ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
 
@@ -12,6 +13,13 @@ export interface ConvertModalProps {
   onClose: () => void;
   onConverted: () => void;
 }
+
+const buildCandidateRows = (candidates: ConversionCandidate[]): ScrollListRow[] =>
+  candidates.map((candidate) => ({
+    key: candidate.relativePath,
+    label: `${candidate.relativePath} -> ${candidate.destinationPath}`,
+    className: candidate.willOverwrite ? styles.overwrite : styles.new,
+  }));
 
 export const ConvertModal = ({
   currentPath,
@@ -45,9 +53,7 @@ export const ConvertModal = ({
 
   const folderLabel = currentPath === "" ? "root" : currentPath;
   const hasNothingToConvert = plan !== null && plan.candidates.length === 0;
-  const newCandidates = plan?.candidates.filter((candidate) => !candidate.willOverwrite) ?? [];
-  const overwritingCandidates =
-    plan?.candidates.filter((candidate) => candidate.willOverwrite) ?? [];
+  const candidateRows = useMemo(() => (plan ? buildCandidateRows(plan.candidates) : []), [plan]);
 
   const footer =
     plan && plan.candidates.length > 0 ? (
@@ -70,30 +76,10 @@ export const ConvertModal = ({
       {error && <p className={styles.error}>{error}</p>}
       {!plan && !error && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}
-      {newCandidates.length > 0 && (
+      {plan && !hasNothingToConvert && (
         <div className={styles.section}>
-          <p>{`${newCandidates.length} file(s) will be converted:`}</p>
-          <ul className={styles.list}>
-            {newCandidates.map((candidate) => (
-              <li key={candidate.relativePath}>
-                {`${candidate.relativePath} -> ${candidate.destinationPath}`}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {overwritingCandidates.length > 0 && (
-        <div className={styles.section}>
-          <p className={styles.warning}>
-            {`${overwritingCandidates.length} file(s) will overwrite an existing destination:`}
-          </p>
-          <ul className={styles.list}>
-            {overwritingCandidates.map((candidate) => (
-              <li key={candidate.relativePath}>
-                {`${candidate.relativePath} -> ${candidate.destinationPath}`}
-              </li>
-            ))}
-          </ul>
+          <p className={styles.summary}>{`${plan.candidates.length} file(s) to convert:`}</p>
+          <ScrollList rows={candidateRows} />
         </div>
       )}
     </Modal>

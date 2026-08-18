@@ -14,17 +14,29 @@
   font-size: var(--font-size-sm);
 }
 
-.virtualList {
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-}
-
-.row {
+.summary {
+  margin: 0;
   font-size: var(--font-size-sm);
-  padding: 0 var(--spacing-xs);
 }
 
 .error {
   font-size: var(--font-size-sm);
   color: var(--color-danger);
+}
+
+.added {
+  color: var(--color-sync-new);
+}
+
+.modified {
+  color: var(--color-sync-pending);
+}
+
+.deleted {
+  color: var(--color-danger);
+  text-decoration: line-through;
+}
+
+.renamed {
+  color: var(--color-sync-renamed);
 }

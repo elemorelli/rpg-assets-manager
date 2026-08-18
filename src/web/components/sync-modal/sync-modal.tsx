@@ -1,7 +1,7 @@
-import { useVirtualizer } from "@tanstack/react-virtual";
-import { type JSX, useEffect, useMemo, useRef, useState } from "react";
+import { type JSX, useEffect, useMemo, useState } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
+import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
@@ -13,30 +13,26 @@ export interface SyncModalProps {
   onApplied: () => void;
 }
 
-interface ChangeRow {
-  key: string;
-  label: string;
-}
-
-const ROW_HEIGHT_PX = 28;
-const LIST_HEIGHT_PX = 300;
-
-const buildChangeRows = (diff: BatchDiff): ChangeRow[] => [
+const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
   ...diff.added.map((relativePath) => ({
     key: `added:${relativePath}`,
     label: `+ ${relativePath}`,
+    className: styles.added,
   })),
   ...diff.modified.map((relativePath) => ({
     key: `modified:${relativePath}`,
     label: `~ ${relativePath}`,
+    className: styles.modified,
   })),
   ...diff.deleted.map((relativePath) => ({
     key: `deleted:${relativePath}`,
     label: `- ${relativePath}`,
+    className: styles.deleted,
   })),
   ...diff.renamed.map((pair) => ({
     key: `renamed:${pair.oldPath}`,
     label: `${pair.oldPath} -> ${pair.newPath}`,
+    className: styles.renamed,
   })),
 ];
 
@@ -44,7 +40,6 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
   const [diff, setDiff] = useState<BatchDiff | null>(null);
   const [busy, setBusy] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     api
@@ -54,12 +49,6 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
   }, []);
 
   const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
-
-  const virtualizer = useVirtualizer({
-    count: changeRows.length,
-    getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => ROW_HEIGHT_PX,
-  });
 
   const handleApply = (): void => {
     setBusy(true);
@@ -105,19 +94,15 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
       {hasNothingToSync && <p>Nothing to sync.</p>}
       {diff && !hasNothingToSync && (
         <div className={styles.section}>
-          <p>
-            {`${diff.added.length} added, ${diff.modified.length} modified, ${diff.deleted.length} deleted, ${diff.renamed.length} renamed`}
+          <p className={styles.summary}>
+            <span className={styles.added}>{`${diff.added.length} added`}</span>
+            {", "}
+            <span className={styles.modified}>{`${diff.modified.length} modified`}</span>
+            {", "}
+            <span className={styles.deleted}>{`${diff.deleted.length} deleted`}</span>
+            {", "}
+            <span className={styles.renamed}>{`${diff.renamed.length} renamed`}</span>
           </p>
-          {diff.deleted.length > 0 && (
-            <div className={styles.section}>
-              <p>Deletions:</p>
-              <ul className={styles.list}>
-                {diff.deleted.map((relativePath) => (
-                  <li key={relativePath}>{relativePath}</li>
-                ))}
-              </ul>
-            </div>
-          )}
           {diff.ambiguousWarnings.length > 0 && (
             <div className={styles.section}>
               <p>Ambiguous renames (resolved as delete plus add):</p>
@@ -130,28 +115,7 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
               </ul>
             </div>
           )}
-          <div
-            ref={scrollContainerRef}
-            className={styles.virtualList}
-            style={{ height: LIST_HEIGHT_PX }}>
-            <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
-              {virtualizer.getVirtualItems().map((virtualRow) => (
-                <div
-                  key={changeRows[virtualRow.index].key}
-                  className={styles.row}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: virtualRow.size,
-                    transform: `translateY(${virtualRow.start}px)`,
-                  }}>
-                  {changeRows[virtualRow.index].label}
-                </div>
-              ))}
-            </div>
-          </div>
+          <ScrollList rows={changeRows} />
         </div>
       )}
     </Modal>
