@@ -1,17 +1,19 @@
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type DragEvent, type JSX, type MouseEvent, useState } from "react";
+import type { JSX, MouseEvent } from "react";
 
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import { getEntrySyncFlags } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
-import { isPreviewableEntry } from "#utils/preview.ts";
+import { createEntrySelectionHandlers } from "#web/utils/entry-selection-handlers.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
-import { modifierFromClick, type SelectionClickModifier } from "#web/utils/row-selection.ts";
+import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
+import { useEntryDragAndDrop } from "#web/utils/use-entry-drag-and-drop.ts";
 import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
 import styles from "./directory-table.module.css";
@@ -49,7 +51,6 @@ export const DirectoryTableRow = ({
   onTagsChange,
   onOpenLightbox,
 }: DirectoryTableRowProps): JSX.Element => {
-  const [dragOver, setDragOver] = useState<boolean>(false);
   const {
     isRenaming,
     renameDraft,
@@ -59,72 +60,20 @@ export const DirectoryTableRow = ({
     handleRenameKeyDown,
     handleRenameDraftChange,
   } = useInlineRename(entry.name, (newName) => onRename(entry, newName));
+  const { isDeleted, isNew, isRenamed, isPending } = getEntrySyncFlags(entry);
+  const { dragOver, handleDragOver, handleDragLeave, handleDrop, handleDragStart } =
+    useEntryDragAndDrop<HTMLTableRowElement>({ entry, isDropTarget, onDragStart, onDropEntry });
+  const { handleClick, handleDoubleClick, handleNameClick } =
+    createEntrySelectionHandlers<HTMLTableRowElement>({
+      entry,
+      isDeleted,
+      onSelectRow,
+      onOpenDirectory,
+      onOpenLightbox,
+    });
   const contextMenu = useContextMenu();
   const sizeLabel =
     entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
-  const isDeleted = entry.syncStatus === "deleted";
-  const isNew = entry.syncStatus === "new";
-  const isRenamed = entry.syncStatus === "renamed";
-  const isPending = entry.syncStatus === "pending" || entry.hasPendingSync === true;
-
-  const handleDragOver = (event: DragEvent<HTMLTableRowElement>): void => {
-    if (!isDropTarget) {
-      return;
-    }
-
-    event.preventDefault();
-    setDragOver(true);
-  };
-
-  const handleDragLeave = (): void => {
-    setDragOver(false);
-  };
-
-  const handleDrop = (event: DragEvent<HTMLTableRowElement>): void => {
-    if (!isDropTarget) {
-      return;
-    }
-
-    event.preventDefault();
-    setDragOver(false);
-    onDropEntry(entry);
-  };
-
-  const handleDragStart = (event: DragEvent<HTMLTableRowElement>): void => {
-    event.dataTransfer?.setData("text/plain", entry.name);
-    onDragStart(entry);
-  };
-
-  const handleRowClick = (event: MouseEvent<HTMLTableRowElement>): void => {
-    onSelectRow(entry, modifierFromClick(event));
-  };
-
-  const handleRowDoubleClick = (event: MouseEvent<HTMLTableRowElement>): void => {
-    if (isDeleted) {
-      return;
-    }
-
-    if (event.target instanceof HTMLElement && event.target.closest("button, input")) {
-      return;
-    }
-
-    if (entry.type === "directory") {
-      onOpenDirectory(entry.name);
-
-      return;
-    }
-
-    if (!isPreviewableEntry(entry)) {
-      return;
-    }
-
-    onOpenLightbox(entry);
-  };
-
-  const handleNameClick = (event: MouseEvent<HTMLButtonElement>): void => {
-    event.stopPropagation();
-    onOpenDirectory(entry.name);
-  };
 
   const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
@@ -136,8 +85,8 @@ export const DirectoryTableRow = ({
       draggable={!isDeleted}
       aria-selected={isSelected}
       className={clsx(isDropTarget && dragOver && styles.dragOver, isSelected && styles.selected)}
-      onClick={isDeleted ? undefined : handleRowClick}
-      onDoubleClick={handleRowDoubleClick}
+      onClick={isDeleted ? undefined : handleClick}
+      onDoubleClick={handleDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}
