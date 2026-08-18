@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { renameEntry } from "../rename.ts";
 
 describe("renameEntry", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("POSTs the path and the new name", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ renamed: true })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ renamed: true })));
 
     await renameEntry("tiles/old.png", "new.png");
 

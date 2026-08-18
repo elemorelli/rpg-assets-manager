@@ -1,16 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { fetchConversionPlan } from "../conversion.ts";
 
 describe("fetchConversionPlan", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("GETs the conversion plan", async () => {
     const plan = { candidates: [], conflicts: [] };
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(plan)));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(plan)));
 
     const result = await fetchConversionPlan();
 

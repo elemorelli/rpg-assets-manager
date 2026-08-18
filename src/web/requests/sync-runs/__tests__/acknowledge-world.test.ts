@@ -1,19 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { acknowledgeWorld } from "../acknowledge-world.ts";
 
 const SYNC_RUN_ID = 42;
 
 describe("acknowledgeWorld", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("POSTs the world and the acknowledged flag for the given sync run", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ acknowledged: true })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ acknowledged: true })));
 
     await acknowledgeWorld(SYNC_RUN_ID, "kingmaker", true);
 

@@ -1,18 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { ApiError } from "#web/requests/http-client.ts";
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { searchEntries } from "../search.ts";
 
 describe("searchEntries", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("GETs the encoded query and returns the parsed results", async () => {
     const results = [{ relativePath: "tiles/forest.png", type: "file" }];
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(results)));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(results)));
 
     const result = await searchEntries("legacy pack");
 
@@ -21,13 +17,12 @@ describe("searchEntries", () => {
   });
 
   it("throws an ApiError carrying the backend's error message and status", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    stubFetch(
       new Response(JSON.stringify({ error: "search failed" }), {
         status: 500,
         statusText: "Internal Server Error",
       }),
     );
-    vi.stubGlobal("fetch", fetchMock);
 
     await expect(searchEntries("forest")).rejects.toMatchObject({
       message: "search failed",

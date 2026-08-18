@@ -1,18 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { ApiError } from "#web/requests/http-client.ts";
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { listDirectory } from "../list.ts";
 
 describe("listDirectory", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("GETs the encoded path and returns the parsed entries", async () => {
     const entries = [{ name: "tiles", type: "directory" }];
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(entries)));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(entries)));
 
     const result = await listDirectory("tiles/legacy pack");
 
@@ -21,13 +17,12 @@ describe("listDirectory", () => {
   });
 
   it("throws an ApiError carrying the backend's error message and status", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    stubFetch(
       new Response(JSON.stringify({ error: "path escapes the asset tree root" }), {
         status: 400,
         statusText: "Bad Request",
       }),
     );
-    vi.stubGlobal("fetch", fetchMock);
 
     await expect(listDirectory("../escaped")).rejects.toMatchObject({
       message: "path escapes the asset tree root",
@@ -36,12 +31,7 @@ describe("listDirectory", () => {
   });
 
   it("falls back to the response status text when the error body is not JSON", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(
-        new Response("not json", { status: 500, statusText: "Internal Server Error" }),
-      );
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(new Response("not json", { status: 500, statusText: "Internal Server Error" }));
 
     await expect(listDirectory("tiles")).rejects.toMatchObject({
       message: "Internal Server Error",
@@ -50,8 +40,7 @@ describe("listDirectory", () => {
   });
 
   it("rejects with an ApiError instance", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 404 }));
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(new Response("{}", { status: 404 }));
 
     await expect(listDirectory("missing")).rejects.toBeInstanceOf(ApiError);
   });

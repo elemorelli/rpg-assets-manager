@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { setAssetTags } from "../set.ts";
 
 describe("setAssetTags", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("PUTs the path and tags, and returns the normalized tags from the response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ tags: ["npc"] })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ tags: ["npc"] })));
 
     const result = await setAssetTags("tiles/npc.png", ["NPC"]);
 

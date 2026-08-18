@@ -1,10 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { applyBatch } from "../batch.ts";
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe("applyBatch", () => {
   it("POSTs to /api/apply and returns the parsed summary", async () => {
@@ -16,11 +14,7 @@ describe("applyBatch", () => {
       outcome: "applied",
       syncRunId: 1,
     };
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(summary),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(summary)));
 
     const result = await applyBatch();
 

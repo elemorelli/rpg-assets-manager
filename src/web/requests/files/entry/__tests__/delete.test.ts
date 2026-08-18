@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { deleteEntry } from "../delete.ts";
 
 describe("deleteEntry", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("sends a DELETE with a JSON body", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ deleted: true })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ deleted: true })));
 
     await deleteEntry("tiles/old.png");
 

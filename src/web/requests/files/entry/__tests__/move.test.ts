@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { moveEntry } from "../move.ts";
 
 describe("moveEntry", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("POSTs the source and destination paths", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ moved: true })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ moved: true })));
 
     await moveEntry("a.png", "tiles/a.png");
 

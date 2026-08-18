@@ -1,10 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { fetchDiff } from "../fetch.ts";
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe("fetchDiff", () => {
   it("GETs /api/diff and returns the parsed batch diff", async () => {
@@ -15,11 +13,7 @@ describe("fetchDiff", () => {
       renamed: [],
       ambiguousWarnings: [],
     };
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(diff),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(diff)));
 
     const result = await fetchDiff();
 

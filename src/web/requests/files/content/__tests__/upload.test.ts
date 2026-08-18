@@ -1,17 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { uploadFile } from "../upload.ts";
 
 describe("uploadFile", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("POSTs a multipart form with the target path and file", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify({ uploaded: "map.png" })));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify({ uploaded: "map.png" })));
     const file = new File(["content"], "map.png", { type: "image/png" });
 
     await uploadFile("tiles", file);

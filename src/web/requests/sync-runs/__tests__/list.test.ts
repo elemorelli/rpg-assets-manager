@@ -1,10 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { fetchSyncRuns } from "../list.ts";
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 describe("fetchSyncRuns", () => {
   it("GETs /api/sync-runs and returns the parsed run list", async () => {
@@ -22,11 +20,7 @@ describe("fetchSyncRuns", () => {
         worldAcknowledgements: { kingmaker: false },
       },
     ];
-    const fetchMock = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve(runs),
-    });
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(runs)));
 
     const result = await fetchSyncRuns();
 

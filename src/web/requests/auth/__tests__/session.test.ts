@@ -1,26 +1,21 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { checkSession } from "../session.ts";
 
 describe("checkSession", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("resolves true when GET /api/session responds ok", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }));
+    stubFetch(new Response(JSON.stringify({})));
 
     await expect(checkSession()).resolves.toBe(true);
   });
 
   it("resolves false when GET /api/session responds 401", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
+    stubFetch(
+      new Response(JSON.stringify({ error: "unauthorized" }), {
         status: 401,
         statusText: "Unauthorized",
-        json: async () => ({ error: "unauthorized" }),
       }),
     );
 
@@ -28,13 +23,10 @@ describe("checkSession", () => {
   });
 
   it("rejects when GET /api/session fails with a non-401 error", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: false,
+    stubFetch(
+      new Response(JSON.stringify({ error: "boom" }), {
         status: 500,
         statusText: "Internal Server Error",
-        json: async () => ({ error: "boom" }),
       }),
     );
 

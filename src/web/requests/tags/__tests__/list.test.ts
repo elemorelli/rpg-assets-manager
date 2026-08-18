@@ -1,15 +1,12 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { fetchTags } from "../list.ts";
 
 describe("fetchTags", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
-  });
-
   it("GETs the distinct tag list", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(["loot", "npc"])));
-    vi.stubGlobal("fetch", fetchMock);
+    const fetchMock = stubFetch(new Response(JSON.stringify(["loot", "npc"])));
 
     const result = await fetchTags();
 
