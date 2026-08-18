@@ -1,7 +1,9 @@
 import { type DragEvent, useRef, useState } from "react";
 
+import { type DroppedFile, readDroppedFiles } from "#web/utils/read-dropped-files.ts";
+
 export interface UseFileDropzoneParams {
-  onFilesDropped: (files: File[]) => void;
+  onFilesDropped: (files: DroppedFile[]) => void;
 }
 
 export interface UseFileDropzoneResult {
@@ -61,11 +63,13 @@ export const useFileDropzone = ({
     externalDragCounterRef.current = 0;
     setIsDropzoneActive(false);
 
-    const files = Array.from(event.dataTransfer?.files ?? []);
+    const dataTransfer = event.dataTransfer;
 
-    if (files.length > 0) {
-      onFilesDropped(files);
-    }
+    void readDroppedFiles(dataTransfer).then((droppedFiles) => {
+      if (droppedFiles.length > 0) {
+        onFilesDropped(droppedFiles);
+      }
+    });
   };
 
   return {

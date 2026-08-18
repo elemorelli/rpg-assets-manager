@@ -1,13 +1,21 @@
 import { useRef, useState } from "react";
 
+import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
 import { ApiError } from "#web/requests/http-client.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
+import type { DroppedFile } from "#web/utils/read-dropped-files.ts";
 
 const CONFLICT_STATUS = 409;
 
 const isConflictError = (error: unknown): boolean =>
   error instanceof ApiError && error.statusCode === CONFLICT_STATUS;
+
+interface UploadItem {
+  file: File;
+  targetDir: string;
+  displayName: string;
+}
 
 export interface UseFileUploadParams {
   currentPath: string;
@@ -18,8 +26,8 @@ export interface UseFileUploadParams {
 
 export interface UseFileUploadResult {
   handleUploadFile: (file: File) => void;
-  handleFilesDropped: (files: File[]) => void;
-  conflictingFiles: File[] | null;
+  handleFilesDropped: (files: DroppedFile[]) => void;
+  conflictingFileNames: string[] | null;
   confirmOverwrite: () => void;
   cancelOverwrite: () => void;
 }
@@ -30,40 +38,46 @@ export const useFileUpload = ({
   setError,
   loadDirectory,
 }: UseFileUploadParams): UseFileUploadResult => {
-  const [conflictingFiles, setConflictingFiles] = useState<File[] | null>(null);
+  const [conflictingItems, setConflictingItems] = useState<UploadItem[] | null>(null);
   const overwriteDecisionRef = useRef<((overwrite: boolean) => void) | null>(null);
 
-  const askToOverwrite = (files: File[]): Promise<boolean> =>
+  const askToOverwrite = (items: UploadItem[]): Promise<boolean> =>
     new Promise((resolve) => {
       overwriteDecisionRef.current = resolve;
-      setConflictingFiles(files);
+      setConflictingItems(items);
     });
 
   const resolveOverwriteDecision = (overwrite: boolean): void => {
     overwriteDecisionRef.current?.(overwrite);
     overwriteDecisionRef.current = null;
-    setConflictingFiles(null);
+    setConflictingItems(null);
   };
 
   const confirmOverwrite = (): void => resolveOverwriteDecision(true);
   const cancelOverwrite = (): void => resolveOverwriteDecision(false);
 
-  const uploadBatch = async (files: File[]): Promise<void> => {
+  const resolveTargetDir = (relativePath: string): string => {
+    const parent = parentDirectory(relativePath);
+
+    return parent ? joinRelativePath(currentPath, parent) : currentPath;
+  };
+
+  const uploadBatch = async (items: UploadItem[]): Promise<void> => {
     let successCount = 0;
-    const conflicts: File[] = [];
+    const conflicts: UploadItem[] = [];
     let errorMessage: string | null = null;
 
-    for (const file of files) {
+    for (const item of items) {
       try {
-        await api.uploadFile(currentPath, file);
+        await api.uploadFile(item.targetDir, item.file);
         successCount += 1;
       } catch (caught) {
         if (isConflictError(caught)) {
-          conflicts.push(file);
+          conflicts.push(item);
           continue;
         }
 
-        errorMessage = `Uploaded ${successCount} of ${files.length} before failing on "${file.name}": ${describeError(caught)}`;
+        errorMessage = `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`;
         break;
       }
     }
@@ -72,17 +86,17 @@ export const useFileUpload = ({
       const overwriteConfirmed = await askToOverwrite(conflicts);
 
       if (overwriteConfirmed) {
-        for (const file of conflicts) {
+        for (const item of conflicts) {
           try {
-            await api.uploadFile(currentPath, file, true);
+            await api.uploadFile(item.targetDir, item.file, true);
             successCount += 1;
           } catch (caught) {
-            errorMessage = `Uploaded ${successCount} of ${files.length} before failing on "${file.name}": ${describeError(caught)}`;
+            errorMessage = `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`;
             break;
           }
         }
       } else {
-        const skippedNames = conflicts.map((file) => file.name).join(", ");
+        const skippedNames = conflicts.map((item) => item.displayName).join(", ");
 
         errorMessage = `Skipped ${conflicts.length} file(s) that already exist: ${skippedNames}`;
       }
@@ -95,20 +109,31 @@ export const useFileUpload = ({
     }
   };
 
-  const runUpload = (files: File[]): void => {
+  const runUpload = (items: UploadItem[]): void => {
     setBusy(true);
     setError(null);
 
-    void uploadBatch(files);
+    void uploadBatch(items);
   };
 
-  const handleUploadFile = (file: File): void => runUpload([file]);
-  const handleFilesDropped = (files: File[]): void => runUpload(files);
+  const handleUploadFile = (file: File): void =>
+    runUpload([{ file, targetDir: currentPath, displayName: file.name }]);
+
+  const handleFilesDropped = (droppedFiles: DroppedFile[]): void =>
+    runUpload(
+      droppedFiles.map(({ file, relativePath }) => ({
+        file,
+        targetDir: resolveTargetDir(relativePath),
+        displayName: relativePath,
+      })),
+    );
 
   return {
     handleUploadFile,
     handleFilesDropped,
-    conflictingFiles,
+    conflictingFileNames: conflictingItems
+      ? conflictingItems.map((item) => item.displayName)
+      : null,
     confirmOverwrite,
     cancelOverwrite,
   };

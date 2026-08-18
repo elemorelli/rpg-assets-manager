@@ -375,6 +375,43 @@ describe("FileBrowser", () => {
     expect(screen.queryByText(/Drop files to upload/)).not.toBeInTheDocument();
   });
 
+  it("uploads files inside a dropped folder to the matching subdirectory", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const file = new File(["content"], "hello.mp3", { type: "audio/mpeg" });
+    const fileEntry = {
+      isFile: true,
+      isDirectory: false,
+      name: "hello.mp3",
+      fullPath: "/audio/hello.mp3",
+      file: (success: (resolvedFile: File) => void) => success(file),
+    };
+    let remainingEntries: unknown[] = [fileEntry];
+    const folderEntry = {
+      isFile: false,
+      isDirectory: true,
+      name: "audio",
+      fullPath: "/audio",
+      createReader: () => ({
+        readEntries: (success: (entries: unknown[]) => void) => {
+          const batch = remainingEntries;
+
+          remainingEntries = [];
+          success(batch);
+        },
+      }),
+    };
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], items: [{ webkitGetAsEntry: () => folderEntry }] },
+    });
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledWith("audio", file);
+    });
+  });
+
   it("stops uploading dropped files on the first failure and reports how many succeeded", async () => {
     const fileA = new File(["a"], "a.png", { type: "image/png" });
     const fileB = new File(["b"], "b.png", { type: "image/png" });

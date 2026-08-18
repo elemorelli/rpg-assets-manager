@@ -135,7 +135,7 @@ export const FileBrowser = (): JSX.Element => {
   const {
     handleUploadFile,
     handleFilesDropped,
-    conflictingFiles,
+    conflictingFileNames,
     confirmOverwrite,
     cancelOverwrite,
   } = useFileUpload({ currentPath, setBusy, setError, loadDirectory });
@@ -305,9 +305,9 @@ export const FileBrowser = (): JSX.Element => {
                 }}
               />
             )}
-            {conflictingFiles && (
+            {conflictingFileNames && (
               <OverwriteConfirmModal
-                fileNames={conflictingFiles.map((file) => file.name)}
+                fileNames={conflictingFileNames}
                 onConfirm={confirmOverwrite}
                 onCancel={cancelOverwrite}
               />
