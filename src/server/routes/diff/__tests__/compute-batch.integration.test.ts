@@ -1,20 +1,18 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
+import {
+  cleanupAssetsByPrefix,
+  destroyDbAfterAll,
+} from "#server/test-utils/integration-lifecycle.ts";
 
 import { computeBatchDiff } from "../compute-batch.ts";
 
 const PREFIX = "diff-test/";
 
 describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres)", () => {
-  afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-    await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
-  });
-
-  afterAll(async () => {
-    await db.destroy();
-  });
+  cleanupAssetsByPrefix(PREFIX, ["assets", "remote_assets"]);
+  destroyDbAfterAll();
 
   it("classifies unchanged, modified, added, deleted, and renamed paths", async () => {
     const now = new Date();

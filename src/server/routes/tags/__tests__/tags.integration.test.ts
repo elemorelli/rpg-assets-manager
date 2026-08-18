@@ -1,13 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
+import {
+  cleanupAssetsByPrefix,
+  destroyDbAfterAll,
+} from "#server/test-utils/integration-lifecycle.ts";
 
 import { listDistinctTags } from "../list-distinct-tags.ts";
 
 describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres)", () => {
-  afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", "distinct-tags-test/%").execute();
-  });
+  cleanupAssetsByPrefix("distinct-tags-test/");
+  destroyDbAfterAll();
 
   it("returns the distinct tags in use, alphabetically", async () => {
     // listDistinctTags() reads across the whole table by design, so scope the

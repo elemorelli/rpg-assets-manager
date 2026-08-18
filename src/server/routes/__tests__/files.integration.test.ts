@@ -1,41 +1,34 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../app.ts";
 import { db } from "../../db/index.ts";
 import { HTTP_STATUS } from "../../errors/index.ts";
+import { destroyDbAfterAll, useTempDir } from "../../test-utils/integration-lifecycle.ts";
 import { loginTestSession } from "../../test-utils/login-test-session.ts";
 
 const WEBP_MAGIC_START = 8;
 const WEBP_MAGIC_END = 12;
 
 describe("file routes", () => {
-  let tempDir = "";
+  const tempDir = useTempDir("file-routes-");
 
-  beforeEach(async () => {
-    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "file-routes-"));
-  });
+  destroyDbAfterAll();
 
   afterEach(async () => {
     // uploadFile() upserts into the assets table as a side effect, so the upload
     // test below leaves a real row behind even though the rest of this file is
     // filesystem-only.
     await db.deleteFrom("assets").where("path", "=", "tiles/forest.png").execute();
-    await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  afterAll(async () => {
-    await db.destroy();
   });
 
   it("lists a directory via GET /api/files", async () => {
-    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -54,8 +47,8 @@ describe("file routes", () => {
   it("rejects an unsafe path with 400", async () => {
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -71,8 +64,8 @@ describe("file routes", () => {
   it("creates a directory via POST /api/files/mkdir", async () => {
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -84,15 +77,15 @@ describe("file routes", () => {
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect((await fs.stat(path.join(tempDir, "tiles"))).isDirectory()).toBe(true);
+    expect((await fs.stat(path.join(tempDir.path, "tiles"))).isDirectory()).toBe(true);
   });
 
   it("deletes an entry via DELETE /api/files", async () => {
-    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -104,15 +97,15 @@ describe("file routes", () => {
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    await expect(fs.stat(path.join(tempDir, "forest.png"))).rejects.toThrow();
+    await expect(fs.stat(path.join(tempDir.path, "forest.png"))).rejects.toThrow();
   });
 
   it("renames an entry via POST /api/files/rename", async () => {
-    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -124,15 +117,15 @@ describe("file routes", () => {
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect((await fs.stat(path.join(tempDir, "forest-renamed.png"))).isFile()).toBe(true);
+    expect((await fs.stat(path.join(tempDir.path, "forest-renamed.png"))).isFile()).toBe(true);
   });
 
   it("moves an entry via POST /api/files/move", async () => {
-    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -144,14 +137,14 @@ describe("file routes", () => {
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect((await fs.stat(path.join(tempDir, "tiles", "forest.png"))).isFile()).toBe(true);
+    expect((await fs.stat(path.join(tempDir.path, "tiles", "forest.png"))).isFile()).toBe(true);
   });
 
   it("uploads a file via POST /api/files/upload", async () => {
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
 
     await app.ready();
@@ -170,18 +163,18 @@ describe("file routes", () => {
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual({ uploaded: "forest.png" });
-    expect(await fs.readFile(path.join(tempDir, "tiles", "forest.png"), "utf8")).toBe(
+    expect(await fs.readFile(path.join(tempDir.path, "tiles", "forest.png"), "utf8")).toBe(
       "fake-png-bytes",
     );
   });
 
   it("searches for entries by name via GET /api/files/search", async () => {
-    await fs.mkdir(path.join(tempDir, "tiles"));
-    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
+    await fs.mkdir(path.join(tempDir.path, "tiles"));
+    await fs.writeFile(path.join(tempDir.path, "tiles", "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -196,11 +189,11 @@ describe("file routes", () => {
   });
 
   it("serves the raw file content via GET /api/files/raw", async () => {
-    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 
@@ -218,11 +211,14 @@ describe("file routes", () => {
   it("generates a thumbnail via GET /api/files/thumbnail", async () => {
     const minimalPngBase64 =
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
-    await fs.writeFile(path.join(tempDir, "forest.png"), Buffer.from(minimalPngBase64, "base64"));
+    await fs.writeFile(
+      path.join(tempDir.path, "forest.png"),
+      Buffer.from(minimalPngBase64, "base64"),
+    );
     const app = buildApp({
       webDistDir: null,
-      assetTreeRoot: tempDir,
-      thumbnailCacheDir: path.join(tempDir, "thumbnails"),
+      assetTreeRoot: tempDir.path,
+      thumbnailCacheDir: path.join(tempDir.path, "thumbnails"),
     });
     const sessionCookie = await loginTestSession(app);
 

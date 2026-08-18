@@ -1,7 +1,11 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
+import {
+  destroyDbAfterAll,
+  useCreatedSyncRunIds,
+} from "#server/test-utils/integration-lifecycle.ts";
 
 import { finishSyncRun, startSyncRun } from "../../../apply/sync-run.ts";
 import { acknowledgeWorld } from "../acknowledge.ts";
@@ -9,23 +13,14 @@ import { acknowledgeWorld } from "../acknowledge.ts";
 const emptyDiff = { added: [], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] };
 const NON_EXISTENT_SYNC_RUN_ID = 999999999;
 
-let createdIds: number[] = [];
-
-afterEach(async () => {
-  for (const id of createdIds) {
-    await db.deleteFrom("sync_runs").where("id", "=", String(id)).execute();
-  }
-  createdIds = [];
-});
-
-afterAll(async () => {
-  await db.destroy();
-});
-
 describe("acknowledgeWorld", () => {
+  const createdSyncRunIds = useCreatedSyncRunIds();
+
+  destroyDbAfterAll();
+
   it("flips one world's flag without touching the others", async () => {
     const syncRunId = await startSyncRun(db);
-    createdIds.push(syncRunId);
+    createdSyncRunIds.push(syncRunId);
     await finishSyncRun(db, syncRunId, "applied", emptyDiff, [], "// macro", {
       kingmaker: false,
       "stolen-fate": false,

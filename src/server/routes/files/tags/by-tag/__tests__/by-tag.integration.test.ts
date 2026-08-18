@@ -1,13 +1,16 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { db } from "#server/db/index.ts";
+import {
+  cleanupAssetsByPrefix,
+  destroyDbAfterAll,
+} from "#server/test-utils/integration-lifecycle.ts";
 
 import { findFilesByTags } from "../find-files-by-tag.ts";
 
 describe("findFilesByTags (requires DATABASE_URL pointing at a running Postgres)", () => {
-  afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", "by-tag-test/%").execute();
-  });
+  cleanupAssetsByPrefix("by-tag-test/");
+  destroyDbAfterAll();
 
   it("returns only files carrying every requested tag", async () => {
     await db

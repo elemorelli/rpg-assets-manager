@@ -1,39 +1,27 @@
 import fs from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { db } from "#server/db/index.ts";
+import {
+  cleanupAssetsByPrefix,
+  destroyDbAfterAll,
+  useCreatedSyncRunIds,
+  useTempDir,
+} from "#server/test-utils/integration-lifecycle.ts";
 
 import { applyBatch } from "../batch.ts";
 
 const PREFIX = "apply-batch-test/";
 
-let rootDir = "";
-let destinationRoot = "";
-let createdSyncRunIds: number[] = [];
-
-beforeEach(async () => {
-  rootDir = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-root-"));
-  destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "apply-batch-dest-"));
-});
-
-afterEach(async () => {
-  await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-  await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
-  for (const syncRunId of createdSyncRunIds) {
-    await db.deleteFrom("sync_runs").where("id", "=", String(syncRunId)).execute();
-  }
-  createdSyncRunIds = [];
-  await fs.rm(rootDir, { recursive: true, force: true });
-  await fs.rm(destinationRoot, { recursive: true, force: true });
-});
-
-afterAll(async () => {
-  await db.destroy();
-});
-
 describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => {
+  const rootDir = useTempDir("apply-batch-root-");
+  const destinationRoot = useTempDir("apply-batch-dest-");
+  const createdSyncRunIds = useCreatedSyncRunIds();
+
+  cleanupAssetsByPrefix(PREFIX, ["assets", "remote_assets"]);
+  destroyDbAfterAll();
+
   it("in dry run mode, reports the plan without touching remote_assets, rclone, or purge", async () => {
     const now = new Date();
 
@@ -76,11 +64,11 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
   it("applies for real: runs rclone against a local destination, updates remote_assets, and purges", async () => {
     const now = new Date();
 
-    await fs.mkdir(path.join(rootDir, PREFIX.replace(/\/$/, "")), { recursive: true });
-    await fs.writeFile(path.join(rootDir, `${PREFIX}added.png`), "added-bytes");
-    await fs.writeFile(path.join(destinationRoot, "placeholder"), "");
-    await fs.mkdir(path.join(destinationRoot, PREFIX.replace(/\/$/, "")), { recursive: true });
-    await fs.writeFile(path.join(destinationRoot, `${PREFIX}stale.png`), "stale-bytes");
+    await fs.mkdir(path.join(rootDir.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(rootDir.path, `${PREFIX}added.png`), "added-bytes");
+    await fs.writeFile(path.join(destinationRoot.path, "placeholder"), "");
+    await fs.mkdir(path.join(destinationRoot.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(destinationRoot.path, `${PREFIX}stale.png`), "stale-bytes");
 
     await db
       .insertInto("assets")
@@ -97,8 +85,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     const summary = await applyBatch(
       db,
       {
-        rootDir,
-        destinationRoot,
+        rootDir: rootDir.path,
+        destinationRoot: destinationRoot.path,
         baseUrl: "https://assets.example.com",
         dryRun: false,
         purge,
@@ -110,10 +98,12 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     createdSyncRunIds.push(summary.syncRunId);
 
     expect(summary.outcome).toBe("applied");
-    expect(await fs.readFile(path.join(destinationRoot, `${PREFIX}added.png`), "utf8")).toBe(
+    expect(await fs.readFile(path.join(destinationRoot.path, `${PREFIX}added.png`), "utf8")).toBe(
       "added-bytes",
     );
-    await expect(fs.access(path.join(destinationRoot, `${PREFIX}stale.png`))).rejects.toThrow();
+    await expect(
+      fs.access(path.join(destinationRoot.path, `${PREFIX}stale.png`)),
+    ).rejects.toThrow();
 
     const addedRow = await db
       .selectFrom("remote_assets")
@@ -139,8 +129,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
   });
 
   it("on a real apply with renames, stores a macro and initial world acknowledgements", async () => {
-    await fs.mkdir(path.join(destinationRoot, PREFIX.replace(/\/$/, "")), { recursive: true });
-    await fs.writeFile(path.join(destinationRoot, `${PREFIX}old.png`), "renamed-bytes");
+    await fs.mkdir(path.join(destinationRoot.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(destinationRoot.path, `${PREFIX}old.png`), "renamed-bytes");
 
     await db
       .insertInto("assets")
@@ -152,8 +142,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       .execute();
 
     const summary = await applyBatch(db, {
-      rootDir,
-      destinationRoot,
+      rootDir: rootDir.path,
+      destinationRoot: destinationRoot.path,
       baseUrl: "https://assets.example.com",
       dryRun: false,
       purge: vi.fn().mockResolvedValue(undefined),

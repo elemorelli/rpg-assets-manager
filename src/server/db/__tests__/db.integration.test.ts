@@ -1,11 +1,11 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
+
+import { destroyDbAfterAll } from "#server/test-utils/integration-lifecycle.ts";
 
 import { db } from "../index.ts";
 
 describe("db (requires DATABASE_URL pointing at a running Postgres)", () => {
-  afterAll(async () => {
-    await db.destroy();
-  });
+  destroyDbAfterAll();
 
   it("round-trips a row in assets", async () => {
     const inserted = await db
