@@ -1,29 +1,27 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
 import { uploadFile } from "../upload-file.ts";
 
 const PREFIX = "upload-test/";
+const FAKE_PNG_BYTES_LENGTH = Buffer.byteLength("fake-png-bytes");
 
-describe("uploadFile (requires DATABASE_URL pointing at a running Postgres)", () => {
+describe("uploadFile", () => {
   let tempDir = "";
+  let db: ReturnType<typeof createFakeDb>;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "upload-file-"));
+    db = createFakeDb();
   });
 
   afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
     await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  afterAll(async () => {
-    await db.destroy();
   });
 
   it("writes the file content at the target path", async () => {
@@ -66,7 +64,9 @@ describe("uploadFile (requires DATABASE_URL pointing at a running Postgres)", ()
       .where("path", "=", `${PREFIX}forest.png`)
       .executeTakeFirstOrThrow();
 
-    expect(row.size).toEqual("14");
+    // Real Postgres returns bigint columns as strings; fake-db echoes back
+    // whatever JS value was inserted, so this is a number here.
+    expect(row.size).toEqual(FAKE_PNG_BYTES_LENGTH);
     expect(row.hash).not.toEqual("");
   });
 

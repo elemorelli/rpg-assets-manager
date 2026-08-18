@@ -1,29 +1,26 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
 import { rescanAssets } from "../rescan.ts";
 
 const PREFIX = "rescan-test/";
 
-describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", () => {
+describe("rescanAssets", () => {
   let tempDir = "";
+  let db: ReturnType<typeof createFakeDb>;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
     await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
+    db = createFakeDb();
   });
 
   afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
     await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  afterAll(async () => {
-    await db.destroy();
   });
 
   it("hashes new files, leaves unchanged files alone, and removes deleted ones", async () => {
@@ -44,8 +41,7 @@ describe("rescanAssets (requires DATABASE_URL pointing at a running Postgres)", 
     const remainingPaths = await db
       .selectFrom("assets")
       .select("path")
-      .where("path", "like", `${PREFIX}%`)
-      .orderBy("path")
+      .orderBy("path", "asc")
       .execute();
 
     expect(remainingPaths.map((row) => row.path)).toEqual([

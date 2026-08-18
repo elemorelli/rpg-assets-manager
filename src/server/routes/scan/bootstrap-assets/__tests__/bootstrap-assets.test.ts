@@ -1,30 +1,26 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
 import { bootstrapAssets } from "../bootstrap.ts";
 
 const PREFIX = "bootstrap-test/";
 
-describe("bootstrapAssets (requires DATABASE_URL pointing at a running Postgres)", () => {
+describe("bootstrapAssets", () => {
   let tempDir = "";
+  let db: ReturnType<typeof createFakeDb>;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "bootstrap-test-"));
     await fs.mkdir(path.join(tempDir, "bootstrap-test"), { recursive: true });
+    db = createFakeDb();
   });
 
   afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
-    await db.deleteFrom("remote_assets").where("path", "like", `${PREFIX}%`).execute();
     await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  afterAll(async () => {
-    await db.destroy();
   });
 
   it("writes a matching snapshot to assets and remote_assets", async () => {
@@ -38,14 +34,12 @@ describe("bootstrapAssets (requires DATABASE_URL pointing at a running Postgres)
     const assetRows = await db
       .selectFrom("assets")
       .select(["path", "hash"])
-      .where("path", "like", `${PREFIX}%`)
-      .orderBy("path")
+      .orderBy("path", "asc")
       .execute();
     const remoteRows = await db
       .selectFrom("remote_assets")
       .select(["path", "hash"])
-      .where("path", "like", `${PREFIX}%`)
-      .orderBy("path")
+      .orderBy("path", "asc")
       .execute();
 
     expect(assetRows).toEqual(remoteRows);

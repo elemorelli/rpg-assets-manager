@@ -4,14 +4,15 @@ import type { DB } from "#server/db/index.ts";
 
 // Hand-rolled in-memory double for the small subset of the Kysely query builder
 // that src/server's business logic actually uses (selectFrom/insertInto/updateTable/
-// deleteFrom with equality/"in" where, onConflict upserts, orderBy, returning).
-// It does NOT execute real SQL: raw `sql` template queries (Postgres arrays, JSONB
-// operators, FULL OUTER JOIN) are out of scope on purpose, since faking their exact
-// Postgres semantics would risk tests passing against behavior Postgres doesn't have.
-// Those stay covered by real *.integration.test.ts files instead.
+// deleteFrom with equality/"in"/"like" where, callback where with eb.or(), onConflict
+// upserts, orderBy, returning). It does NOT execute real SQL: raw `sql` template
+// queries (Postgres arrays, JSONB operators, FULL OUTER JOIN) are out of scope on
+// purpose, since faking their exact Postgres semantics would risk tests passing
+// against behavior Postgres doesn't have. Those stay covered by real
+// *.integration.test.ts files instead.
 
 type Row = Record<string, unknown>;
-type WhereOperator = "=" | "in";
+type WhereOperator = "=" | "in" | "like";
 type OrderDirection = "asc" | "desc";
 
 interface WhereClause {
@@ -19,6 +20,35 @@ interface WhereClause {
   readonly operator: WhereOperator;
   readonly value: unknown;
 }
+
+interface WhereExpression {
+  readonly matches: (row: Row) => boolean;
+}
+
+type WhereCondition = WhereClause | WhereExpression;
+
+type ExpressionBuilder = ((
+  column: string,
+  operator: WhereOperator,
+  value: unknown,
+) => WhereExpression) & {
+  or: (expressions: WhereExpression[]) => WhereExpression;
+};
+
+const isWhereExpression = (condition: WhereCondition): condition is WhereExpression =>
+  "matches" in condition;
+
+const escapeRegExpLiteral = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const matchesLikePattern = (value: unknown, pattern: string): boolean => {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const regexSource = `^${pattern.split("%").map(escapeRegExpLiteral).join(".*")}$`;
+
+  return new RegExp(regexSource).test(value);
+};
 
 const asColumnList = (columns: string | string[]): string[] =>
   Array.isArray(columns) ? columns : [columns];
@@ -28,11 +58,44 @@ const rowMatchesClause = (row: Row, clause: WhereClause): boolean => {
     return Array.isArray(clause.value) && clause.value.includes(row[clause.column]);
   }
 
+  if (clause.operator === "like") {
+    return matchesLikePattern(row[clause.column], clause.value as string);
+  }
+
   return row[clause.column] === clause.value;
 };
 
-const rowMatchesAllClauses = (row: Row, clauses: WhereClause[]): boolean =>
-  clauses.every((clause) => rowMatchesClause(row, clause));
+const conditionMatches = (row: Row, condition: WhereCondition): boolean =>
+  isWhereExpression(condition) ? condition.matches(row) : rowMatchesClause(row, condition);
+
+const rowMatchesAllClauses = (row: Row, conditions: WhereCondition[]): boolean =>
+  conditions.every((condition) => conditionMatches(row, condition));
+
+const createExpressionBuilder = (): ExpressionBuilder => {
+  const eb = ((column: string, operator: WhereOperator, value: unknown): WhereExpression => ({
+    matches: (row) => rowMatchesClause(row, { column, operator, value }),
+  })) as ExpressionBuilder;
+
+  eb.or = (expressions: WhereExpression[]): WhereExpression => ({
+    matches: (row) => expressions.some((expression) => expression.matches(row)),
+  });
+
+  return eb;
+};
+
+type WhereArgs =
+  | [column: string, operator: WhereOperator, value: unknown]
+  | [callback: (eb: ExpressionBuilder) => WhereExpression];
+
+const resolveWhereCondition = (...args: WhereArgs): WhereCondition => {
+  if (args.length === 1) {
+    return args[0](createExpressionBuilder());
+  }
+
+  const [column, operator, value] = args;
+
+  return { column, operator, value };
+};
 
 const projectColumns = (row: Row, columns: string[] | undefined): Row => {
   if (!columns) {
@@ -69,7 +132,7 @@ const sortRows = (
 };
 
 const createSelectQuery = (rows: Row[]) => {
-  const wheres: WhereClause[] = [];
+  const wheres: WhereCondition[] = [];
   let columns: string[] | undefined;
   let orderByClause: { column: string; direction: OrderDirection } | undefined;
 
@@ -90,8 +153,8 @@ const createSelectQuery = (rows: Row[]) => {
 
       return query;
     },
-    where: (column: string, operator: WhereOperator, value: unknown) => {
-      wheres.push({ column, operator, value });
+    where: (...args: WhereArgs) => {
+      wheres.push(resolveWhereCondition(...args));
 
       return query;
     },
@@ -158,12 +221,12 @@ const createFakeTable = () => {
     },
     findByColumn: (column: string, value: unknown): Row | undefined =>
       rows.find((row) => row[column] === value),
-    updateMatching: (wheres: WhereClause[], values: Row): void => {
+    updateMatching: (wheres: WhereCondition[], values: Row): void => {
       for (const row of rows.filter((row) => rowMatchesAllClauses(row, wheres))) {
         Object.assign(row, values);
       }
     },
-    deleteMatching: (wheres: WhereClause[]): void => {
+    deleteMatching: (wheres: WhereCondition[]): void => {
       const remaining = rows.filter((row) => !rowMatchesAllClauses(row, wheres));
 
       rows.length = 0;
@@ -228,7 +291,7 @@ const createInsertQuery = (table: FakeTable) => {
 };
 
 const createUpdateQuery = (table: FakeTable) => {
-  const wheres: WhereClause[] = [];
+  const wheres: WhereCondition[] = [];
   let values: Row = {};
 
   const query = {
@@ -237,8 +300,8 @@ const createUpdateQuery = (table: FakeTable) => {
 
       return query;
     },
-    where: (column: string, operator: WhereOperator, value: unknown) => {
-      wheres.push({ column, operator, value });
+    where: (...args: WhereArgs) => {
+      wheres.push(resolveWhereCondition(...args));
 
       return query;
     },
@@ -251,11 +314,11 @@ const createUpdateQuery = (table: FakeTable) => {
 };
 
 const createDeleteQuery = (table: FakeTable) => {
-  const wheres: WhereClause[] = [];
+  const wheres: WhereCondition[] = [];
 
   const query = {
-    where: (column: string, operator: WhereOperator, value: unknown) => {
-      wheres.push({ column, operator, value });
+    where: (...args: WhereArgs) => {
+      wheres.push(resolveWhereCondition(...args));
 
       return query;
     },

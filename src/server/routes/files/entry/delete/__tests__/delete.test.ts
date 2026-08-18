@@ -1,30 +1,27 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { db } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
+import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
 import { deleteEntry } from "../delete-entry.ts";
 
 const PREFIX = "delete-entry-test/";
 
-describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", () => {
+describe("deleteEntry", () => {
   let tempDir = "";
+  let db: ReturnType<typeof createFakeDb>;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
+    db = createFakeDb();
   });
 
   afterEach(async () => {
-    await db.deleteFrom("assets").where("path", "like", `${PREFIX}%`).execute();
     await fs.rm(tempDir, { recursive: true, force: true });
-  });
-
-  afterAll(async () => {
-    await db.destroy();
   });
 
   it("deletes a file", async () => {
@@ -83,10 +80,11 @@ describe("deleteEntry (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "forest", "b.png"), "b");
     await db
       .insertInto("assets")
-      .values([
-        { path: `${PREFIX}tiles/a.png`, size: 1, mtime: new Date(), hash: "hash-a" },
-        { path: `${PREFIX}tiles/forest/b.png`, size: 1, mtime: new Date(), hash: "hash-b" },
-      ])
+      .values({ path: `${PREFIX}tiles/a.png`, size: 1, mtime: new Date(), hash: "hash-a" })
+      .execute();
+    await db
+      .insertInto("assets")
+      .values({ path: `${PREFIX}tiles/forest/b.png`, size: 1, mtime: new Date(), hash: "hash-b" })
       .execute();
 
     await deleteEntry(db, tempDir, `${PREFIX}tiles`);
