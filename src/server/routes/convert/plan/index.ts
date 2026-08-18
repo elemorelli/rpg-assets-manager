@@ -1,4 +1,5 @@
-import { walkAssetTree } from "../../scan/index.ts";
+import { walkAssetTree } from "#server/routes/scan/index.ts";
+
 import { type ConversionPlan, computeConversionPlan } from "./conversion.ts";
 
 export const getConversionPlan = async (rootDir: string): Promise<ConversionPlan> => {

@@ -1,4 +1,5 @@
-import { buildHashGroups, resolveRenames } from "../../diff/rename-resolution.ts";
+import { buildHashGroups, resolveRenames } from "#server/routes/diff/index.ts";
+
 import type { PreviousAssetSnapshot } from "./plan.ts";
 
 export interface HashedCandidate {

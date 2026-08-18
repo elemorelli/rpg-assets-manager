@@ -1,6 +1,6 @@
+import type { RenamePair } from "#server/routes/diff/index.ts";
 import { joinUrl } from "#server/utils/url.ts";
 
-import type { RenamePair } from "../../diff/rename-resolution.ts";
 import { buildMacroTemplate } from "./macro-template.ts";
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

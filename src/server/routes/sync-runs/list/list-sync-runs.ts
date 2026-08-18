@@ -1,9 +1,8 @@
 import type { Kysely } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
-
-import type { SyncRunWorldAcknowledgements } from "../../apply/build-finish-sync-run-update.ts";
-import type { SyncRunOutcome } from "../../apply/sync-run.ts";
+import type { SyncRunWorldAcknowledgements } from "#server/routes/apply/build-finish-sync-run-update.ts";
+import type { SyncRunOutcome } from "#server/routes/apply/sync-run.ts";
 
 export interface SyncRunSummary {
   id: number;

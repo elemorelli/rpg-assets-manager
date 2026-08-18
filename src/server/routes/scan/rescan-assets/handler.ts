@@ -1,8 +1,8 @@
 import type { FastifyRequest } from "fastify";
 
 import { db } from "#server/db/index.ts";
+import { runTrackedJob } from "#server/routes/jobs/index.ts";
 
-import { runTrackedJob } from "../../jobs/index.ts";
 import { rescanAssets } from "./rescan.ts";
 
 interface RescanRequestBody {

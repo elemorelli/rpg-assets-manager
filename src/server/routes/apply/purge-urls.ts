@@ -1,6 +1,6 @@
 import { joinUrl } from "#server/utils/url.ts";
 
-import type { RenamePair } from "../diff/rename-resolution.ts";
+import type { RenamePair } from "../diff/index.ts";
 
 interface BatchChangeSet {
   added: string[];
