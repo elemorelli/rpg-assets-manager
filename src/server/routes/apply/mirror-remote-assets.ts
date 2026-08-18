@@ -12,11 +12,14 @@ export const mirrorRemoteAssets = async (trx: Kysely<DB>, diff: BatchDiffResult)
     ...diff.renamed.map((pair) => pair.newPath),
   ];
 
-  const assetRows = await trx
-    .selectFrom("assets")
-    .select(["path", "size", "hash"])
-    .where("path", "in", pathsNeedingAssetLookup)
-    .execute();
+  const assetRows =
+    pathsNeedingAssetLookup.length === 0
+      ? []
+      : await trx
+          .selectFrom("assets")
+          .select(["path", "size", "hash"])
+          .where("path", "in", pathsNeedingAssetLookup)
+          .execute();
 
   const assetsByPath = new Map(
     assetRows.map((row) => [row.path, { size: row.size, hash: row.hash }]),

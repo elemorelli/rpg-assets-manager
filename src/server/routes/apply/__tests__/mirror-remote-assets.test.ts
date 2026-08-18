@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
@@ -41,5 +41,29 @@ describe("mirrorRemoteAssets", () => {
     });
     expect(rowsByPath.has("deleted.png")).toBe(false);
     expect(rowsByPath.has("renamed-from.png")).toBe(false);
+  });
+
+  it("skips the assets lookup when the diff has nothing to add, modify or rename", async () => {
+    const db = createFakeDb();
+
+    db.seed("remote_assets", [{ id: "1", path: "deleted.png", size: 3, hash: "hash-deleted" }]);
+
+    const diff: BatchDiffResult = {
+      added: [],
+      modified: [],
+      deleted: ["deleted.png"],
+      renamed: [],
+      ambiguousWarnings: [],
+    };
+
+    // Real Postgres rejects `WHERE path IN ()` with a syntax error, which fake-db's
+    // "in" operator doesn't reproduce (it just matches nothing), so this asserts the
+    // lookup query is skipped entirely rather than relying on it failing here too.
+    const selectFromSpy = vi.spyOn(db, "selectFrom");
+
+    await mirrorRemoteAssets(db, diff);
+
+    expect(selectFromSpy).not.toHaveBeenCalledWith("assets");
+    expect(db.rows("remote_assets").some((row) => row.path === "deleted.png")).toBe(false);
   });
 });
