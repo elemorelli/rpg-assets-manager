@@ -3,6 +3,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   font-size: var(--font-size-sm);
+  overflow-x: auto;
 }
 
 .crumb {
@@ -12,6 +13,10 @@
   cursor: pointer;
   padding: 0;
   font: inherit;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .crumb:disabled {

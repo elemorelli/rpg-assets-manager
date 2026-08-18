@@ -54,6 +54,7 @@ export const Breadcrumbs = ({
           <span key={crumb.path}>
             <button
               type="button"
+              title={crumb.name}
               className={isDragOver ? `${styles.crumb} ${styles.dragOver}` : styles.crumb}
               disabled={isLast}
               onClick={() => onNavigate(crumb.path)}

@@ -31,7 +31,7 @@ const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
   })),
   ...diff.renamed.map((pair) => ({
     key: `renamed:${pair.oldPath}`,
-    label: `${pair.oldPath} -> ${pair.newPath}`,
+    label: `${pair.oldPath}\n-> ${pair.newPath}`,
     className: styles.renamed,
   })),
 ];

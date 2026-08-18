@@ -12,4 +12,5 @@
   padding: 1px var(--spacing-xs);
   line-height: 1.3;
   overflow-wrap: anywhere;
+  white-space: pre-line;
 }

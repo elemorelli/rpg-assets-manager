@@ -37,7 +37,9 @@ export const Modal = ({ title, onClose, children, footer }: ModalProps): JSX.Ele
     <div className={styles.backdrop} data-testid="modal-backdrop" onClick={handleBackdropClick}>
       <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
         <div className={styles.header}>
-          <span className={styles.title}>{title}</span>
+          <span className={styles.title} title={title}>
+            {title}
+          </span>
           <button type="button" className={styles.closeButton} aria-label="Close" onClick={onClose}>
             <FontAwesomeIcon icon={faXmark} />
           </button>

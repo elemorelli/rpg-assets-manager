@@ -40,7 +40,7 @@ describe("SyncModal", () => {
       added: ["a.png"],
       modified: ["b.png"],
       deleted: ["c.png", "d.png"],
-      renamed: [],
+      renamed: [{ oldPath: "old.png", newPath: "new.png" }],
       ambiguousWarnings: [{ hash: "h1", localPaths: ["x.png"], remotePaths: ["y.png"] }],
     });
 
@@ -49,9 +49,10 @@ describe("SyncModal", () => {
     expect(await screen.findByText("1 added")).toBeInTheDocument();
     expect(screen.getByText("1 modified")).toBeInTheDocument();
     expect(screen.getByText("2 deleted")).toBeInTheDocument();
-    expect(screen.getByText("0 renamed")).toBeInTheDocument();
+    expect(screen.getByText("1 renamed")).toBeInTheDocument();
     expect(screen.getByText("+ a.png")).toBeInTheDocument();
     expect(screen.getByText("~ b.png")).toBeInTheDocument();
+    expect(screen.getByText("old.png -> new.png")).toBeInTheDocument();
     expect(screen.getByText("- c.png")).toBeInTheDocument();
     expect(screen.getByText("- d.png")).toBeInTheDocument();
     expect(screen.getByText("x.png <-> y.png")).toBeInTheDocument();
