@@ -1,5 +1,6 @@
 import { type ChangeEvent, type JSX, type KeyboardEvent, useEffect, useRef, useState } from "react";
 
+import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
@@ -113,18 +114,14 @@ export const LightboxDetails = ({
         onChange={(tags) => onTagsChange(entry, tags)}
       />
       {confirmingDelete ? (
-        <div className={styles.confirmDelete}>
-          <p className={styles.confirmMessage}>Delete "{entry.name}"?</p>
-          <button type="button" className={styles.actionButton} onClick={handleConfirmDelete}>
-            Confirm
-          </button>
-          <button
-            type="button"
-            className={styles.actionButton}
-            onClick={() => setConfirmingDelete(false)}>
-            Cancel
-          </button>
-        </div>
+        <ConfirmDelete
+          entryName={entry.name}
+          containerClassName={styles.confirmDelete}
+          messageClassName={styles.confirmMessage}
+          buttonClassName={styles.actionButton}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       ) : (
         <button
           type="button"

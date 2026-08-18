@@ -1,5 +1,6 @@
 import { type JSX, useEffect, useState } from "react";
 
+import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
@@ -56,15 +57,14 @@ export const EntryContextMenu = ({
   return (
     <ContextMenu position={position} onClose={onClose}>
       {confirmingDelete ? (
-        <div className={styles.confirmDelete}>
-          <p className={styles.confirmMessage}>Delete "{entry.name}"?</p>
-          <button type="button" className={styles.item} onClick={handleConfirmDelete}>
-            Confirm
-          </button>
-          <button type="button" className={styles.item} onClick={() => setConfirmingDelete(false)}>
-            Cancel
-          </button>
-        </div>
+        <ConfirmDelete
+          entryName={entry.name}
+          containerClassName={styles.confirmDelete}
+          messageClassName={styles.confirmMessage}
+          buttonClassName={styles.item}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       ) : (
         <div className={styles.items}>
           {isPreviewable && (
