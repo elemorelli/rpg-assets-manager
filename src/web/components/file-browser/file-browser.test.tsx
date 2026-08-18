@@ -4,12 +4,15 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiError } from "#web/requests/http-client.ts";
 import * as api from "#web/requests/index.ts";
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
 
 import { FileBrowser } from "./file-browser.tsx";
 
 vi.mock("../../requests/index.ts");
+
+const CONFLICT_STATUS = 409;
 
 const listDirectoryMock = vi.mocked(api.listDirectory);
 const createDirectoryMock = vi.mocked(api.createDirectory);
@@ -386,6 +389,46 @@ describe("FileBrowser", () => {
     expect(
       await screen.findByText('Uploaded 1 of 2 before failing on "b.png": disk full'),
     ).toBeInTheDocument();
+  });
+
+  it("prompts to overwrite on a name conflict and retries the upload on confirm", async () => {
+    const file = new File(["content"], "existing.png", { type: "image/png" });
+    uploadFileMock
+      .mockRejectedValueOnce(new ApiError("File already exists", CONFLICT_STATUS))
+      .mockResolvedValueOnce(undefined);
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], files: [file] },
+    });
+
+    expect(await screen.findByText("existing.png")).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledWith("", file, true);
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("leaves the existing file untouched when the overwrite prompt is cancelled", async () => {
+    const file = new File(["content"], "existing.png", { type: "image/png" });
+    uploadFileMock.mockRejectedValueOnce(new ApiError("File already exists", CONFLICT_STATUS));
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], files: [file] },
+    });
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(
+      await screen.findByText("Skipped 1 file(s) that already exist: existing.png"),
+    ).toBeInTheDocument();
+    expect(uploadFileMock).toHaveBeenCalledTimes(1);
   });
 
   it("fetches the tag list on mount and renders it as filter chips", async () => {

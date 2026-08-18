@@ -10,7 +10,6 @@ export interface UseDirectoryActionsParams {
 
 export interface UseDirectoryActionsResult {
   handleCreateDirectory: (name: string) => void;
-  handleUploadFile: (file: File) => void;
   handleRescan: (forceRehash: boolean) => void;
   handleRename: (entry: DirectoryEntry, newName: string) => void;
   handleDelete: (entry: DirectoryEntry) => void;
@@ -27,10 +26,6 @@ export const useDirectoryActions = ({
 }: UseDirectoryActionsParams): UseDirectoryActionsResult => {
   const handleCreateDirectory = (name: string): void => {
     runAction(() => api.createDirectory(joinRelativePath(currentPath, name)));
-  };
-
-  const handleUploadFile = (file: File): void => {
-    runAction(() => api.uploadFile(currentPath, file));
   };
 
   const handleRescan = (forceRehash: boolean): void => {
@@ -65,7 +60,6 @@ export const useDirectoryActions = ({
 
   return {
     handleCreateDirectory,
-    handleUploadFile,
     handleRescan,
     handleRename,
     handleDelete,

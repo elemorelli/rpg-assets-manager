@@ -22,12 +22,16 @@ const createHashingTransform = (hasher: IncrementalHasher): Transform =>
     },
   });
 
+const isFileAlreadyExistsError = (error: unknown): boolean =>
+  error instanceof Error && "code" in error && error.code === "EEXIST";
+
 export const uploadFile = async (
   db: Kysely<DB>,
   rootDir: string,
   targetDirPath: string,
   fileName: string,
   content: UploadableStream,
+  overwrite = false,
 ): Promise<void> => {
   const relativeDir = resolveSafeRelativePath(targetDirPath);
   const relativeFile = resolveSafeRelativePath(path.posix.join(relativeDir, fileName));
@@ -37,11 +41,19 @@ export const uploadFile = async (
 
   const hasher = await createIncrementalHasher();
 
-  await pipeline(
-    content,
-    createHashingTransform(hasher),
-    createWriteStream(absolutePath, { flags: "wx" }),
-  );
+  try {
+    await pipeline(
+      content,
+      createHashingTransform(hasher),
+      createWriteStream(absolutePath, { flags: overwrite ? "w" : "wx" }),
+    );
+  } catch (caught) {
+    if (isFileAlreadyExistsError(caught)) {
+      throw new HttpError("File already exists", HTTP_STATUS.conflict);
+    }
+
+    throw caught;
+  }
 
   if (content.truncated) {
     await fs.unlink(absolutePath);

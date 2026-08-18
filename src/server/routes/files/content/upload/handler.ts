@@ -18,6 +18,12 @@ const extractTargetDir = (fields: Record<string, unknown>): string => {
   return field.value;
 };
 
+const extractOverwrite = (fields: Record<string, unknown>): boolean => {
+  const field = fields.overwrite as UploadField | undefined;
+
+  return field?.value === "true";
+};
+
 export const uploadFileHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request, reply) => {
     const uploadedFile = await request.file();
@@ -29,8 +35,16 @@ export const uploadFileHandler = (assetTreeRoot: string) =>
     }
 
     const targetDir = extractTargetDir(uploadedFile.fields);
+    const overwrite = extractOverwrite(uploadedFile.fields);
 
-    await uploadFile(db, assetTreeRoot, targetDir, uploadedFile.filename, uploadedFile.file);
+    await uploadFile(
+      db,
+      assetTreeRoot,
+      targetDir,
+      uploadedFile.filename,
+      uploadedFile.file,
+      overwrite,
+    );
 
     return { uploaded: uploadedFile.filename };
   });

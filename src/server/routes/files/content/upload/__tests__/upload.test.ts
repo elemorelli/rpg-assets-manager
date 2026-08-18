@@ -5,7 +5,7 @@ import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { HttpError } from "#server/errors/index.ts";
+import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
@@ -63,13 +63,41 @@ describe("uploadFile", () => {
     ).toBe("fake-png-bytes");
   });
 
-  it("rejects overwriting an existing file", async () => {
+  it("rejects overwriting an existing file with a conflict error", async () => {
     await fs.mkdir(path.join(tempDir, "upload-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
 
-    await expect(
-      uploadFile(db, tempDir, "upload-test", "forest.png", uploadableStreamFrom("replacement")),
-    ).rejects.toThrow();
+    const uploadAttempt = uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("replacement"),
+    );
+
+    await expect(uploadAttempt).rejects.toThrow(HttpError);
+    await expect(uploadAttempt).rejects.toMatchObject({ statusCode: HTTP_STATUS.conflict });
+    expect(await fs.readFile(path.join(tempDir, "upload-test", "forest.png"), "utf8")).toBe(
+      "original",
+    );
+  });
+
+  it("replaces an existing file's content when overwrite is true", async () => {
+    await fs.mkdir(path.join(tempDir, "upload-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
+
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("replacement"),
+      true,
+    );
+
+    expect(await fs.readFile(path.join(tempDir, "upload-test", "forest.png"), "utf8")).toBe(
+      "replacement",
+    );
   });
 
   it("rejects a file name that escapes the tree root", async () => {

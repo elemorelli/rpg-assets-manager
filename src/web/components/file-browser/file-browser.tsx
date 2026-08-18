@@ -8,6 +8,7 @@ import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
+import { OverwriteConfirmModal } from "#components/overwrite-confirm-modal/overwrite-confirm-modal.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
@@ -19,10 +20,8 @@ import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { ViewControls } from "#components/view-controls/view-controls.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
-import * as api from "#web/requests/index.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
 import { initialSelectionState } from "#web/utils/row-selection.ts";
-import { runBatchOperation } from "#web/utils/run-batch-operation.ts";
 import { sortEntries } from "#web/utils/sort-entries.ts";
 import { useViewPreferences } from "#web/utils/use-view-preferences.ts";
 
@@ -32,6 +31,7 @@ import { useDirectoryActions } from "./use-directory-actions.ts";
 import { useDirectoryListing } from "./use-directory-listing.ts";
 import { useEntrySelectionAndDrag } from "./use-entry-selection-and-drag.ts";
 import { useFileDropzone } from "./use-file-dropzone.ts";
+import { useFileUpload } from "./use-file-upload.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 
@@ -71,7 +71,6 @@ export const FileBrowser = (): JSX.Element => {
 
   const {
     handleCreateDirectory,
-    handleUploadFile,
     handleRescan,
     handleRename,
     handleDelete,
@@ -133,27 +132,13 @@ export const FileBrowser = (): JSX.Element => {
     handleLightboxDelete,
   } = useLightboxNavigation({ previewableEntries, onRename: handleRename, onDelete: handleDelete });
 
-  const runBatchUpload = (files: File[]): void => {
-    setBusy(true);
-    setError(null);
-
-    const performBatchUpload = async (): Promise<void> => {
-      const { errorMessage } = await runBatchOperation(
-        files,
-        (file) => api.uploadFile(currentPath, file),
-        (file) => file.name,
-        "Uploaded",
-      );
-
-      await loadDirectory(currentPath);
-
-      if (errorMessage) {
-        setError(errorMessage);
-      }
-    };
-
-    void performBatchUpload();
-  };
+  const {
+    handleUploadFile,
+    handleFilesDropped,
+    conflictingFiles,
+    confirmOverwrite,
+    cancelOverwrite,
+  } = useFileUpload({ currentPath, setBusy, setError, loadDirectory });
 
   const {
     isDropzoneActive,
@@ -161,7 +146,7 @@ export const FileBrowser = (): JSX.Element => {
     handleDropzoneDragOver,
     handleDropzoneDragLeave,
     handleDropzoneDrop,
-  } = useFileDropzone({ onFilesDropped: runBatchUpload });
+  } = useFileDropzone({ onFilesDropped: handleFilesDropped });
 
   return (
     <>
@@ -318,6 +303,13 @@ export const FileBrowser = (): JSX.Element => {
                   loadDirectory(currentPath);
                   setSyncHistoryRefreshTrigger((trigger) => trigger + 1);
                 }}
+              />
+            )}
+            {conflictingFiles && (
+              <OverwriteConfirmModal
+                fileNames={conflictingFiles.map((file) => file.name)}
+                onConfirm={confirmOverwrite}
+                onCancel={cancelOverwrite}
               />
             )}
           </div>
