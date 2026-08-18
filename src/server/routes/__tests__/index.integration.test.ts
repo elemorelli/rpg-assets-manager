@@ -158,9 +158,9 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
           relativePath: "core-routes-test/forest.png",
           kind: "image",
           destinationPath: "core-routes-test/forest.webp",
+          willOverwrite: false,
         },
       ],
-      conflicts: [],
     });
   });
 
@@ -185,8 +185,14 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
     expect(response.json()).toEqual({
-      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
-      conflicts: [],
+      candidates: [
+        {
+          relativePath: "forest.png",
+          kind: "image",
+          destinationPath: "forest.webp",
+          willOverwrite: false,
+        },
+      ],
     });
   });
 
@@ -210,7 +216,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
 
     unsubscribe();
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect(response.json()).toEqual({ converted: 1, conflicts: 0 });
+    expect(response.json()).toEqual({ converted: 1, overwritten: 0 });
     expect(observedJobs[0]).toMatchObject({ type: "convert", done: 0 });
     expect(getCurrentJob()).toBeNull();
   });
@@ -237,7 +243,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
-    expect(response.json()).toEqual({ converted: 1, conflicts: 0 });
+    expect(response.json()).toEqual({ converted: 1, overwritten: 0 });
     await expect(
       fs.access(path.join(tempDir.path, "core-routes-test", "tiles", "forest.webp")),
     ).resolves.toBeUndefined();

@@ -23,8 +23,12 @@ describe("getConversionPlan", () => {
     const plan = await getConversionPlan(tempDir);
 
     expect(plan.candidates).toEqual([
-      { relativePath: "tiles/forest.png", kind: "image", destinationPath: "tiles/forest.webp" },
+      {
+        relativePath: "tiles/forest.png",
+        kind: "image",
+        destinationPath: "tiles/forest.webp",
+        willOverwrite: false,
+      },
     ]);
-    expect(plan.conflicts).toEqual([]);
   });
 });

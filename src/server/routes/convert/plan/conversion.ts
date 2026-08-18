@@ -6,11 +6,11 @@ export interface ConversionCandidate {
   relativePath: string;
   kind: ConversionKind;
   destinationPath: string;
+  willOverwrite: boolean;
 }
 
 export interface ConversionPlan {
   candidates: ConversionCandidate[];
-  conflicts: ConversionCandidate[];
 }
 
 const IMAGE_SOURCE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png"]);
@@ -63,7 +63,6 @@ export const computeConversionPlan = (files: { relativePath: string }[]): Conver
   const sortedFiles = [...files].sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 
   const candidates: ConversionCandidate[] = [];
-  const conflicts: ConversionCandidate[] = [];
 
   for (const file of sortedFiles) {
     const extension = extensionOf(file.relativePath);
@@ -82,20 +81,14 @@ export const computeConversionPlan = (files: { relativePath: string }[]): Conver
       extension,
       DESTINATION_EXTENSION[kind],
     );
-    const candidate: ConversionCandidate = {
+
+    candidates.push({
       relativePath: file.relativePath,
       kind,
       destinationPath,
-    };
-
-    if (existingPaths.has(destinationPath)) {
-      conflicts.push(candidate);
-
-      continue;
-    }
-
-    candidates.push(candidate);
+      willOverwrite: existingPaths.has(destinationPath),
+    });
   }
 
-  return { candidates, conflicts };
+  return { candidates };
 };

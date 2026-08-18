@@ -6,7 +6,7 @@ import { fetchConversionPlan } from "../conversion.ts";
 
 describe("fetchConversionPlan", () => {
   it("GETs the conversion plan", async () => {
-    const plan = { candidates: [], conflicts: [] };
+    const plan = { candidates: [] };
     const fetchMock = stubFetch(new Response(JSON.stringify(plan)));
 
     const result = await fetchConversionPlan("tiles");

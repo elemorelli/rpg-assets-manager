@@ -51,7 +51,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
       (progress) => progressUpdates.push(progress),
     );
 
-    expect(summary).toEqual({ converted: 1, conflicts: 0 });
+    expect(summary).toEqual({ converted: 1, overwritten: 0 });
     expect(progressUpdates[0]).toEqual({ done: 0, total: 1 });
     expect(progressUpdates.at(-1)).toEqual({ done: 1, total: 1 });
 
@@ -71,6 +71,34 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     ).rejects.toThrow();
   });
 
+  it("overwrites an existing destination file instead of skipping the conversion", async () => {
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.webp"),
+      "stale-placeholder-content",
+    );
+
+    const summary = await convertAssets(
+      db,
+      path.join(tempDir.path, "convert-assets-test"),
+      "convert-assets-test",
+    );
+
+    expect(summary).toEqual({ converted: 1, overwritten: 1 });
+    await expect(
+      fs.access(path.join(tempDir.path, "convert-assets-test", "forest.png")),
+    ).rejects.toThrow();
+
+    const destinationContent = await fs.readFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.webp"),
+    );
+
+    expect(destinationContent.toString()).not.toEqual("stale-placeholder-content");
+  });
+
   it("converts both an image and an audio file in one pass", async () => {
     await fs.writeFile(
       path.join(tempDir.path, "convert-assets-test", "forest.png"),
@@ -88,7 +116,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
       "convert-assets-test",
     );
 
-    expect(summary).toEqual({ converted: 2, conflicts: 0 });
+    expect(summary).toEqual({ converted: 2, overwritten: 0 });
     await expect(
       fs.access(path.join(tempDir.path, "convert-assets-test", "audio", "theme.ogg")),
     ).resolves.toBeUndefined();

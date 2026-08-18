@@ -2,7 +2,7 @@ import { jsonInit, requestJson } from "../http-client.ts";
 
 export interface ConversionSummary {
   converted: number;
-  conflicts: number;
+  overwritten: number;
 }
 
 export const convert = (path: string): Promise<ConversionSummary> =>

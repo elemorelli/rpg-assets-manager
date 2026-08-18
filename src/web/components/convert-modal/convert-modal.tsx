@@ -44,8 +44,10 @@ export const ConvertModal = ({
   };
 
   const folderLabel = currentPath === "" ? "root" : currentPath;
-  const hasNothingToConvert =
-    plan !== null && plan.candidates.length === 0 && plan.conflicts.length === 0;
+  const hasNothingToConvert = plan !== null && plan.candidates.length === 0;
+  const newCandidates = plan?.candidates.filter((candidate) => !candidate.willOverwrite) ?? [];
+  const overwritingCandidates =
+    plan?.candidates.filter((candidate) => candidate.willOverwrite) ?? [];
 
   const footer =
     plan && plan.candidates.length > 0 ? (
@@ -68,11 +70,11 @@ export const ConvertModal = ({
       {error && <p className={styles.error}>{error}</p>}
       {!plan && !error && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}
-      {plan && plan.candidates.length > 0 && (
+      {newCandidates.length > 0 && (
         <div className={styles.section}>
-          <p>{`${plan.candidates.length} file(s) will be converted:`}</p>
+          <p>{`${newCandidates.length} file(s) will be converted:`}</p>
           <ul className={styles.list}>
-            {plan.candidates.map((candidate) => (
+            {newCandidates.map((candidate) => (
               <li key={candidate.relativePath}>
                 {`${candidate.relativePath} -> ${candidate.destinationPath}`}
               </li>
@@ -80,13 +82,15 @@ export const ConvertModal = ({
           </ul>
         </div>
       )}
-      {plan && plan.conflicts.length > 0 && (
+      {overwritingCandidates.length > 0 && (
         <div className={styles.section}>
-          <p>{`${plan.conflicts.length} file(s) skipped: destination already exists.`}</p>
+          <p className={styles.warning}>
+            {`${overwritingCandidates.length} file(s) will overwrite an existing destination:`}
+          </p>
           <ul className={styles.list}>
-            {plan.conflicts.map((conflict) => (
-              <li key={conflict.relativePath}>
-                {`${conflict.relativePath} -> ${conflict.destinationPath}`}
+            {overwritingCandidates.map((candidate) => (
+              <li key={candidate.relativePath}>
+                {`${candidate.relativePath} -> ${candidate.destinationPath}`}
               </li>
             ))}
           </ul>

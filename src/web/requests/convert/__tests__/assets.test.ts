@@ -6,7 +6,7 @@ import { convert } from "../assets.ts";
 
 describe("convert", () => {
   it("POSTs to /api/convert", async () => {
-    const summary = { converted: 3, conflicts: 1 };
+    const summary = { converted: 3, overwritten: 1 };
     const fetchMock = stubFetch(new Response(JSON.stringify(summary)));
 
     const result = await convert("tiles");

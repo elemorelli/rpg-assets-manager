@@ -10,17 +10,31 @@ describe("computeConversionPlan", () => {
     ]);
 
     expect(plan.candidates).toEqual([
-      { relativePath: "audio/theme.mp3", kind: "audio", destinationPath: "audio/theme.ogg" },
-      { relativePath: "tiles/forest.png", kind: "image", destinationPath: "tiles/forest.webp" },
+      {
+        relativePath: "audio/theme.mp3",
+        kind: "audio",
+        destinationPath: "audio/theme.ogg",
+        willOverwrite: false,
+      },
+      {
+        relativePath: "tiles/forest.png",
+        kind: "image",
+        destinationPath: "tiles/forest.webp",
+        willOverwrite: false,
+      },
     ]);
-    expect(plan.conflicts).toEqual([]);
   });
 
   it("matches source extensions case-insensitively", () => {
     const plan = computeConversionPlan([{ relativePath: "tiles/forest.PNG" }]);
 
     expect(plan.candidates).toEqual([
-      { relativePath: "tiles/forest.PNG", kind: "image", destinationPath: "tiles/forest.webp" },
+      {
+        relativePath: "tiles/forest.PNG",
+        kind: "image",
+        destinationPath: "tiles/forest.webp",
+        willOverwrite: false,
+      },
     ]);
   });
 
@@ -32,7 +46,6 @@ describe("computeConversionPlan", () => {
     ]);
 
     expect(plan.candidates).toEqual([]);
-    expect(plan.conflicts).toEqual([]);
   });
 
   it("skips files inside a directory that directly contains a .skip file", () => {
@@ -43,7 +56,12 @@ describe("computeConversionPlan", () => {
     ]);
 
     expect(plan.candidates).toEqual([
-      { relativePath: "tiles/forest.png", kind: "image", destinationPath: "tiles/forest.webp" },
+      {
+        relativePath: "tiles/forest.png",
+        kind: "image",
+        destinationPath: "tiles/forest.webp",
+        willOverwrite: false,
+      },
     ]);
   });
 
@@ -58,19 +76,24 @@ describe("computeConversionPlan", () => {
         relativePath: "tiles/legacy-pack/nested/old-tile.png",
         kind: "image",
         destinationPath: "tiles/legacy-pack/nested/old-tile.webp",
+        willOverwrite: false,
       },
     ]);
   });
 
-  it("reports a conflict instead of a candidate when the destination path already exists", () => {
+  it("flags a candidate for overwrite when the destination path already exists, instead of skipping it", () => {
     const plan = computeConversionPlan([
       { relativePath: "tiles/forest.png" },
       { relativePath: "tiles/forest.webp" },
     ]);
 
-    expect(plan.candidates).toEqual([]);
-    expect(plan.conflicts).toEqual([
-      { relativePath: "tiles/forest.png", kind: "image", destinationPath: "tiles/forest.webp" },
+    expect(plan.candidates).toEqual([
+      {
+        relativePath: "tiles/forest.png",
+        kind: "image",
+        destinationPath: "tiles/forest.webp",
+        willOverwrite: true,
+      },
     ]);
   });
 });

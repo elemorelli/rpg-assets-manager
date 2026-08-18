@@ -12,7 +12,7 @@ import { convertToWebp } from "./to-webp.ts";
 
 export interface ConversionSummary {
   converted: number;
-  conflicts: number;
+  overwritten: number;
 }
 
 export interface ConversionProgress {
@@ -84,5 +84,7 @@ export const convertAssets = async (
     invalidateLocalHashIndex(db);
   }
 
-  return { converted: plan.candidates.length, conflicts: plan.conflicts.length };
+  const overwritten = plan.candidates.filter((candidate) => candidate.willOverwrite).length;
+
+  return { converted: plan.candidates.length, overwritten };
 };

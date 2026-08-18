@@ -6,11 +6,11 @@ export interface ConversionCandidate {
   relativePath: string;
   kind: ConversionKind;
   destinationPath: string;
+  willOverwrite: boolean;
 }
 
 export interface ConversionPlan {
   candidates: ConversionCandidate[];
-  conflicts: ConversionCandidate[];
 }
 
 export const fetchConversionPlan = (path: string): Promise<ConversionPlan> =>

@@ -22,27 +22,42 @@ describe("ConvertModal", () => {
   });
 
   it("fetches the plan for the current folder as soon as it opens", () => {
-    fetchConversionPlanMock.mockResolvedValue({ candidates: [], conflicts: [] });
+    fetchConversionPlanMock.mockResolvedValue({ candidates: [] });
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
 
     expect(fetchConversionPlanMock).toHaveBeenCalledWith("tiles");
   });
 
-  it("shows candidates and conflicts once the plan resolves", async () => {
+  it("shows candidates, calling out the ones that will overwrite an existing destination", async () => {
     fetchConversionPlanMock.mockResolvedValue({
-      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
-      conflicts: [{ relativePath: "theme.wav", kind: "audio", destinationPath: "theme.ogg" }],
+      candidates: [
+        {
+          relativePath: "forest.png",
+          kind: "image",
+          destinationPath: "forest.webp",
+          willOverwrite: false,
+        },
+        {
+          relativePath: "theme.wav",
+          kind: "audio",
+          destinationPath: "theme.ogg",
+          willOverwrite: true,
+        },
+      ],
     });
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
 
     expect(await screen.findByText("forest.png -> forest.webp")).toBeInTheDocument();
     expect(screen.getByText("theme.wav -> theme.ogg")).toBeInTheDocument();
+    expect(
+      screen.getByText("1 file(s) will overwrite an existing destination:"),
+    ).toBeInTheDocument();
   });
 
   it("shows a message when there is nothing to convert", async () => {
-    fetchConversionPlanMock.mockResolvedValue({ candidates: [], conflicts: [] });
+    fetchConversionPlanMock.mockResolvedValue({ candidates: [] });
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
 
@@ -55,10 +70,16 @@ describe("ConvertModal", () => {
     const onConverted = vi.fn();
     const onClose = vi.fn();
     fetchConversionPlanMock.mockResolvedValue({
-      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
-      conflicts: [],
+      candidates: [
+        {
+          relativePath: "forest.png",
+          kind: "image",
+          destinationPath: "forest.webp",
+          willOverwrite: false,
+        },
+      ],
     });
-    convertMock.mockResolvedValue({ converted: 1, conflicts: 0 });
+    convertMock.mockResolvedValue({ converted: 1, overwritten: 0 });
 
     render(<ConvertModal currentPath="tiles" onClose={onClose} onConverted={onConverted} />);
     await screen.findByText("forest.png -> forest.webp");
@@ -75,8 +96,14 @@ describe("ConvertModal", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     fetchConversionPlanMock.mockResolvedValue({
-      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
-      conflicts: [],
+      candidates: [
+        {
+          relativePath: "forest.png",
+          kind: "image",
+          destinationPath: "forest.webp",
+          willOverwrite: false,
+        },
+      ],
     });
 
     render(<ConvertModal currentPath="tiles" onClose={onClose} onConverted={vi.fn()} />);
@@ -91,8 +118,14 @@ describe("ConvertModal", () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     fetchConversionPlanMock.mockResolvedValue({
-      candidates: [{ relativePath: "forest.png", kind: "image", destinationPath: "forest.webp" }],
-      conflicts: [],
+      candidates: [
+        {
+          relativePath: "forest.png",
+          kind: "image",
+          destinationPath: "forest.webp",
+          willOverwrite: false,
+        },
+      ],
     });
     convertMock.mockRejectedValue(new Error("disk full"));
 
