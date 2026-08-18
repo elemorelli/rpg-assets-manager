@@ -29,9 +29,8 @@ export const uploadFileHandler = (assetTreeRoot: string) =>
     }
 
     const targetDir = extractTargetDir(uploadedFile.fields);
-    const content = await uploadedFile.toBuffer();
 
-    await uploadFile(db, assetTreeRoot, targetDir, uploadedFile.filename, content);
+    await uploadFile(db, assetTreeRoot, targetDir, uploadedFile.filename, uploadedFile.file);
 
     return { uploaded: uploadedFile.filename };
   });

@@ -1,9 +1,11 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
+import { HttpError } from "#server/errors/index.ts";
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
@@ -11,6 +13,14 @@ import { uploadFile } from "../upload-file.ts";
 
 const PREFIX = "upload-test/";
 const FAKE_PNG_BYTES_LENGTH = Buffer.byteLength("fake-png-bytes");
+
+const uploadableStreamFrom = (content: string, truncated = false) => {
+  const stream = Readable.from([Buffer.from(content)]) as Readable & { truncated: boolean };
+
+  stream.truncated = truncated;
+
+  return stream;
+};
 
 describe("uploadFile", () => {
   let tempDir = "";
@@ -26,7 +36,13 @@ describe("uploadFile", () => {
   });
 
   it("writes the file content at the target path", async () => {
-    await uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("fake-png-bytes"));
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
 
     expect(await fs.readFile(path.join(tempDir, "upload-test", "forest.png"), "utf8")).toBe(
       "fake-png-bytes",
@@ -34,7 +50,13 @@ describe("uploadFile", () => {
   });
 
   it("creates the target directory when it does not exist", async () => {
-    await uploadFile(db, tempDir, "upload-test/tiles", "forest.png", Buffer.from("fake-png-bytes"));
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test/tiles",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
 
     expect(
       await fs.readFile(path.join(tempDir, "upload-test", "tiles", "forest.png"), "utf8"),
@@ -46,18 +68,30 @@ describe("uploadFile", () => {
     await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
 
     await expect(
-      uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("replacement")),
+      uploadFile(db, tempDir, "upload-test", "forest.png", uploadableStreamFrom("replacement")),
     ).rejects.toThrow();
   });
 
   it("rejects a file name that escapes the tree root", async () => {
     await expect(
-      uploadFile(db, tempDir, "upload-test", "../../escaped.png", Buffer.from("fake-png-bytes")),
+      uploadFile(
+        db,
+        tempDir,
+        "upload-test",
+        "../../escaped.png",
+        uploadableStreamFrom("fake-png-bytes"),
+      ),
     ).rejects.toThrow(UnsafePathError);
   });
 
   it("records the uploaded file's hash in the assets table", async () => {
-    await uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("fake-png-bytes"));
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
 
     const row = await db
       .selectFrom("assets")
@@ -83,7 +117,13 @@ describe("uploadFile", () => {
       })
       .execute();
 
-    await uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("fake-png-bytes"));
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
 
     const row = await db
       .selectFrom("assets")
@@ -94,10 +134,30 @@ describe("uploadFile", () => {
     expect(row.hash).not.toEqual("stale-hash");
   });
 
+  it("deletes the partial file and rejects with a 413 when the stream was truncated", async () => {
+    await expect(
+      uploadFile(
+        db,
+        tempDir,
+        "upload-test",
+        "forest.png",
+        uploadableStreamFrom("fake-png-bytes", true),
+      ),
+    ).rejects.toThrow(HttpError);
+
+    await expect(fs.access(path.join(tempDir, "upload-test", "forest.png"))).rejects.toThrow();
+  });
+
   it("invalidates the cached local hash index so the next read reflects the upload", async () => {
     await getLocalHashIndex(db);
 
-    await uploadFile(db, tempDir, "upload-test", "forest.png", Buffer.from("fake-png-bytes"));
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
     const index = await getLocalHashIndex(db);
 
     expect(index.has(`${PREFIX}forest.png`)).toBe(true);
