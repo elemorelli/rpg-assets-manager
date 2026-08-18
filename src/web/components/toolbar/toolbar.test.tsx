@@ -29,6 +29,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -49,6 +50,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "New folder" }));
@@ -69,6 +71,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     const hiddenInput = document.querySelector('input[type="file"]');
@@ -94,6 +97,7 @@ describe("Toolbar", () => {
         onRescan={onRescan}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -113,6 +117,7 @@ describe("Toolbar", () => {
         onRescan={onRescan}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
@@ -132,6 +137,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     const rehashButton = screen.getByRole("button", { name: "Full rehash" });
@@ -152,6 +158,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
 
@@ -161,6 +168,7 @@ describe("Toolbar", () => {
     expect(screen.getByRole("button", { name: "Full rehash" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Convert" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sync" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Reconcile" })).toBeDisabled();
   });
 
   it("triggers onConvert when Convert is clicked", async () => {
@@ -175,6 +183,7 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={onConvert}
         onSync={vi.fn()}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Convert" }));
@@ -194,10 +203,31 @@ describe("Toolbar", () => {
         onRescan={vi.fn()}
         onConvert={vi.fn()}
         onSync={onSync}
+        onReconcile={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Sync" }));
 
     expect(onSync).toHaveBeenCalled();
+  });
+
+  it("triggers onReconcile when Reconcile is clicked", async () => {
+    const user = userEvent.setup();
+    const onReconcile = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onConvert={vi.fn()}
+        onSync={vi.fn()}
+        onReconcile={onReconcile}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Reconcile" }));
+
+    expect(onReconcile).toHaveBeenCalled();
   });
 });

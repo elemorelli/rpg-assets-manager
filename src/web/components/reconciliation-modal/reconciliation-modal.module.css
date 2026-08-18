@@ -1,0 +1,31 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.error {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}
+
+.missingDestination {
+  color: var(--color-sync-new);
+}
+
+.missingSource {
+  color: var(--color-sync-renamed);
+}
+
+.differs {
+  color: var(--color-sync-pending);
+}
+
+.erroredPath {
+  color: var(--color-danger);
+}

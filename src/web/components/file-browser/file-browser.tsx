@@ -10,10 +10,11 @@ import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { OverwriteConfirmModal } from "#components/overwrite-confirm-modal/overwrite-confirm-modal.tsx";
 import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
+import { ReconciliationModal } from "#components/reconciliation-modal/reconciliation-modal.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
+import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
 import { SyncModal } from "#components/sync-modal/sync-modal.tsx";
-import { SyncSection } from "#components/sync-section/sync-section.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
@@ -44,6 +45,7 @@ export const FileBrowser = (): JSX.Element => {
   const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
+  const [isReconciliationModalOpen, setReconciliationModalOpen] = useState<boolean>(false);
   const [syncHistoryRefreshTrigger, setSyncHistoryRefreshTrigger] = useState<number>(0);
 
   const {
@@ -182,6 +184,7 @@ export const FileBrowser = (): JSX.Element => {
                   onRescan={handleRescan}
                   onConvert={() => setConvertModalOpen(true)}
                   onSync={() => setSyncModalOpen(true)}
+                  onReconcile={() => setReconciliationModalOpen(true)}
                 />
                 {searchResults === null && tagFilterResults === null && (
                   <ViewControls
@@ -305,6 +308,9 @@ export const FileBrowser = (): JSX.Element => {
                 }}
               />
             )}
+            {isReconciliationModalOpen && (
+              <ReconciliationModal onClose={() => setReconciliationModalOpen(false)} />
+            )}
             {conflictingFileNames && (
               <OverwriteConfirmModal
                 fileNames={conflictingFileNames}
@@ -317,7 +323,7 @@ export const FileBrowser = (): JSX.Element => {
         drawer={
           <PanelDrawer expandTrigger={drawerExpandTrigger}>
             <JobProgress onJobStarted={handleJobStarted} />
-            <SyncSection historyRefreshTrigger={syncHistoryRefreshTrigger} />
+            <SyncHistoryPanel refreshToken={syncHistoryRefreshTrigger} />
           </PanelDrawer>
         }
       />

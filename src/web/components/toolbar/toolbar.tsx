@@ -4,6 +4,7 @@ import {
   faFolderPlus,
   faHashtag,
   faRightLeft,
+  faScaleBalanced,
   faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -19,6 +20,7 @@ export interface ToolbarProps {
   onRescan: (forceRehash: boolean) => void;
   onConvert: () => void;
   onSync: () => void;
+  onReconcile: () => void;
 }
 
 export const Toolbar = ({
@@ -28,6 +30,7 @@ export const Toolbar = ({
   onRescan,
   onConvert,
   onSync,
+  onReconcile,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -101,6 +104,14 @@ export const Toolbar = ({
         </button>
         <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
           <FontAwesomeIcon icon={faCloudArrowUp} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Reconcile"
+          title="Reconcile"
+          onClick={onReconcile}>
+          <FontAwesomeIcon icon={faScaleBalanced} />
         </button>
         <input
           ref={fileInputRef}
