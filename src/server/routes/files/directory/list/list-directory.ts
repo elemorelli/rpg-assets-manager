@@ -2,10 +2,11 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import type { Kysely } from "kysely";
 
+import { getLocalHashIndex, getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
-import { computeDirectorySyncStatus, type RemoteIndexRecord } from "#utils/sync-status.ts";
+import { computeDirectorySyncStatus } from "#utils/sync-status.ts";
 
 const fetchTagsForPaths = async (
   db: Kysely<DB>,
@@ -22,18 +23,6 @@ const fetchTagsForPaths = async (
     .execute();
 
   return new Map(rows.map((row) => [row.path, row.tags]));
-};
-
-const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, string>> => {
-  const rows = await db.selectFrom("assets").select(["path", "hash"]).execute();
-
-  return new Map(rows.map((row) => [row.path, row.hash]));
-};
-
-const fetchRemoteHashIndex = async (db: Kysely<DB>): Promise<Map<string, RemoteIndexRecord>> => {
-  const rows = await db.selectFrom("remote_assets").select(["path", "hash", "size"]).execute();
-
-  return new Map(rows.map((row) => [row.path, { hash: row.hash, size: Number(row.size) }]));
 };
 
 export const listDirectory = async (
@@ -77,8 +66,8 @@ export const listDirectory = async (
       db,
       fileEntries.map((file) => file.relativePath),
     ),
-    fetchLocalHashIndex(db),
-    fetchRemoteHashIndex(db),
+    getLocalHashIndex(db),
+    getRemoteHashIndex(db),
   ]);
 
   for (const file of fileEntries) {

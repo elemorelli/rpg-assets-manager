@@ -173,4 +173,31 @@ describe("listDirectory", () => {
 
     expect(tiles?.hasPendingSync).toBe(true);
   });
+
+  it("reuses the cached remote index across repeated calls, so a direct db write bypassing invalidation is not reflected", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-"));
+    await fs.writeFile(path.join(tempDir, "forest.png"), "fake-png-bytes");
+    await db
+      .insertInto("assets")
+      .values({ path: "forest.png", size: 14, mtime: new Date(), hash: "same-hash" })
+      .execute();
+    await db
+      .insertInto("remote_assets")
+      .values({ path: "forest.png", size: 14, hash: "same-hash" })
+      .execute();
+
+    const first = await listDirectory(db, tempDir, "");
+    expect(first.find((entry) => entry.name === "forest.png")?.syncStatus).toBeUndefined();
+
+    await db
+      .updateTable("remote_assets")
+      .set({ hash: "different-hash" })
+      .where("path", "=", "forest.png")
+      .execute();
+    const second = await listDirectory(db, tempDir, "");
+
+    expect(second.find((entry) => entry.name === "forest.png")?.syncStatus).toBeUndefined();
+  });
 });
