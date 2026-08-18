@@ -1,5 +1,8 @@
 import { runner } from "node-pg-migrate";
 
+import { db } from "#server/db/index.ts";
+import { rescanAssets } from "#server/routes/scan/index.ts";
+
 import { buildApp } from "./app.ts";
 
 const DEFAULT_HOST = "127.0.0.1";
@@ -31,6 +34,8 @@ const start = async (): Promise<void> => {
     direction: "up",
     migrationsTable: "pgmigrations",
   });
+
+  await rescanAssets(db, ASSET_TREE_ROOT);
 
   const app = buildApp({
     webDistDir: WEB_DIST_DIR,
