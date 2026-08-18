@@ -25,12 +25,17 @@ import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
 import { acknowledgeWorldHandler, listSyncRunsHandler } from "./sync-runs/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
 
+const BYTES_PER_KILOBYTE = 1024;
+const BYTES_PER_MEGABYTE = BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
+const MAX_UPLOAD_FILE_SIZE_MEGABYTES = 1024;
+const MAX_UPLOAD_FILE_SIZE_BYTES = MAX_UPLOAD_FILE_SIZE_MEGABYTES * BYTES_PER_MEGABYTE;
+
 export const registerRoutes = (
   app: FastifyInstance,
   assetTreeRoot: string,
   thumbnailCacheDir: string,
 ): void => {
-  app.register(fastifyMultipart);
+  app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_FILE_SIZE_BYTES } });
 
   app.get("/api/health", healthHandler);
   app.post("/api/login", loginHandler);
