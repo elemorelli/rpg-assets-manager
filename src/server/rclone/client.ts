@@ -28,6 +28,7 @@ export const rcloneCopy = async (
     destinationRoot,
     "--files-from-raw",
     listFilePath,
+    "--s3-no-check-bucket",
   ]);
 };
 
@@ -37,7 +38,13 @@ export const rcloneDelete = async (
 ): Promise<void> => {
   const listFilePath = await writeRelativePathsListFile(relativePaths);
 
-  await execFileAsync("rclone", ["delete", destinationRoot, "--files-from-raw", listFilePath]);
+  await execFileAsync("rclone", [
+    "delete",
+    destinationRoot,
+    "--files-from-raw",
+    listFilePath,
+    "--s3-no-check-bucket",
+  ]);
 };
 
 export const rcloneMoveTo = async (
@@ -49,6 +56,7 @@ export const rcloneMoveTo = async (
     "moveto",
     `${destinationRoot}/${oldRelativePath}`,
     `${destinationRoot}/${newRelativePath}`,
+    "--s3-no-check-bucket",
   ]);
 };
 

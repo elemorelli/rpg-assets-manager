@@ -40,6 +40,7 @@ describe("rcloneCopy", () => {
     expect(capturedArgs[1]).toBe("/source");
     expect(capturedArgs[2]).toBe("/destination");
     expect(capturedArgs[3]).toBe("--files-from-raw");
+    expect(capturedArgs[5]).toBe("--s3-no-check-bucket");
 
     const listFileContent = await fs.readFile(capturedArgs[4], "utf8");
 
@@ -58,6 +59,7 @@ describe("rcloneDelete", () => {
     await rcloneDelete("/destination", ["gone.png"]);
 
     expect(capturedArgs.slice(0, 2)).toEqual(["delete", "/destination"]);
+    expect(capturedArgs[4]).toBe("--s3-no-check-bucket");
 
     const listFileContent = await fs.readFile(capturedArgs[3], "utf8");
 
@@ -79,6 +81,7 @@ describe("rcloneMoveTo", () => {
       "moveto",
       "/destination/old/name.png",
       "/destination/new/name.png",
+      "--s3-no-check-bucket",
     ]);
   });
 });
