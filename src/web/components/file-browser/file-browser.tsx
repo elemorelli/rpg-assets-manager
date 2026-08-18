@@ -130,7 +130,7 @@ export const FileBrowser = (): JSX.Element => {
       .fetchFilesByTag(selectedTags)
       .then(setTagFilterResults)
       .catch((caught: unknown) => setError(describeError(caught)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // selectedTags is a fresh array every render; depend on tagsParam instead to avoid refetching on every render.
   }, [tagsParam]);
 
   const runAction = (action: () => Promise<void>): void => {
