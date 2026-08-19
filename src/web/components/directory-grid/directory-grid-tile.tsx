@@ -62,14 +62,13 @@ export const DirectoryGridTile = ({
   const { isDeleted, isNew, isRenamed, isPending } = getEntrySyncFlags(entry);
   const { dragOver, handleDragOver, handleDragLeave, handleDrop, handleDragStart } =
     useEntryDragAndDrop<HTMLDivElement>({ entry, isDropTarget, onDragStart, onDropEntry });
-  const { handleClick, handleDoubleClick, handleNameClick } =
-    createEntrySelectionHandlers<HTMLDivElement>({
-      entry,
-      isDeleted,
-      onSelectRow,
-      onOpenDirectory,
-      onOpenLightbox,
-    });
+  const { handleClick, handleNameClick } = createEntrySelectionHandlers<HTMLDivElement>({
+    entry,
+    isDeleted,
+    onSelectRow,
+    onOpenDirectory,
+    onOpenLightbox,
+  });
   const contextMenu = useContextMenu();
 
   const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
@@ -88,7 +87,6 @@ export const DirectoryGridTile = ({
         isSelected && styles.selected,
       )}
       onClick={isDeleted ? undefined : handleClick}
-      onDoubleClick={handleDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}

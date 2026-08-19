@@ -440,7 +440,7 @@ describe("DirectoryTable", () => {
     expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 
-  it("opens the lightbox on double-click of a file row", () => {
+  it("opens the lightbox on click of a file row", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -450,12 +450,12 @@ describe("DirectoryTable", () => {
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    fireEvent.doubleClick(getRow("map.png"));
+    fireEvent.click(getRow("map.png"));
 
     expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 
-  it("does not open the lightbox on double-click of a directory row", () => {
+  it("does not open the lightbox on click of a directory row", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -465,14 +465,12 @@ describe("DirectoryTable", () => {
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    fireEvent.doubleClick(
-      screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement);
 
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 
-  it("opens the directory on double-click of a directory row", () => {
+  it("opens the directory on click of a directory row", () => {
     const onOpenDirectory = vi.fn();
 
     render(
@@ -482,14 +480,12 @@ describe("DirectoryTable", () => {
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    fireEvent.doubleClick(
-      screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement,
-    );
+    fireEvent.click(screen.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement);
 
     expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
   });
 
-  it("does not open the lightbox on double-click of the actions menu button", () => {
+  it("does not open the lightbox on click of the actions menu button", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -499,7 +495,7 @@ describe("DirectoryTable", () => {
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    fireEvent.doubleClick(screen.getByRole("button", { name: "Actions for map.png" }));
+    fireEvent.click(screen.getByRole("button", { name: "Actions for map.png" }));
 
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
@@ -517,7 +513,7 @@ describe("DirectoryTable", () => {
     expect(screen.queryByRole("button", { name: "Actions for gone.png" })).not.toBeInTheDocument();
   });
 
-  it("is not draggable and does not open the lightbox on double-click for a deleted file row", () => {
+  it("is not draggable and does not open the lightbox on click for a deleted file row", () => {
     const onOpenLightbox = vi.fn();
     const deletedFile: DirectoryEntry = {
       name: "gone.png",
@@ -537,7 +533,7 @@ describe("DirectoryTable", () => {
 
     expect(row).toHaveAttribute("draggable", "false");
 
-    fireEvent.doubleClick(row);
+    fireEvent.click(row);
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 

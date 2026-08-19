@@ -366,7 +366,7 @@ describe("DirectoryGrid", () => {
     expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 
-  it("opens the lightbox on double-click of a file tile", () => {
+  it("opens the lightbox on click of a file tile", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -376,12 +376,12 @@ describe("DirectoryGrid", () => {
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    fireEvent.doubleClick(screen.getByTestId("tile-map.png"));
+    fireEvent.click(screen.getByTestId("tile-map.png"));
 
     expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
   });
 
-  it("does not open the lightbox on double-click of a directory tile", () => {
+  it("does not open the lightbox on click of a directory tile", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -391,12 +391,12 @@ describe("DirectoryGrid", () => {
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    fireEvent.doubleClick(screen.getByTestId("tile-tiles"));
+    fireEvent.click(screen.getByTestId("tile-tiles"));
 
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 
-  it("opens the directory on double-click of a directory tile", () => {
+  it("opens the directory on click of a directory tile", () => {
     const onOpenDirectory = vi.fn();
 
     render(
@@ -406,12 +406,12 @@ describe("DirectoryGrid", () => {
         groups={[{ label: null, entries: [directoryEntry] }]}
       />,
     );
-    fireEvent.doubleClick(screen.getByTestId("tile-tiles"));
+    fireEvent.click(screen.getByTestId("tile-tiles"));
 
     expect(onOpenDirectory).toHaveBeenCalledWith("tiles");
   });
 
-  it("does not open the lightbox on double-click of the actions menu button", () => {
+  it("does not open the lightbox on click of the actions menu button", () => {
     const onOpenLightbox = vi.fn();
 
     render(
@@ -421,7 +421,7 @@ describe("DirectoryGrid", () => {
         groups={[{ label: null, entries: [fileEntry] }]}
       />,
     );
-    fireEvent.doubleClick(screen.getByRole("button", { name: "Actions for map.png" }));
+    fireEvent.click(screen.getByRole("button", { name: "Actions for map.png" }));
 
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
@@ -439,7 +439,7 @@ describe("DirectoryGrid", () => {
     expect(screen.queryByRole("button", { name: "Actions for gone.png" })).not.toBeInTheDocument();
   });
 
-  it("is not draggable and does not open the lightbox on double-click for a deleted file tile", () => {
+  it("is not draggable and does not open the lightbox on click for a deleted file tile", () => {
     const onOpenLightbox = vi.fn();
     const deletedFile: DirectoryEntry = {
       name: "gone.png",
@@ -459,7 +459,7 @@ describe("DirectoryGrid", () => {
 
     expect(tile).toHaveAttribute("draggable", "false");
 
-    fireEvent.doubleClick(tile);
+    fireEvent.click(tile);
     expect(onOpenLightbox).not.toHaveBeenCalled();
   });
 

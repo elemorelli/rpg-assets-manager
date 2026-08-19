@@ -63,14 +63,13 @@ export const DirectoryTableRow = ({
   const { isDeleted, isNew, isRenamed, isPending } = getEntrySyncFlags(entry);
   const { dragOver, handleDragOver, handleDragLeave, handleDrop, handleDragStart } =
     useEntryDragAndDrop<HTMLTableRowElement>({ entry, isDropTarget, onDragStart, onDropEntry });
-  const { handleClick, handleDoubleClick, handleNameClick } =
-    createEntrySelectionHandlers<HTMLTableRowElement>({
-      entry,
-      isDeleted,
-      onSelectRow,
-      onOpenDirectory,
-      onOpenLightbox,
-    });
+  const { handleClick, handleNameClick } = createEntrySelectionHandlers<HTMLTableRowElement>({
+    entry,
+    isDeleted,
+    onSelectRow,
+    onOpenDirectory,
+    onOpenLightbox,
+  });
   const contextMenu = useContextMenu();
   const sizeLabel =
     entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
@@ -86,7 +85,6 @@ export const DirectoryTableRow = ({
       aria-selected={isSelected}
       className={clsx(isDropTarget && dragOver && styles.dragOver, isSelected && styles.selected)}
       onClick={isDeleted ? undefined : handleClick}
-      onDoubleClick={handleDoubleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
       onDragOver={handleDragOver}

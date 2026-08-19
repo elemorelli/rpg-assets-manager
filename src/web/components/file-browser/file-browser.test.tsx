@@ -579,16 +579,18 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findByText("a.png");
 
-    fireEvent.click(screen.getByText("a.png"));
-    fireEvent.click(screen.getByText("b.png"), { ctrlKey: true });
+    const table = within(screen.getByRole("table"));
 
-    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+    fireEvent.click(table.getByText("a.png"));
+    fireEvent.click(table.getByText("b.png"), { ctrlKey: true });
+
+    const targetRow = table.getAllByText("tiles").find((el) => el.closest("tr") !== null);
 
     if (!targetRow?.closest("tr")) {
       throw new Error("target row not found");
     }
 
-    fireEvent.dragStart(screen.getByText("a.png").closest("tr") as HTMLElement);
+    fireEvent.dragStart(table.getByText("a.png").closest("tr") as HTMLElement);
     fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
     fireEvent.drop(targetRow.closest("tr") as HTMLElement);
 
@@ -659,7 +661,7 @@ describe("FileBrowser", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("opens the lightbox on double-click of a table row", async () => {
+  it("opens the lightbox on click of a table row", async () => {
     renderFileBrowser();
     await screen.findByText("map.png");
 
@@ -669,12 +671,12 @@ describe("FileBrowser", () => {
       throw new Error("row not found");
     }
 
-    fireEvent.doubleClick(row);
+    fireEvent.click(row);
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("does not open the lightbox on double-click of a directory row", async () => {
+  it("does not open the lightbox on click of a directory row", async () => {
     renderFileBrowser();
     await screen.findByText("map.png");
 
@@ -684,12 +686,12 @@ describe("FileBrowser", () => {
       throw new Error("row not found");
     }
 
-    fireEvent.doubleClick(row);
+    fireEvent.click(row);
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it("navigates into a directory on double-click of its row", async () => {
+  it("navigates into a directory on click of its row", async () => {
     renderFileBrowser();
     await screen.findByText("map.png");
 
@@ -700,7 +702,7 @@ describe("FileBrowser", () => {
       throw new Error("row not found");
     }
 
-    fireEvent.doubleClick(row);
+    fireEvent.click(row);
 
     await screen.findAllByText("legacy-pack");
     expect(listDirectoryMock).toHaveBeenLastCalledWith("tiles");

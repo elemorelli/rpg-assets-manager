@@ -14,7 +14,6 @@ export interface CreateEntrySelectionHandlersParams {
 
 export interface EntrySelectionHandlers<ElementType extends HTMLElement> {
   handleClick: (event: MouseEvent<ElementType>) => void;
-  handleDoubleClick: (event: MouseEvent<ElementType>) => void;
   handleNameClick: (event: MouseEvent<HTMLButtonElement>) => void;
 }
 
@@ -25,11 +24,7 @@ export const createEntrySelectionHandlers = <ElementType extends HTMLElement>({
   onOpenDirectory,
   onOpenLightbox,
 }: CreateEntrySelectionHandlersParams): EntrySelectionHandlers<ElementType> => {
-  const handleClick = (event: MouseEvent<ElementType>): void => {
-    onSelectRow(entry, modifierFromClick(event));
-  };
-
-  const handleDoubleClick = (event: MouseEvent<ElementType>): void => {
+  const openEntry = (event: MouseEvent<ElementType>): void => {
     if (isDeleted) {
       return;
     }
@@ -51,10 +46,20 @@ export const createEntrySelectionHandlers = <ElementType extends HTMLElement>({
     onOpenLightbox(entry);
   };
 
+  const handleClick = (event: MouseEvent<ElementType>): void => {
+    const modifier = modifierFromClick(event);
+
+    onSelectRow(entry, modifier);
+
+    if (modifier === "replace") {
+      openEntry(event);
+    }
+  };
+
   const handleNameClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
     onOpenDirectory(entry.name);
   };
 
-  return { handleClick, handleDoubleClick, handleNameClick };
+  return { handleClick, handleNameClick };
 };
