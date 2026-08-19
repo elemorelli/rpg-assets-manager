@@ -1,7 +1,7 @@
-import { faFolder } from "@fortawesome/free-solid-svg-icons";
+import { faFile, faFileCircleExclamation, faFolder } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import type { JSX, KeyboardEvent } from "react";
+import { type JSX, type KeyboardEvent, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
@@ -23,6 +23,7 @@ export const AssetPreview = ({
   onOpen,
 }: AssetPreviewProps): JSX.Element => {
   const isLarge = size === "large";
+  const [imageLoadFailed, setImageLoadFailed] = useState(false);
 
   if (entry.type === "directory") {
     return (
@@ -48,6 +49,17 @@ export const AssetPreview = ({
   const previewSource = resolvePreviewSource(entry);
 
   if (previewSource.kind === "image") {
+    if (imageLoadFailed) {
+      return (
+        <span
+          data-size={size}
+          aria-label="Image failed to load"
+          className={clsx(styles.errorIcon, isLarge && styles.errorIconLarge)}>
+          <FontAwesomeIcon icon={faFileCircleExclamation} />
+        </span>
+      );
+    }
+
     const imageUrl = previewSource.useThumbnail
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
@@ -62,6 +74,10 @@ export const AssetPreview = ({
         event.preventDefault();
         onOpen?.(entry);
       }
+    };
+
+    const handleImageError = (): void => {
+      setImageLoadFailed(true);
     };
 
     const image = (
@@ -79,6 +95,7 @@ export const AssetPreview = ({
         tabIndex={isOpenable ? 0 : undefined}
         onClick={isOpenable ? handleOpenClick : undefined}
         onKeyDown={isOpenable ? handleOpenKeyDown : undefined}
+        onError={handleImageError}
       />
     );
 
@@ -101,8 +118,9 @@ export const AssetPreview = ({
   return (
     <span
       data-size={size}
-      className={clsx(styles.placeholder, isLarge && styles.placeholderLarge)}
       aria-label="No preview available"
-    />
+      className={clsx(styles.fileIcon, isLarge && styles.fileIconLarge)}>
+      <FontAwesomeIcon icon={faFile} />
+    </span>
   );
 };

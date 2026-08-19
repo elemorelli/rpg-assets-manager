@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
@@ -50,10 +50,28 @@ describe("AssetPreview", () => {
     expect(audio).toHaveAttribute("preload", "none");
   });
 
-  it("renders a placeholder for an unsupported file type", () => {
-    render(<AssetPreview entry={{ name: "sketch.xcf", type: "file" }} relativePath="sketch.xcf" />);
+  it("renders a generic file icon for an unsupported file type", () => {
+    render(<AssetPreview entry={{ name: "deploy.sh", type: "file" }} relativePath="deploy.sh" />);
 
-    expect(screen.getByLabelText("No preview available")).toBeInTheDocument();
+    const icon = screen.getByLabelText("No preview available");
+    expect(icon).toBeInTheDocument();
+    expect(icon.querySelector("svg")).toBeInTheDocument();
+  });
+
+  it("renders a broken-image icon when a thumbnail fails to load", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "forest.png", type: "file", size: SIZE_ABOVE_THRESHOLD }}
+        relativePath="tiles/forest.png"
+      />,
+    );
+
+    fireEvent.error(screen.getByRole("img", { name: "forest.png" }));
+
+    const icon = screen.getByLabelText("Image failed to load");
+    expect(icon).toBeInTheDocument();
+    expect(icon.querySelector("svg")).toBeInTheDocument();
+    expect(screen.queryByRole("img")).not.toBeInTheDocument();
   });
 
   it("renders a placeholder without hitting the network for a deleted file", () => {
