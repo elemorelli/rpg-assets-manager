@@ -244,13 +244,13 @@ describe("FileBrowser", () => {
     });
   });
 
-  it("triggers a full rehash when the toolbar's Full rehash button is toggled on", async () => {
+  it("triggers a full rehash from the toolbar after confirming the warning", async () => {
     const user = userEvent.setup();
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
-    await user.click(screen.getByRole("button", { name: "Rescan" }));
+    await user.click(screen.getByRole("button", { name: "Rehash" }));
 
     await waitFor(() => {
       expect(rescanMock).toHaveBeenCalledWith(true);

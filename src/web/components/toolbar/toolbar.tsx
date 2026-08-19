@@ -10,6 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import { type JSX, useState } from "react";
 
+import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
@@ -38,8 +39,13 @@ export const Toolbar = ({
   onFoundry,
   hasPendingFoundryMacro,
 }: ToolbarProps): JSX.Element => {
-  const [forceRehash, setForceRehash] = useState<boolean>(false);
+  const [confirmingRehash, setConfirmingRehash] = useState<boolean>(false);
   const directoryActionsMenu = useContextMenu();
+
+  const handleConfirmRehash = (): void => {
+    setConfirmingRehash(false);
+    onRescan(true);
+  };
 
   return (
     <div className={clsx(styles.toolbar, busy && styles.busy)}>
@@ -49,7 +55,7 @@ export const Toolbar = ({
           disabled={busy}
           aria-label="Rescan"
           title="Rescan"
-          onClick={() => onRescan(forceRehash)}>
+          onClick={() => onRescan(false)}>
           <FontAwesomeIcon icon={faArrowsRotate} />
         </button>
         <button
@@ -57,9 +63,7 @@ export const Toolbar = ({
           disabled={busy}
           aria-label="Full rehash"
           title="Full rehash"
-          aria-pressed={forceRehash}
-          className={clsx(forceRehash && styles.toggleActive)}
-          onClick={() => setForceRehash((current) => !current)}>
+          onClick={() => setConfirmingRehash(true)}>
           <FontAwesomeIcon icon={faHashtag} />
         </button>
         <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
@@ -104,6 +108,16 @@ export const Toolbar = ({
           onConvert={onConvert}
         />
       </div>
+      {confirmingRehash && (
+        <ConfirmDialog
+          title="Full rehash"
+          icon={faHashtag}
+          message="This re-reads and re-hashes every file in the collection, even the ones that haven't changed. It can take a while for large collections. Continue?"
+          confirmLabel="Rehash"
+          onConfirm={handleConfirmRehash}
+          onCancel={() => setConfirmingRehash(false)}
+        />
+      )}
     </div>
   );
 };

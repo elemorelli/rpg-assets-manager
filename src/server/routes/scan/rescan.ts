@@ -125,8 +125,10 @@ interface RescanRequestBody {
 
 export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
   const body = request.body as RescanRequestBody | undefined;
+  const forceRehash = body?.forceRehash ?? false;
+  const stage = forceRehash ? "full rehash" : "hashing";
 
-  return runTrackedJob("rescan", "hashing", "rescan failed", (onProgress) =>
-    rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false }, onProgress),
+  return runTrackedJob("rescan", stage, "rescan failed", (onProgress) =>
+    rescanAssets(db, assetTreeRoot, { forceRehash }, onProgress),
   );
 };

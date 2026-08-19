@@ -4,6 +4,7 @@ import { parseJobEvent } from "#utils/job.ts";
 import { Modal } from "#web/components/modal/modal.tsx";
 import { computeEtaSeconds, formatEta } from "#web/utils/job-eta.ts";
 import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
+import { iconForJobType } from "#web/utils/job-type-icon.ts";
 
 import styles from "./job-progress.module.css";
 
@@ -72,7 +73,11 @@ export const JobProgress = (): JSX.Element | null => {
         );
 
     return (
-      <Modal title={runningTitle(displayState)} onClose={handleDismiss} dismissible={false}>
+      <Modal
+        title={runningTitle(displayState)}
+        icon={iconForJobType(displayState.type)}
+        onClose={handleDismiss}
+        dismissible={false}>
         <div className={styles.progress}>
           {displayState.indeterminate ? (
             <span className={styles.spinner} data-testid="job-progress-spinner" />
@@ -108,6 +113,7 @@ export const JobProgress = (): JSX.Element | null => {
     return (
       <Modal
         title={`${displayState.type}: completed`}
+        icon={iconForJobType(displayState.type)}
         onClose={handleDismiss}
         footer={dismissButton}>
         <span>Operation completed successfully.</span>
@@ -116,7 +122,11 @@ export const JobProgress = (): JSX.Element | null => {
   }
 
   return (
-    <Modal title={`${displayState.type}: failed`} onClose={handleDismiss} footer={dismissButton}>
+    <Modal
+      title={`${displayState.type}: failed`}
+      icon={iconForJobType(displayState.type)}
+      onClose={handleDismiss}
+      footer={dismissButton}>
       <div className={styles.error}>
         <span>{displayState.error}</span>
         {displayState.detail !== undefined && <span>{`File: ${displayState.detail}`}</span>}

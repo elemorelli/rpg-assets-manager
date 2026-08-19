@@ -28,7 +28,7 @@ describe("Toolbar", () => {
     expect(onRescan).toHaveBeenCalledWith(false);
   });
 
-  it("triggers a rescan with forceRehash once Full rehash is toggled on", async () => {
+  it("shows a warning before triggering a full rehash", async () => {
     const user = userEvent.setup();
     const onRescan = vi.fn();
 
@@ -46,20 +46,25 @@ describe("Toolbar", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
-    await user.click(screen.getByRole("button", { name: "Rescan" }));
+
+    expect(onRescan).not.toHaveBeenCalled();
+    expect(screen.getByText("Full rehash")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Rehash" }));
 
     expect(onRescan).toHaveBeenCalledWith(true);
   });
 
-  it("marks Full rehash as pressed once toggled on, and unpressed by default", async () => {
+  it("does not trigger a full rehash when the warning is cancelled", async () => {
     const user = userEvent.setup();
+    const onRescan = vi.fn();
 
     render(
       <Toolbar
         busy={false}
         onCreateDirectory={vi.fn()}
         onUploadFile={vi.fn()}
-        onRescan={vi.fn()}
+        onRescan={onRescan}
         onConvert={vi.fn()}
         onSync={vi.fn()}
         onReconcile={vi.fn()}
@@ -67,13 +72,10 @@ describe("Toolbar", () => {
         hasPendingFoundryMacro={false}
       />,
     );
-    const rehashButton = screen.getByRole("button", { name: "Full rehash" });
+    await user.click(screen.getByRole("button", { name: "Full rehash" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(rehashButton).toHaveAttribute("aria-pressed", "false");
-
-    await user.click(rehashButton);
-
-    expect(rehashButton).toHaveAttribute("aria-pressed", "true");
+    expect(onRescan).not.toHaveBeenCalled();
   });
 
   it("disables its buttons while busy", () => {
