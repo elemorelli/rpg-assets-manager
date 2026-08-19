@@ -8,8 +8,8 @@ describe("iconForJobType", () => {
     expect(iconForJobType("rescan")).toBe(faArrowsRotate);
   });
 
-  it("maps apply to the toolbar sync icon", () => {
-    expect(iconForJobType("apply")).toBe(faCloudArrowUp);
+  it("maps sync to the toolbar sync icon", () => {
+    expect(iconForJobType("sync")).toBe(faCloudArrowUp);
   });
 
   it("maps reconcile to the toolbar reconcile icon", () => {

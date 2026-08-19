@@ -256,7 +256,7 @@ describe("JobProgress", () => {
     act(() =>
       source?.emitMessage(
         JSON.stringify({
-          type: "apply",
+          type: "sync",
           stage: "applying",
           done: 10,
           total: 10,
@@ -271,7 +271,7 @@ describe("JobProgress", () => {
     act(() => source?.emitMessage("null"));
 
     expect(onJobSucceeded).toHaveBeenCalledTimes(1);
-    expect(onJobSucceeded).toHaveBeenCalledWith("apply");
+    expect(onJobSucceeded).toHaveBeenCalledWith("sync");
   });
 
   it("does not call onJobSucceeded when a job fails", () => {
@@ -282,7 +282,7 @@ describe("JobProgress", () => {
     act(() =>
       source?.emitMessage(
         JSON.stringify({
-          type: "apply",
+          type: "sync",
           stage: "applying",
           done: 3,
           total: 10,

@@ -103,7 +103,7 @@ export const applyBatchHandler = (assetTreeRoot: string) => async () => {
     await purgeCloudflareCache(urls, cloudflareConfig);
   };
 
-  return runTrackedJob("apply", "applying", "apply failed", (onProgress) =>
+  return runTrackedJob("sync", "applying", "sync failed", (onProgress) =>
     applyBatch(
       db,
       {

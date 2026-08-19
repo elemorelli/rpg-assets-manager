@@ -31,7 +31,7 @@ import { useFoundryPendingStatus } from "./use-foundry-pending-status.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 
-const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY = new Set(["apply", "rescan", "reconcile", "convert"]);
+const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY = new Set(["sync", "rescan", "reconcile", "convert"]);
 
 export const FileBrowser = (): JSX.Element => {
   const params = useParams();
@@ -75,7 +75,7 @@ export const FileBrowser = (): JSX.Element => {
 
     loadDirectory(currentPath);
 
-    if (type === "apply") {
+    if (type === "sync") {
       setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
     }
   };

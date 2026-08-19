@@ -267,7 +267,7 @@ describe("FileBrowser", () => {
     act(() =>
       jobStream?.emitMessage(
         JSON.stringify({
-          type: "apply",
+          type: "sync",
           stage: "applying",
           done: 1,
           total: 1,

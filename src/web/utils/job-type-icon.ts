@@ -3,7 +3,7 @@ import { faArrowsRotate, faCloudArrowUp, faScaleBalanced } from "@fortawesome/fr
 
 const ICON_BY_JOB_TYPE: Record<string, IconDefinition> = {
   rescan: faArrowsRotate,
-  apply: faCloudArrowUp,
+  sync: faCloudArrowUp,
   reconcile: faScaleBalanced,
 };
 
