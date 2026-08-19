@@ -81,6 +81,7 @@ export const TreeNode = ({
   const isDropTarget = canDropOnPath(path);
   const state = childrenByPath[path];
   const nodeEntry: DirectoryEntry = { name, type: "directory" };
+  const hasSubfolders = !Array.isArray(state) || state.length > 0;
 
   const clearDragExpandTimer = (): void => {
     if (dragExpandTimerRef.current !== null) {
@@ -136,13 +137,17 @@ export const TreeNode = ({
         className={clsx(styles.row, isDropTarget && dragOver && styles.dragOver)}
         style={{ paddingLeft: depth * INDENT_PX }}
         onContextMenu={contextMenu.open}>
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-label={isExpanded ? `Collapse ${name}` : `Expand ${name}`}
-          onClick={() => onToggle(path)}>
-          <ChevronIcon expanded={isExpanded} />
-        </button>
+        {hasSubfolders ? (
+          <button
+            type="button"
+            className={styles.toggle}
+            aria-label={isExpanded ? `Collapse ${name}` : `Expand ${name}`}
+            onClick={() => onToggle(path)}>
+            <ChevronIcon expanded={isExpanded} />
+          </button>
+        ) : (
+          <span className={styles.toggle} aria-hidden="true" />
+        )}
         {isRenaming ? (
           <input
             ref={renameInputRef}
