@@ -3,7 +3,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { setCurrentJob } from "../store.ts";
-import { jobsStreamHandler } from "../stream-handler.ts";
+import { jobsStreamHandler } from "../stream.ts";
 
 const createRequest = (): FastifyRequest & { raw: EventEmitter } => {
   const raw = new EventEmitter();

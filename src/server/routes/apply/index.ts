@@ -1,1 +1,1 @@
-export { applyBatchHandler } from "./handler.ts";
+export { applyBatchHandler } from "./batch.ts";

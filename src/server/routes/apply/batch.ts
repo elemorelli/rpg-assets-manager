@@ -1,9 +1,17 @@
 import type { Kysely } from "kysely";
 
 import { invalidateRemoteHashIndex } from "#server/asset-index-cache/index.ts";
-import type { DB } from "#server/db/index.ts";
+import {
+  assetsPublicBaseUrl,
+  cloudflareConfig,
+  purgeCloudflareCache,
+} from "#server/cloudflare/index.ts";
+import { type DB, db } from "#server/db/index.ts";
+import { rcloneDestination } from "#server/rclone/index.ts";
 
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
+import { runTrackedJob } from "../jobs/index.ts";
+import { dryRun } from "./config.ts";
 import { mirrorRemoteAssets } from "./mirror-remote-assets.ts";
 import { buildPurgeUrls } from "./purge-urls.ts";
 import { recordAssetRenames } from "./record-asset-renames.ts";
@@ -83,4 +91,28 @@ export const applyBatch = async (
 
     throw error;
   }
+};
+
+export const applyBatchHandler = (assetTreeRoot: string) => async () => {
+  const purge = async (urls: string[]): Promise<void> => {
+    if (!cloudflareConfig) {
+      return;
+    }
+
+    await purgeCloudflareCache(urls, cloudflareConfig);
+  };
+
+  return runTrackedJob("apply", "applying", "apply failed", (onProgress) =>
+    applyBatch(
+      db,
+      {
+        rootDir: assetTreeRoot,
+        destinationRoot: rcloneDestination,
+        baseUrl: assetsPublicBaseUrl,
+        dryRun,
+        purge,
+      },
+      onProgress,
+    ),
+  );
 };
