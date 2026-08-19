@@ -1,8 +1,9 @@
-import { type JSX, useEffect, useReducer, useState } from "react";
+import { type JSX, useEffect, useReducer, useRef, useState } from "react";
 
 import { parseJobEvent } from "#utils/job.ts";
 import { Modal } from "#web/components/modal/modal.tsx";
-import { computeEtaSeconds, formatEta } from "#web/utils/job-eta.ts";
+import { ProgressModal } from "#web/components/progress-modal/progress-modal.tsx";
+import { computeEtaSeconds } from "#web/utils/job-eta.ts";
 import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
 import { iconForJobType } from "#web/utils/job-type-icon.ts";
 
@@ -17,16 +18,31 @@ type RunningState = Extract<JobDisplayState, { kind: "running" }>;
 
 const runningTitle = (state: RunningState): string => `${state.type}: ${state.stage}`;
 
-export const JobProgress = (): JSX.Element | null => {
+export interface JobProgressProps {
+  onJobSucceeded?: (type: string) => void;
+}
+
+export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Element | null => {
   const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
   const [, tick] = useReducer((count: number) => count + 1, 0);
+  const onJobSucceededRef = useRef(onJobSucceeded);
+  onJobSucceededRef.current = onJobSucceeded;
 
   useEffect(() => {
     const source = new EventSource("/api/jobs/stream");
 
     source.onmessage = (event) => {
       const incoming = parseJobEvent(event.data);
-      setDisplayState((previous) => nextJobDisplayState(previous, incoming));
+
+      setDisplayState((previous) => {
+        const next = nextJobDisplayState(previous, incoming);
+
+        if (next.kind === "succeeded" && previous.kind === "running") {
+          onJobSucceededRef.current?.(previous.type);
+        }
+
+        return next;
+      });
     };
 
     return () => {
@@ -73,33 +89,15 @@ export const JobProgress = (): JSX.Element | null => {
         );
 
     return (
-      <Modal
+      <ProgressModal
         title={runningTitle(displayState)}
         icon={iconForJobType(displayState.type)}
+        done={displayState.done}
+        total={displayState.total}
+        detail={displayState.detail}
+        etaSeconds={eta}
         onClose={handleDismiss}
-        dismissible={false}>
-        <div className={styles.progress}>
-          {displayState.indeterminate ? (
-            <span className={styles.spinner} data-testid="job-progress-spinner" />
-          ) : (
-            <>
-              <progress
-                className={styles.progressBar}
-                value={displayState.done}
-                max={displayState.total}
-              />
-              <div className={styles.meta}>
-                <span>{`${displayState.done} / ${displayState.total}`}</span>
-                {eta !== null && <span>{`ETA: ${formatEta(eta)}`}</span>}
-              </div>
-            </>
-          )}
-
-          {displayState.detail !== undefined && (
-            <span className={styles.detail}>{displayState.detail}</span>
-          )}
-        </div>
-      </Modal>
+      />
     );
   }
 

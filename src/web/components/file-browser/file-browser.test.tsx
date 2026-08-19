@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -257,6 +257,32 @@ describe("FileBrowser", () => {
     });
   });
 
+  it("refreshes the directory listing when a sync job succeeds, even without a matching API response", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const callsBeforeSync = listDirectoryMock.mock.calls.length;
+    const jobStream = FakeEventSource.instances[0];
+
+    act(() =>
+      jobStream?.emitMessage(
+        JSON.stringify({
+          type: "apply",
+          stage: "applying",
+          done: 1,
+          total: 1,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+    act(() => jobStream?.emitMessage("null"));
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.length).toBeGreaterThan(callsBeforeSync);
+    });
+  });
+
   it("shows search results for a debounced query and hides the directory table", async () => {
     const user = userEvent.setup();
     searchEntriesMock.mockResolvedValue([{ relativePath: "tiles/forest.png", type: "file" }]);
@@ -479,6 +505,55 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(uploadFileMock).toHaveBeenCalledWith("audio", file);
     });
+  });
+
+  it("shows upload progress with the current file name while dropping multiple files", async () => {
+    const fileA = new File(["a"], "a.png", { type: "image/png" });
+    const fileB = new File(["b"], "b.png", { type: "image/png" });
+    let resolveFirstUpload: (() => void) | undefined;
+
+    uploadFileMock.mockImplementation((_targetDir: string, file: File) => {
+      if (file === fileA) {
+        return new Promise<void>((resolve) => {
+          resolveFirstUpload = resolve;
+        });
+      }
+
+      return Promise.resolve(undefined);
+    });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], files: [fileA, fileB] },
+    });
+
+    expect(await screen.findByRole("dialog", { name: "Uploading files" })).toBeInTheDocument();
+    expect(screen.getByText("0 / 2")).toBeInTheDocument();
+    expect(screen.getByText("a.png")).toBeInTheDocument();
+
+    resolveFirstUpload?.();
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Uploading files" })).not.toBeInTheDocument();
+    });
+  });
+
+  it("does not show the upload progress dialog for a single dropped file", async () => {
+    const file = new File(["content"], "solo.png", { type: "image/png" });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.drop(screen.getByTestId("directory-dropzone"), {
+      dataTransfer: { types: ["Files"], files: [file] },
+    });
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledWith("", file);
+    });
+    expect(screen.queryByRole("dialog", { name: "Uploading files" })).not.toBeInTheDocument();
   });
 
   it("stops uploading dropped files on the first failure and reports how many succeeded", async () => {

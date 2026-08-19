@@ -1,3 +1,4 @@
+import { faUpload } from "@fortawesome/free-solid-svg-icons";
 import { type JSX, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
@@ -5,6 +6,7 @@ import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
+import { ProgressModal } from "#components/progress-modal/progress-modal.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
@@ -28,6 +30,8 @@ import { useFileUpload } from "./use-file-upload.ts";
 import { useFoundryPendingStatus } from "./use-foundry-pending-status.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
+
+const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY = new Set(["apply", "rescan", "reconcile", "convert"]);
 
 export const FileBrowser = (): JSX.Element => {
   const params = useParams();
@@ -62,6 +66,18 @@ export const FileBrowser = (): JSX.Element => {
 
   const navigateToPath = (path: string): void => {
     navigate(`/${path}`);
+  };
+
+  const handleJobSucceeded = (type: string): void => {
+    if (!JOB_TYPES_THAT_REFRESH_THE_DIRECTORY.has(type)) {
+      return;
+    }
+
+    loadDirectory(currentPath);
+
+    if (type === "apply") {
+      setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
+    }
   };
 
   const handleOpenDirectory = (name: string): void => {
@@ -137,6 +153,7 @@ export const FileBrowser = (): JSX.Element => {
   const {
     handleUploadFile,
     handleFilesDropped,
+    uploadProgress,
     conflictingFileNames,
     confirmOverwrite,
     cancelOverwrite,
@@ -283,9 +300,19 @@ export const FileBrowser = (): JSX.Element => {
               onConfirmOverwrite={confirmOverwrite}
               onCancelOverwrite={cancelOverwrite}
             />
+            {uploadProgress && (
+              <ProgressModal
+                title="Uploading files"
+                icon={faUpload}
+                done={uploadProgress.done}
+                total={uploadProgress.total}
+                detail={uploadProgress.detail}
+                onClose={() => {}}
+              />
+            )}
           </div>
         }
-        drawer={<JobProgress />}
+        drawer={<JobProgress onJobSucceeded={handleJobSucceeded} />}
       />
     </>
   );

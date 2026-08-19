@@ -24,12 +24,35 @@ describe("rclone client (requires the real rclone binary)", () => {
     expect(await fs.readFile(path.join(destinationDir.path, "top.png"), "utf8")).toBe("top-bytes");
   });
 
+  it("reports each copied file as it completes, not just once at the end", async () => {
+    await fs.writeFile(path.join(sourceDir.path, "one.png"), "one-bytes");
+    await fs.writeFile(path.join(sourceDir.path, "two.png"), "two-bytes");
+    const completedPaths: string[] = [];
+
+    await rcloneCopy(sourceDir.path, destinationDir.path, ["one.png", "two.png"], (relativePath) =>
+      completedPaths.push(relativePath),
+    );
+
+    expect(completedPaths.sort()).toEqual(["one.png", "two.png"]);
+  });
+
   it("deletes listed files from the destination", async () => {
     await fs.writeFile(path.join(destinationDir.path, "gone.png"), "gone-bytes");
 
     await rcloneDelete(destinationDir.path, ["gone.png"]);
 
     await expect(fs.access(path.join(destinationDir.path, "gone.png"))).rejects.toThrow();
+  });
+
+  it("reports each deleted file as it completes", async () => {
+    await fs.writeFile(path.join(destinationDir.path, "gone-with-progress.png"), "bytes");
+    const completedPaths: string[] = [];
+
+    await rcloneDelete(destinationDir.path, ["gone-with-progress.png"], (relativePath) =>
+      completedPaths.push(relativePath),
+    );
+
+    expect(completedPaths).toEqual(["gone-with-progress.png"]);
   });
 
   it("moves a file within the destination to a new relative path", async () => {
@@ -73,6 +96,19 @@ describe("rclone client (requires the real rclone binary)", () => {
     expect(result.missingOnDestination).toEqual([]);
     expect(result.missingOnSource).toEqual([]);
     expect(result.differs).toEqual([]);
+  });
+
+  it("reports checked/total progress while checking", async () => {
+    await fs.writeFile(path.join(sourceDir.path, "matching.png"), "same-bytes");
+    await fs.writeFile(path.join(destinationDir.path, "matching.png"), "same-bytes");
+    const progressUpdates: { done: number; total: number }[] = [];
+
+    await rcloneCheck(sourceDir.path, destinationDir.path, (progress) =>
+      progressUpdates.push(progress),
+    );
+
+    expect(progressUpdates.length).toBeGreaterThan(0);
+    expect(progressUpdates.at(-1)).toEqual({ done: 1, total: 1 });
   });
 
   it("cleans up its temp report directory even when rclone check fails unexpectedly", async () => {

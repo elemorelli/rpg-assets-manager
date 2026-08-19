@@ -15,9 +15,9 @@ const { countRcloneSteps, runRcloneOperations } = await import("../run-rclone-op
 const emptyDiff = { added: [], modified: [], deleted: [], renamed: [], ambiguousWarnings: [] };
 
 beforeEach(() => {
-  rcloneCopyMock.mockClear();
-  rcloneDeleteMock.mockClear();
-  rcloneMoveToMock.mockClear();
+  rcloneCopyMock.mockReset().mockResolvedValue(undefined);
+  rcloneDeleteMock.mockReset().mockResolvedValue(undefined);
+  rcloneMoveToMock.mockReset().mockResolvedValue(undefined);
 });
 
 describe("countRcloneSteps", () => {
@@ -25,14 +25,18 @@ describe("countRcloneSteps", () => {
     expect(countRcloneSteps(emptyDiff)).toBe(0);
   });
 
-  it("counts one step for added and modified combined, regardless of how many files", () => {
+  it("counts one step per added and modified file", () => {
+    const twoAddedSteps = 2;
+    const oneModifiedStep = 1;
+    const expectedSteps = twoAddedSteps + oneModifiedStep;
+
     expect(countRcloneSteps({ ...emptyDiff, added: ["a.png", "b.png"], modified: ["c.png"] })).toBe(
-      1,
+      expectedSteps,
     );
   });
 
-  it("counts one step for any number of deletions", () => {
-    expect(countRcloneSteps({ ...emptyDiff, deleted: ["a.png", "b.png"] })).toBe(1);
+  it("counts one step per deleted file", () => {
+    expect(countRcloneSteps({ ...emptyDiff, deleted: ["a.png", "b.png"] })).toBe(2);
   });
 
   it("counts one step per rename pair", () => {
@@ -47,11 +51,11 @@ describe("countRcloneSteps", () => {
     ).toBe(2);
   });
 
-  it("sums copy, delete and rename steps together", () => {
-    const oneCopyStep = 1;
-    const oneDeleteStep = 1;
-    const oneRenameStep = 1;
-    const expectedTotalSteps = oneCopyStep + oneDeleteStep + oneRenameStep;
+  it("sums copy, delete and rename file counts together", () => {
+    const oneAddedStep = 1;
+    const oneDeletedStep = 1;
+    const oneRenamedStep = 1;
+    const expectedSteps = oneAddedStep + oneDeletedStep + oneRenamedStep;
 
     expect(
       countRcloneSteps({
@@ -61,7 +65,7 @@ describe("countRcloneSteps", () => {
         renamed: [{ oldPath: "c.png", newPath: "c2.png" }],
         ambiguousWarnings: [],
       }),
-    ).toBe(expectedTotalSteps);
+    ).toBe(expectedSteps);
   });
 });
 
@@ -82,7 +86,12 @@ describe("runRcloneOperations", () => {
     });
 
     expect(rcloneCopyMock).toHaveBeenCalledTimes(1);
-    expect(rcloneCopyMock).toHaveBeenCalledWith("/root", "/dest", ["a.png", "b.png"]);
+    expect(rcloneCopyMock).toHaveBeenCalledWith(
+      "/root",
+      "/dest",
+      ["a.png", "b.png"],
+      expect.any(Function),
+    );
   });
 
   it("runs copy before delete before renames, in that order", async () => {
@@ -122,29 +131,50 @@ describe("runRcloneOperations", () => {
     expect(rcloneMoveToMock).toHaveBeenNthCalledWith(2, "/dest", "b.png", "b2.png");
   });
 
-  it("reports cumulative progress across copy, delete and each rename", async () => {
+  it("reports per-file progress as rclone reports each copied and deleted file completing", async () => {
     const progressUpdates: { done: number; total: number; detail?: string }[] = [];
+
+    rcloneCopyMock.mockImplementation(
+      async (
+        _root: string,
+        _dest: string,
+        files: string[],
+        onFileDone: (relativePath: string) => void,
+      ) => {
+        for (const file of files) {
+          onFileDone(file);
+        }
+      },
+    );
+    rcloneDeleteMock.mockImplementation(
+      async (_dest: string, files: string[], onFileDone: (relativePath: string) => void) => {
+        for (const file of files) {
+          onFileDone(file);
+        }
+      },
+    );
 
     await runRcloneOperations(
       "/root",
       "/dest",
       {
-        added: ["a.png"],
+        added: ["a.png", "b.png"],
         modified: [],
-        deleted: ["b.png"],
-        renamed: [{ oldPath: "c.png", newPath: "c2.png" }],
+        deleted: ["c.png"],
+        renamed: [{ oldPath: "d.png", newPath: "d2.png" }],
         ambiguousWarnings: [],
       },
       (progress) => progressUpdates.push(progress),
     );
 
     expect(progressUpdates).toEqual([
-      { done: 0, total: 3, detail: "Copying 1 file(s)" },
-      { done: 1, total: 3 },
-      { done: 1, total: 3, detail: "Deleting 1 file(s)" },
-      { done: 2, total: 3 },
-      { done: 2, total: 3, detail: "Renaming c.png → c2.png" },
-      { done: 3, total: 3 },
+      { done: 0, total: 4, detail: "Copying 2 file(s)" },
+      { done: 1, total: 4, detail: "a.png" },
+      { done: 2, total: 4, detail: "b.png" },
+      { done: 2, total: 4, detail: "Deleting 1 file(s)" },
+      { done: 3, total: 4, detail: "c.png" },
+      { done: 3, total: 4, detail: "Renaming d.png → d2.png" },
+      { done: 4, total: 4, detail: "d2.png" },
     ]);
   });
 
@@ -152,6 +182,6 @@ describe("runRcloneOperations", () => {
     await runRcloneOperations("/root", "/dest", { ...emptyDiff, deleted: ["b.png"] });
 
     expect(rcloneCopyMock).not.toHaveBeenCalled();
-    expect(rcloneDeleteMock).toHaveBeenCalledWith("/dest", ["b.png"]);
+    expect(rcloneDeleteMock).toHaveBeenCalledWith("/dest", ["b.png"], expect.any(Function));
   });
 });

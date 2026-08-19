@@ -129,7 +129,7 @@ describe("JobProgress", () => {
       ),
     );
 
-    expect(screen.getByTestId("job-progress-spinner")).toBeInTheDocument();
+    expect(screen.getByTestId("progress-modal-spinner")).toBeInTheDocument();
   });
 
   it("renders an error message and the failing file when the job fails", () => {
@@ -246,5 +246,52 @@ describe("JobProgress", () => {
     render(<JobProgress />);
 
     expect(FakeEventSource.instances[0]?.url).toBe("/api/jobs/stream");
+  });
+
+  it("calls onJobSucceeded with the job type once a running job clears without an error", () => {
+    const onJobSucceeded = vi.fn();
+
+    render(<JobProgress onJobSucceeded={onJobSucceeded} />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "apply",
+          stage: "applying",
+          done: 10,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+
+    expect(onJobSucceeded).not.toHaveBeenCalled();
+
+    act(() => source?.emitMessage("null"));
+
+    expect(onJobSucceeded).toHaveBeenCalledTimes(1);
+    expect(onJobSucceeded).toHaveBeenCalledWith("apply");
+  });
+
+  it("does not call onJobSucceeded when a job fails", () => {
+    const onJobSucceeded = vi.fn();
+
+    render(<JobProgress onJobSucceeded={onJobSucceeded} />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "apply",
+          stage: "applying",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: "disk full",
+        }),
+      ),
+    );
+
+    expect(onJobSucceeded).not.toHaveBeenCalled();
   });
 });
