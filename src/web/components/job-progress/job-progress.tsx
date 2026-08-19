@@ -1,21 +1,16 @@
-import { type JSX, useEffect, useRef, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 
 import { parseJobEvent } from "#utils/job.ts";
 import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
 
 import styles from "./job-progress.module.css";
 
-export interface JobProgressProps {
-  onJobStarted?: () => void;
-}
-
 const SUCCESS_AUTO_DISMISS_MS = 4000;
 
 const IDLE: JobDisplayState = { kind: "idle" };
 
-export const JobProgress = ({ onJobStarted }: JobProgressProps): JSX.Element | null => {
+export const JobProgress = (): JSX.Element | null => {
   const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
-  const previousKindRef = useRef<JobDisplayState["kind"]>("idle");
 
   useEffect(() => {
     const source = new EventSource("/api/jobs/stream");
@@ -29,14 +24,6 @@ export const JobProgress = ({ onJobStarted }: JobProgressProps): JSX.Element | n
       source.close();
     };
   }, []);
-
-  useEffect(() => {
-    if (previousKindRef.current !== "running" && displayState.kind === "running") {
-      onJobStarted?.();
-    }
-
-    previousKindRef.current = displayState.kind;
-  }, [displayState, onJobStarted]);
 
   useEffect(() => {
     if (displayState.kind !== "succeeded") {

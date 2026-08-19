@@ -1,4 +1,4 @@
-import { type JSX, useCallback, useEffect, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 
 import { AppShell } from "#components/app-shell/app-shell.tsx";
@@ -10,11 +10,9 @@ import { FoundryModal } from "#components/foundry-modal/foundry-modal.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { OverwriteConfirmModal } from "#components/overwrite-confirm-modal/overwrite-confirm-modal.tsx";
-import { PanelDrawer } from "#components/panel-drawer/panel-drawer.tsx";
 import { ReconciliationModal } from "#components/reconciliation-modal/reconciliation-modal.tsx";
 import { SearchBox } from "#components/search-box/search-box.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
-import { SyncHistoryPanel } from "#components/sync-history-panel/sync-history-panel.tsx";
 import { SyncModal } from "#components/sync-modal/sync-modal.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
@@ -44,15 +42,15 @@ export const FileBrowser = (): JSX.Element => {
 
   const currentPath = params["*"] ?? "";
 
-  const [drawerExpandTrigger, setDrawerExpandTrigger] = useState<number | undefined>(undefined);
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
   const [isReconciliationModalOpen, setReconciliationModalOpen] = useState<boolean>(false);
   const [isFoundryModalOpen, setFoundryModalOpen] = useState<boolean>(false);
-  const [syncHistoryRefreshTrigger, setSyncHistoryRefreshTrigger] = useState<number>(0);
+  const [foundryStatusRefreshTrigger, setFoundryStatusRefreshTrigger] = useState<number>(0);
 
-  const { hasPendingFoundryMacro, refreshFoundryPendingStatus } =
-    useFoundryPendingStatus(syncHistoryRefreshTrigger);
+  const { hasPendingFoundryMacro, refreshFoundryPendingStatus } = useFoundryPendingStatus(
+    foundryStatusRefreshTrigger,
+  );
 
   const {
     viewMode,
@@ -96,10 +94,6 @@ export const FileBrowser = (): JSX.Element => {
     handleToggleTag,
     handleOpenSearchResult,
   } = useSearchAndTagFilter({ onNavigate: navigateToPath, onError: setError });
-
-  const handleJobStarted = useCallback((): void => {
-    setDrawerExpandTrigger((previous) => (previous ?? 0) + 1);
-  }, []);
 
   const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
   const groups = groupEntries(sortedEntries, groupCriterion);
@@ -312,7 +306,7 @@ export const FileBrowser = (): JSX.Element => {
                 onClose={() => setSyncModalOpen(false)}
                 onApplied={() => {
                   loadDirectory(currentPath);
-                  setSyncHistoryRefreshTrigger((trigger) => trigger + 1);
+                  setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
                 }}
               />
             )}
@@ -334,12 +328,7 @@ export const FileBrowser = (): JSX.Element => {
             )}
           </div>
         }
-        drawer={
-          <PanelDrawer expandTrigger={drawerExpandTrigger}>
-            <JobProgress onJobStarted={handleJobStarted} />
-            <SyncHistoryPanel refreshToken={syncHistoryRefreshTrigger} />
-          </PanelDrawer>
-        }
+        drawer={<JobProgress />}
       />
     </>
   );

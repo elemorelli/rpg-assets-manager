@@ -18,5 +18,4 @@ export { type FoundryWorld, fetchFoundryWorlds } from "./foundry-worlds/list.ts"
 export { markFoundryWorldApplied } from "./foundry-worlds/mark-applied.ts";
 export { type RcloneCheckResult, reconcile } from "./reconcile/check.ts";
 export { rescan } from "./scan/rescan.ts";
-export { fetchSyncRuns, type SyncRun } from "./sync-runs/list.ts";
 export { fetchTags } from "./tags/list.ts";

@@ -26,7 +26,6 @@ import { healthHandler } from "./health/index.ts";
 import { jobsStreamHandler } from "./jobs/index.ts";
 import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
-import { listSyncRunsHandler } from "./sync-runs/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
 
 const BYTES_PER_KILOBYTE = 1024;
@@ -53,7 +52,6 @@ export const registerRoutes = (
   app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));
   app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
   app.post("/api/apply", applyBatchHandler(assetTreeRoot));
-  app.get("/api/sync-runs", listSyncRunsHandler);
   app.get("/api/foundry-worlds", listFoundryWorldsHandler);
   app.post("/api/foundry-worlds/:id/mark-applied", markFoundryWorldAppliedHandler);
 

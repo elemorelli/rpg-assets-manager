@@ -127,24 +127,6 @@ describe("JobProgress", () => {
     expect(screen.queryByText("rescan: completed")).not.toBeInTheDocument();
   });
 
-  it("calls onJobStarted once when a job starts running", () => {
-    const onJobStarted = vi.fn();
-    render(<JobProgress onJobStarted={onJobStarted} />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({ type: "rescan", stage: "hashing", done: 3, total: 10, error: null }),
-      ),
-    );
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({ type: "rescan", stage: "hashing", done: 7, total: 10, error: null }),
-      ),
-    );
-
-    expect(onJobStarted).toHaveBeenCalledTimes(1);
-  });
-
   it("connects to /api/jobs/stream", () => {
     render(<JobProgress />);
 
