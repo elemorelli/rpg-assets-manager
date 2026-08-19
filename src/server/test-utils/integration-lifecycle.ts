@@ -31,7 +31,7 @@ export const useTempDir = (namePrefix: string): TempDirHandle => {
   return handle;
 };
 
-type PrefixCleanupTable = "assets" | "remote_assets";
+type PrefixCleanupTable = "assets" | "remote_assets" | "directories";
 
 export const cleanupAssetsByPrefix = (
   pathPrefix: string,
@@ -40,6 +40,13 @@ export const cleanupAssetsByPrefix = (
   afterEach(async () => {
     for (const table of tables) {
       await db.deleteFrom(table).where("path", "like", `${pathPrefix}%`).execute();
+
+      // "directories" rows can also carry the bare prefix itself (the
+      // directory the other rows live under), which the "%" match above
+      // does not catch since it requires content after the prefix.
+      if (table === "directories" && pathPrefix.endsWith("/")) {
+        await db.deleteFrom("directories").where("path", "=", pathPrefix.slice(0, -1)).execute();
+      }
     }
   });
 };

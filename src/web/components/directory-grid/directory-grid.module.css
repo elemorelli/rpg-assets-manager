@@ -43,6 +43,11 @@
   text-align: center;
 }
 
+.size {
+  color: var(--color-text-muted);
+  font-size: 0.85em;
+}
+
 .pending {
   color: var(--color-sync-pending);
 }

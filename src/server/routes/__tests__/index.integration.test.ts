@@ -20,7 +20,7 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
   const tempDir = useTempDir("core-routes-test-");
   const createdSyncRunIds = useCreatedSyncRunIds();
 
-  cleanupAssetsByPrefix(PREFIX, ["assets", "remote_assets"]);
+  cleanupAssetsByPrefix(PREFIX, ["assets", "remote_assets", "directories"]);
   destroyDbAfterAll();
 
   it("bootstraps the asset tree via POST /api/bootstrap", async () => {

@@ -59,6 +59,24 @@ describe("bootstrapAssets", () => {
     expect(secondSummary).toEqual({ inserted: 1, skipped: 1 });
   });
 
+  it("computes directory aggregates for the scanned tree", async () => {
+    await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
+    await fs.writeFile(path.join(tempDir, "bootstrap-test", "b.png"), "fake-bytes-b");
+
+    await bootstrapAssets(db, tempDir);
+
+    const root = await db
+      .selectFrom("directories")
+      .select(["total_size", "file_count"])
+      .where("path", "=", "bootstrap-test")
+      .executeTakeFirstOrThrow();
+
+    expect(root).toMatchObject({
+      total_size: Buffer.byteLength("fake-bytes-a") + Buffer.byteLength("fake-bytes-b"),
+      file_count: 2,
+    });
+  });
+
   it("invalidates both cached hash indexes after writing the snapshot", async () => {
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
 

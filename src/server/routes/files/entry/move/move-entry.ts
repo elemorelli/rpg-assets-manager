@@ -4,9 +4,13 @@ import { type Kysely, sql } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
+import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
+import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
+import { readSubtreeContribution } from "#server/directory-aggregates/read-subtree-contribution.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 
 export const moveEntry = async (
   db: Kysely<DB>,
@@ -34,6 +38,10 @@ export const moveEntry = async (
     throw new HttpError(`Destination already exists: ${relativeTo}`, HTTP_STATUS.conflict);
   }
 
+  const stat = await fs.stat(absoluteFrom);
+  const isDirectory = stat.isDirectory();
+  const contribution = await readSubtreeContribution(db, relativeFrom, isDirectory);
+
   await fs.mkdir(path.dirname(absoluteTo), { recursive: true });
   await fs.rename(absoluteFrom, absoluteTo);
 
@@ -53,6 +61,29 @@ export const moveEntry = async (
     END
     WHERE path = ${relativeFrom} OR path LIKE ${descendantLikePattern}
   `.execute(db);
+
+  await applyAggregateDelta(db, getParentPath(relativeFrom), {
+    size: -contribution.size,
+    fileCount: -contribution.fileCount,
+    folderCount: -contribution.folderCount,
+  });
+
+  const newParentId = await ensureDirectoryChain(db, getParentPath(relativeTo));
+
+  if (isDirectory) {
+    await sql`
+      UPDATE directories
+      SET
+        path = CASE
+          WHEN path = ${relativeFrom} THEN ${relativeTo}
+          ELSE ${newDescendantPrefix} || substr(path, ${descendantSubstringStart})
+        END,
+        parent_id = CASE WHEN path = ${relativeFrom} THEN ${newParentId} ELSE parent_id END
+      WHERE path = ${relativeFrom} OR path LIKE ${descendantLikePattern}
+    `.execute(db);
+  }
+
+  await applyAggregateDelta(db, getParentPath(relativeTo), contribution);
 
   invalidateLocalHashIndex(db);
 };

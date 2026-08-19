@@ -4,6 +4,7 @@ import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
+import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
 import { walkAssetTree } from "../walk-asset-tree.ts";
@@ -102,6 +103,8 @@ export const rescanAssets = async (
   for (const removedPath of removedPaths) {
     await db.deleteFrom("assets").where("path", "=", removedPath).execute();
   }
+
+  await recomputeAllDirectoryAggregates(db, rootDir);
 
   invalidateLocalHashIndex(db);
 

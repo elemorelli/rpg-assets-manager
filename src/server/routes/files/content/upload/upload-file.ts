@@ -8,9 +8,12 @@ import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
+import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
+import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
 import { createIncrementalHasher, type IncrementalHasher } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 
 export type UploadableStream = Readable & { truncated: boolean };
 
@@ -67,6 +70,13 @@ export const uploadFile = async (
   const stat = await fs.stat(absolutePath);
   const hash = hasher.digest();
 
+  const previousRow = await db
+    .selectFrom("assets")
+    .select("size")
+    .where("path", "=", relativeFile)
+    .executeTakeFirst();
+  const previousSize = previousRow ? Number(previousRow.size) : undefined;
+
   await db
     .insertInto("assets")
     .values({ path: relativeFile, size: stat.size, mtime: stat.mtime, hash })
@@ -79,6 +89,15 @@ export const uploadFile = async (
       }),
     )
     .execute();
+
+  const parentDir = getParentPath(relativeFile);
+
+  await ensureDirectoryChain(db, parentDir);
+  await applyAggregateDelta(db, parentDir, {
+    size: stat.size - (previousSize ?? 0),
+    fileCount: previousSize === undefined ? 1 : 0,
+    folderCount: 0,
+  });
 
   invalidateLocalHashIndex(db);
 };

@@ -49,7 +49,7 @@ describe("DirectoryTable", () => {
     expect(screen.getByText("map.png").tagName).not.toBe("BUTTON");
   });
 
-  it("shows the formatted size for files, and nothing for directories", () => {
+  it("shows the formatted size for files, and nothing for a directory with no aggregate yet", () => {
     render(
       <DirectoryTable
         {...baseProps}
@@ -58,6 +58,16 @@ describe("DirectoryTable", () => {
     );
 
     expect(screen.getByText("2 KB")).toBeInTheDocument();
+  });
+
+  it("shows the formatted recursive total size for a directory that has one", () => {
+    const directoryWithSize: DirectoryEntry = { name: "tiles", type: "directory", size: 10240 };
+
+    render(
+      <DirectoryTable {...baseProps} groups={[{ label: null, entries: [directoryWithSize] }]} />,
+    );
+
+    expect(screen.getByText("10 KB")).toBeInTheDocument();
   });
 
   it("opens a directory on click", async () => {

@@ -39,6 +39,28 @@ describe("DirectoryGrid", () => {
     expect(screen.getByText("map.png")).toBeInTheDocument();
   });
 
+  it("renders the formatted size for a file", () => {
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [fileEntry] }]} />);
+
+    expect(screen.getByText("2 KB")).toBeInTheDocument();
+  });
+
+  it("renders the formatted recursive total size for a directory that has one", () => {
+    const directoryWithSize: DirectoryEntry = { name: "tiles", type: "directory", size: 10240 };
+
+    render(
+      <DirectoryGrid {...baseProps} groups={[{ label: null, entries: [directoryWithSize] }]} />,
+    );
+
+    expect(screen.getByText("10 KB")).toBeInTheDocument();
+  });
+
+  it("renders no size for a directory with no aggregate yet", () => {
+    render(<DirectoryGrid {...baseProps} groups={[{ label: null, entries: [directoryEntry] }]} />);
+
+    expect(screen.queryByText(/\d+ (B|KB|MB|GB)/)).not.toBeInTheDocument();
+  });
+
   it("opens a directory on click", async () => {
     const user = userEvent.setup();
     const onOpenDirectory = vi.fn();

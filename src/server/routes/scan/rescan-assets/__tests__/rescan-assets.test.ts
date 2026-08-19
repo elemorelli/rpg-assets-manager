@@ -98,6 +98,23 @@ describe("rescanAssets", () => {
     expect(oldRow).toBeUndefined();
   });
 
+  it("recomputes directory aggregates to reflect the post-rescan state", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
+    await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
+    await rescanAssets(db, tempDir);
+
+    await fs.rm(path.join(tempDir, "rescan-test", "removed.png"));
+    await rescanAssets(db, tempDir);
+
+    const root = await db
+      .selectFrom("directories")
+      .select(["total_size", "file_count"])
+      .where("path", "=", "rescan-test")
+      .executeTakeFirstOrThrow();
+
+    expect(root).toMatchObject({ total_size: Buffer.byteLength("stays"), file_count: 1 });
+  });
+
   it("reports progress via the onProgress callback", async () => {
     await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
     await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");

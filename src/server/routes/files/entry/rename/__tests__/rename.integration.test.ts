@@ -18,7 +18,7 @@ const PREFIX = "rename-entry-test/";
 describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", () => {
   const tempDir = useTempDir("rename-entry-");
 
-  cleanupAssetsByPrefix(PREFIX);
+  cleanupAssetsByPrefix(PREFIX, ["assets", "directories"]);
   destroyDbAfterAll();
 
   it("renames a file within its own directory", async () => {

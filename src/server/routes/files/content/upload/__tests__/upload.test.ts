@@ -176,6 +176,61 @@ describe("uploadFile", () => {
     await expect(fs.access(path.join(tempDir, "upload-test", "forest.png"))).rejects.toThrow();
   });
 
+  it("records the uploaded file's size in the directory aggregate and its ancestors", async () => {
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test/tiles",
+      "forest.png",
+      uploadableStreamFrom("fake-png-bytes"),
+    );
+
+    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
+
+    expect(byPath.get("upload-test/tiles")).toMatchObject({
+      total_size: FAKE_PNG_BYTES_LENGTH,
+      file_count: 1,
+    });
+    expect(byPath.get("upload-test")).toMatchObject({
+      total_size: FAKE_PNG_BYTES_LENGTH,
+      file_count: 1,
+    });
+    expect(byPath.get("")).toMatchObject({
+      total_size: FAKE_PNG_BYTES_LENGTH,
+      file_count: 1,
+    });
+  });
+
+  it("adjusts the aggregate by the size delta only, without double-counting the file, on overwrite", async () => {
+    await fs.mkdir(path.join(tempDir, "upload-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
+
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("original"),
+      true,
+    );
+
+    await uploadFile(
+      db,
+      tempDir,
+      "upload-test",
+      "forest.png",
+      uploadableStreamFrom("a-longer-replacement"),
+      true,
+    );
+
+    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
+
+    expect(byPath.get("upload-test")).toMatchObject({
+      total_size: Buffer.byteLength("a-longer-replacement"),
+      file_count: 1,
+    });
+  });
+
   it("invalidates the cached local hash index so the next read reflects the upload", async () => {
     await getLocalHashIndex(db);
 

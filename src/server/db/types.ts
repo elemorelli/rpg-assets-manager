@@ -43,6 +43,15 @@ export interface Assets {
   tags: Generated<string[]>;
 }
 
+export interface Directories {
+  file_count: Generated<number>;
+  folder_count: Generated<number>;
+  id: Generated<Int8>;
+  parent_id: Int8 | null;
+  path: string;
+  total_size: Generated<Int8>;
+}
+
 export interface FoundryWorlds {
   acknowledged_at: Generated<Timestamp>;
   active: Generated<boolean>;
@@ -79,6 +88,7 @@ export interface SyncRuns {
 export interface DB {
   asset_renames: AssetRenames;
   assets: Assets;
+  directories: Directories;
   foundry_worlds: FoundryWorlds;
   pgmigrations: Pgmigrations;
   remote_assets: RemoteAssets;

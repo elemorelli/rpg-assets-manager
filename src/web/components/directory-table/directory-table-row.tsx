@@ -71,8 +71,7 @@ export const DirectoryTableRow = ({
     onOpenLightbox,
   });
   const contextMenu = useContextMenu();
-  const sizeLabel =
-    entry.type === "file" && entry.size !== undefined ? formatFileSize(entry.size) : "";
+  const sizeLabel = entry.size !== undefined ? formatFileSize(entry.size) : "";
 
   const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();

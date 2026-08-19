@@ -25,6 +25,23 @@ const fetchTagsForPaths = async (
   return new Map(rows.map((row) => [row.path, row.tags]));
 };
 
+const fetchDirectorySizesForPaths = async (
+  db: Kysely<DB>,
+  paths: string[],
+): Promise<Map<string, number>> => {
+  if (paths.length === 0) {
+    return new Map();
+  }
+
+  const rows = await db
+    .selectFrom("directories")
+    .select(["path", "total_size"])
+    .where("path", "in", paths)
+    .execute();
+
+  return new Map(rows.map((row) => [row.path, Number(row.total_size)]));
+};
+
 export const listDirectory = async (
   db: Kysely<DB>,
   rootDir: string,
@@ -61,14 +78,29 @@ export const listDirectory = async (
     });
   }
 
-  const [tagsByPath, localIndex, remoteIndex] = await Promise.all([
+  const [tagsByPath, localIndex, remoteIndex, sizeByDirectoryPath] = await Promise.all([
     fetchTagsForPaths(
       db,
       fileEntries.map((file) => file.relativePath),
     ),
     getLocalHashIndex(db),
     getRemoteHashIndex(db),
+    fetchDirectorySizesForPaths(
+      db,
+      directoryEntries.map((directory) =>
+        relativeDir ? `${relativeDir}/${directory.name}` : directory.name,
+      ),
+    ),
   ]);
+
+  for (const directory of directoryEntries) {
+    const directoryPath = relativeDir ? `${relativeDir}/${directory.name}` : directory.name;
+    const size = sizeByDirectoryPath.get(directoryPath);
+
+    if (size !== undefined) {
+      directory.size = size;
+    }
+  }
 
   for (const file of fileEntries) {
     const tags = tagsByPath.get(file.relativePath);

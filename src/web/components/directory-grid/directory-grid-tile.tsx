@@ -10,6 +10,7 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { getEntrySyncFlags } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { createEntrySelectionHandlers } from "#web/utils/entry-selection-handlers.ts";
+import { formatFileSize } from "#web/utils/format-file-size.ts";
 import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 import { useEntryDragAndDrop } from "#web/utils/use-entry-drag-and-drop.ts";
@@ -70,6 +71,7 @@ export const DirectoryGridTile = ({
     onOpenLightbox,
   });
   const contextMenu = useContextMenu();
+  const sizeLabel = entry.size !== undefined ? formatFileSize(entry.size) : "";
 
   const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation();
@@ -140,6 +142,7 @@ export const DirectoryGridTile = ({
           {entry.name}
         </span>
       )}
+      {sizeLabel && <span className={styles.size}>{sizeLabel}</span>}
       {entry.type === "file" && <TagBadgeList tags={entry.tags ?? []} />}
       {!isDeleted && (
         <EntryContextMenu

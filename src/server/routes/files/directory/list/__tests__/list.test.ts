@@ -59,6 +59,45 @@ describe("listDirectory", () => {
     expect(entries).toEqual([]);
   });
 
+  it("attaches the recursive total size to a directory entry from the directories table", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-"));
+
+    await fs.mkdir(path.join(tempDir, "tiles"));
+
+    const SEEDED_TOTAL_SIZE = 42;
+
+    db.seed("directories", [
+      {
+        id: "1",
+        path: "tiles",
+        parent_id: null,
+        total_size: SEEDED_TOTAL_SIZE,
+        file_count: 3,
+        folder_count: 0,
+      },
+    ]);
+
+    const entries = await listDirectory(db, tempDir, "");
+    const tiles = entries.find((entry) => entry.name === "tiles");
+
+    expect(tiles?.size).toBe(SEEDED_TOTAL_SIZE);
+  });
+
+  it("leaves a directory entry's size unset when it has no aggregate row yet", async () => {
+    const db = createFakeDb();
+
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "list-directory-"));
+
+    await fs.mkdir(path.join(tempDir, "tiles"));
+
+    const entries = await listDirectory(db, tempDir, "");
+    const tiles = entries.find((entry) => entry.name === "tiles");
+
+    expect(tiles?.size).toBeUndefined();
+  });
+
   it("rejects a path that escapes the tree root", async () => {
     const db = createFakeDb();
 
