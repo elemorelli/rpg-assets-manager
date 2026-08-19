@@ -309,51 +309,82 @@ describe("FileBrowser", () => {
 
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
+    // Path-conditional rather than mockResolvedValueOnce: TreeView eagerly
+    // prefetches subdirectories in the background, so a queued "once" value
+    // can be consumed by that prefetch instead of the click this test drives.
+    listDirectoryMock.mockImplementation((path: string) => {
+      if (path === "") {
+        return Promise.resolve([
+          { name: "tiles", type: "directory" },
+          { name: "map.png", type: "file", size: 1024 },
+        ]);
+      }
+      if (path === "tiles") {
+        return Promise.resolve([{ name: "legacy-pack", type: "directory" }]);
+      }
+      if (path === "tiles/legacy-pack") {
+        return Promise.resolve([{ name: "forest.png", type: "file", size: 512 }]);
+      }
+      return Promise.resolve([]);
+    });
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    listDirectoryMock.mockResolvedValueOnce([{ name: "forest.png", type: "file", size: 512 }]);
-    const nameCell = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+    const tilesCell = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
 
-    if (!nameCell) {
+    if (!tilesCell) {
       throw new Error("tiles name button not found");
     }
-    await user.click(nameCell);
+    await user.click(tilesCell);
+    await screen.findAllByText("legacy-pack");
+
+    const legacyPackCell = screen.getAllByText("legacy-pack").find((el) => el.closest("tr") !== null);
+
+    if (!legacyPackCell) {
+      throw new Error("legacy-pack name button not found");
+    }
+    await user.click(legacyPackCell);
     await screen.findByText("forest.png");
 
     const sourceRow = screen.getByText("forest.png").closest("tr");
-    // Scoped to the breadcrumb nav: the tree's root node is also named
-    // "root", so an unscoped query would match both.
-    const rootCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "root" });
+    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "tiles" });
 
     if (!sourceRow) {
       throw new Error("row not found");
     }
 
     fireEvent.dragStart(sourceRow);
-    fireEvent.dragOver(rootCrumb);
-    fireEvent.drop(rootCrumb);
+    fireEvent.dragOver(tilesCrumb);
+    fireEvent.drop(tilesCrumb);
 
     await waitFor(() => {
-      expect(moveEntryMock).toHaveBeenCalledWith("tiles/forest.png", "forest.png");
+      expect(moveEntryMock).toHaveBeenCalledWith("tiles/legacy-pack/forest.png", "tiles/forest.png");
     });
   });
 
   it("does not move an entry dropped onto its own current directory crumb", async () => {
+    const user = userEvent.setup();
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    const sourceRow = screen.getByText("map.png").closest("tr");
-    // Scoped to the breadcrumb nav: the tree's root node is also named
-    // "root", so an unscoped query would match both.
-    const rootCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "root" });
+    listDirectoryMock.mockResolvedValueOnce([{ name: "forest.png", type: "file", size: 512 }]);
+    const tilesCell = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!tilesCell) {
+      throw new Error("tiles name button not found");
+    }
+    await user.click(tilesCell);
+    await screen.findByText("forest.png");
+
+    const sourceRow = screen.getByText("forest.png").closest("tr");
+    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "tiles" });
 
     if (!sourceRow) {
       throw new Error("row not found");
     }
 
     fireEvent.dragStart(sourceRow);
-    fireEvent.drop(rootCrumb);
+    fireEvent.drop(tilesCrumb);
 
     expect(moveEntryMock).not.toHaveBeenCalled();
   });
