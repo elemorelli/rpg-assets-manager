@@ -9,8 +9,6 @@ export interface SyncRun {
   deletedCount: number;
   renamedCount: number;
   outcome: "in_progress" | "applied" | "dry_run" | "failed";
-  generatedMacro: string | null;
-  worldAcknowledgements: Record<string, boolean>;
 }
 
 export const fetchSyncRuns = (): Promise<SyncRun[]> => requestJson<SyncRun[]>("/api/sync-runs");

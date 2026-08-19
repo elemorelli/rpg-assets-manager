@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import { db } from "#server/db/index.ts";
 import {
+  cleanupAssetRenamesByPrefix,
   cleanupAssetsByPrefix,
   destroyDbAfterAll,
   useCreatedSyncRunIds,
@@ -21,6 +22,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
   const createdSyncRunIds = useCreatedSyncRunIds();
 
   cleanupAssetsByPrefix(PREFIX, ["assets", "remote_assets"]);
+  cleanupAssetRenamesByPrefix(PREFIX);
   destroyDbAfterAll();
 
   it("in dry run mode, reports the plan without touching remote_assets, rclone, or purge", async () => {
@@ -38,7 +40,6 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       baseUrl: "https://assets.example.com",
       dryRun: true,
       purge,
-      foundryWorldNames: [],
     });
 
     createdSyncRunIds.push(summary.syncRunId);
@@ -91,7 +92,6 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
         baseUrl: "https://assets.example.com",
         dryRun: false,
         purge,
-        foundryWorldNames: [],
       },
       onProgress,
     );
@@ -129,7 +129,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     expect(onProgress).toHaveBeenCalledWith({ done: 2, total: 2 });
   });
 
-  it("on a real apply with renames, stores a macro and initial world acknowledgements", async () => {
+  it("on a real apply with renames, records the rename in the asset_renames log", async () => {
     await fs.mkdir(path.join(destinationRoot.path, PREFIX.replace(/\/$/, "")), { recursive: true });
     await fs.writeFile(path.join(destinationRoot.path, `${PREFIX}old.png`), "renamed-bytes");
 
@@ -148,23 +148,18 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       baseUrl: "https://assets.example.com",
       dryRun: false,
       purge: vi.fn().mockResolvedValue(undefined),
-      foundryWorldNames: ["kingmaker", "stolen-fate"],
     });
 
     createdSyncRunIds.push(summary.syncRunId);
 
     expect(summary.renamed).toBe(1);
 
-    const syncRun = await db
-      .selectFrom("sync_runs")
+    const renameRow = await db
+      .selectFrom("asset_renames")
       .selectAll()
-      .where("id", "=", String(summary.syncRunId))
+      .where("old_path", "=", `${PREFIX}old.png`)
       .executeTakeFirstOrThrow();
-
-    expect(syncRun.generated_macro).toContain(
-      '["https://assets.example.com/apply-batch-test/old.png", "https://assets.example.com/apply-batch-test/new.png"]',
-    );
-    expect(syncRun.world_acknowledgements).toEqual({ kingmaker: false, "stolen-fate": false });
+    expect(renameRow.new_path).toBe(`${PREFIX}new.png`);
   });
 
   it("invalidates the cached remote hash index after mirroring changes", async () => {
@@ -183,7 +178,6 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       baseUrl: "https://assets.example.com",
       dryRun: false,
       purge: vi.fn().mockResolvedValue(undefined),
-      foundryWorldNames: [],
     });
     createdSyncRunIds.push(summary.syncRunId);
 

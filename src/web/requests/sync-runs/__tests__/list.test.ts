@@ -16,8 +16,6 @@ describe("fetchSyncRuns", () => {
         deletedCount: 0,
         renamedCount: 1,
         outcome: "applied",
-        generatedMacro: "// macro",
-        worldAcknowledgements: { kingmaker: false },
       },
     ];
     const fetchMock = stubFetch(new Response(JSON.stringify(runs)));

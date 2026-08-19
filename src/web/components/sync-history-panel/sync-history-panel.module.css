@@ -22,44 +22,6 @@
   font-size: var(--font-size-sm);
 }
 
-.toggleButton {
-  align-self: flex-start;
-  background: none;
-  border: none;
-  color: var(--color-accent);
-  font: inherit;
-  font-size: var(--font-size-sm);
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-}
-
-.macroSection {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.macroText {
-  width: 100%;
-  min-height: 120px;
-  font-family: monospace;
-  font-size: var(--font-size-sm);
-}
-
-.worldChecks {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-}
-
-.worldCheck {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-}
-
 .error {
   font-size: var(--font-size-sm);
   color: var(--color-danger);

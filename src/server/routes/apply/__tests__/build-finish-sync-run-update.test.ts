@@ -22,7 +22,7 @@ describe("buildFinishSyncRunUpdate", () => {
     };
     const finishedAt = new Date("2026-08-15T10:00:00Z");
 
-    const update = buildFinishSyncRunUpdate("applied", diff, [], null, {}, finishedAt);
+    const update = buildFinishSyncRunUpdate("applied", diff, [], finishedAt);
 
     expect(update).toMatchObject({
       finished_at: finishedAt,
@@ -34,31 +34,25 @@ describe("buildFinishSyncRunUpdate", () => {
     });
   });
 
-  it("JSON-encodes purge urls and world acknowledgements", () => {
+  it("JSON-encodes purge urls", () => {
     const finishedAt = new Date("2026-08-15T10:00:00Z");
 
     const update = buildFinishSyncRunUpdate(
       "applied",
       emptyDiff,
       ["https://assets.example.com/a.png"],
-      "// macro",
-      { kingmaker: false },
       finishedAt,
     );
 
     expect(update.purged_urls).toBe(JSON.stringify(["https://assets.example.com/a.png"]));
-    expect(update.world_acknowledgements).toBe(JSON.stringify({ kingmaker: false }));
-    expect(update.generated_macro).toBe("// macro");
   });
 
-  it("encodes empty purge urls and world acknowledgements for a dry run", () => {
+  it("encodes empty purge urls for a dry run", () => {
     const finishedAt = new Date("2026-08-15T10:00:00Z");
 
-    const update = buildFinishSyncRunUpdate("dry_run", emptyDiff, [], null, {}, finishedAt);
+    const update = buildFinishSyncRunUpdate("dry_run", emptyDiff, [], finishedAt);
 
     expect(update.outcome).toBe("dry_run");
-    expect(update.generated_macro).toBeNull();
     expect(update.purged_urls).toBe("[]");
-    expect(update.world_acknowledgements).toBe("{}");
   });
 });

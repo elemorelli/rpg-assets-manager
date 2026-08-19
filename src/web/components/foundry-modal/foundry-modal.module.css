@@ -1,0 +1,45 @@
+.worldList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.world {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  border: 1px solid var(--color-border);
+  padding: var(--spacing-xs);
+}
+
+.worldName {
+  margin: 0;
+  font-weight: bold;
+}
+
+.summary {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.upToDate {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-sync-new);
+}
+
+.macroText {
+  width: 100%;
+  min-height: 120px;
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+}
+
+.markAppliedButton {
+  align-self: flex-start;
+}
+
+.error {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+}

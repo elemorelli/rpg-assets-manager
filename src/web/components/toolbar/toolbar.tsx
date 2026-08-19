@@ -1,6 +1,7 @@
 import {
   faArrowsRotate,
   faCloudArrowUp,
+  faDiceD20,
   faFolderPlus,
   faHashtag,
   faRightLeft,
@@ -21,6 +22,8 @@ export interface ToolbarProps {
   onConvert: () => void;
   onSync: () => void;
   onReconcile: () => void;
+  onFoundry: () => void;
+  hasPendingFoundryMacro: boolean;
 }
 
 export const Toolbar = ({
@@ -31,6 +34,8 @@ export const Toolbar = ({
   onConvert,
   onSync,
   onReconcile,
+  onFoundry,
+  hasPendingFoundryMacro,
 }: ToolbarProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
@@ -112,6 +117,21 @@ export const Toolbar = ({
           title="Reconcile"
           onClick={onReconcile}>
           <FontAwesomeIcon icon={faScaleBalanced} />
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Foundry"
+          title="Foundry"
+          onClick={onFoundry}>
+          <FontAwesomeIcon icon={faDiceD20} />
+          {hasPendingFoundryMacro && (
+            <span
+              className={styles.pendingBadge}
+              data-testid="foundry-pending-badge"
+              aria-hidden="true"
+            />
+          )}
         </button>
         <input
           ref={fileInputRef}

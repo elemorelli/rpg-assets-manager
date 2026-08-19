@@ -6,7 +6,7 @@ import type { FilesPathBody } from "#server/routes/files/path-body.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 
-import { convertAssets } from "./convert-assets.ts";
+import { convertAssets } from "./convert.ts";
 
 export const convertAssetsHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {

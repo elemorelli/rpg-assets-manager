@@ -4,15 +4,15 @@ import type { DB } from "#server/db/index.ts";
 
 // Hand-rolled in-memory double for the small subset of the Kysely query builder
 // that src/server's business logic actually uses (selectFrom/insertInto/updateTable/
-// deleteFrom with equality/"in"/"like" where, callback where with eb.or(), onConflict
-// upserts, orderBy, returning). It does NOT execute real SQL: raw `sql` template
+// deleteFrom with equality/"in"/"like"/">" where, callback where with eb.or(),
+// onConflict upserts, orderBy, returning). It does NOT execute real SQL: raw `sql` template
 // queries (Postgres arrays, JSONB operators, FULL OUTER JOIN) are out of scope on
 // purpose, since faking their exact Postgres semantics would risk tests passing
 // against behavior Postgres doesn't have. Those stay covered by real
 // *.integration.test.ts files instead.
 
 type Row = Record<string, unknown>;
-type WhereOperator = "=" | "in" | "like";
+type WhereOperator = "=" | "in" | "like" | ">";
 type OrderDirection = "asc" | "desc";
 
 interface WhereClause {
@@ -53,6 +53,9 @@ const matchesLikePattern = (value: unknown, pattern: string): boolean => {
 const asColumnList = (columns: string | string[]): string[] =>
   Array.isArray(columns) ? columns : [columns];
 
+const asComparable = (value: unknown): number =>
+  value instanceof Date ? value.getTime() : Number(value);
+
 const rowMatchesClause = (row: Row, clause: WhereClause): boolean => {
   if (clause.operator === "in") {
     return Array.isArray(clause.value) && clause.value.includes(row[clause.column]);
@@ -60,6 +63,10 @@ const rowMatchesClause = (row: Row, clause: WhereClause): boolean => {
 
   if (clause.operator === "like") {
     return matchesLikePattern(row[clause.column], clause.value as string);
+  }
+
+  if (clause.operator === ">") {
+    return asComparable(row[clause.column]) > asComparable(clause.value);
   }
 
   return row[clause.column] === clause.value;

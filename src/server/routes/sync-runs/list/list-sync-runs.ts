@@ -1,7 +1,6 @@
 import type { Kysely } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
-import type { SyncRunWorldAcknowledgements } from "#server/routes/apply/build-finish-sync-run-update.ts";
 import type { SyncRunOutcome } from "#server/routes/apply/sync-run.ts";
 
 export interface SyncRunSummary {
@@ -13,8 +12,6 @@ export interface SyncRunSummary {
   deletedCount: number;
   renamedCount: number;
   outcome: SyncRunOutcome;
-  generatedMacro: string | null;
-  worldAcknowledgements: SyncRunWorldAcknowledgements;
 }
 
 export const listSyncRuns = async (db: Kysely<DB>): Promise<SyncRunSummary[]> => {
@@ -29,7 +26,5 @@ export const listSyncRuns = async (db: Kysely<DB>): Promise<SyncRunSummary[]> =>
     deletedCount: row.deleted_count,
     renamedCount: row.renamed_count,
     outcome: row.outcome as SyncRunOutcome,
-    generatedMacro: row.generated_macro,
-    worldAcknowledgements: row.world_acknowledgements as SyncRunWorldAcknowledgements,
   }));
 };

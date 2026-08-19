@@ -18,11 +18,15 @@ import {
   thumbnailHandler,
   uploadFileHandler,
 } from "./files/index.ts";
+import {
+  listFoundryWorldsHandler,
+  markFoundryWorldAppliedHandler,
+} from "./foundry-worlds/index.ts";
 import { healthHandler } from "./health/index.ts";
 import { jobsStreamHandler } from "./jobs/index.ts";
 import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
-import { acknowledgeWorldHandler, listSyncRunsHandler } from "./sync-runs/index.ts";
+import { listSyncRunsHandler } from "./sync-runs/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
 
 const BYTES_PER_KILOBYTE = 1024;
@@ -50,7 +54,8 @@ export const registerRoutes = (
   app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
   app.post("/api/apply", applyBatchHandler(assetTreeRoot));
   app.get("/api/sync-runs", listSyncRunsHandler);
-  app.post("/api/sync-runs/:id/world-acknowledgement", acknowledgeWorldHandler);
+  app.get("/api/foundry-worlds", listFoundryWorldsHandler);
+  app.post("/api/foundry-worlds/:id/mark-applied", markFoundryWorldAppliedHandler);
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
   app.post("/api/files/mkdir", createDirectoryHandler(assetTreeRoot));

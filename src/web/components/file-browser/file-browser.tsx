@@ -6,6 +6,7 @@ import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { ConvertModal } from "#components/convert-modal/convert-modal.tsx";
 import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
+import { FoundryModal } from "#components/foundry-modal/foundry-modal.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { OverwriteConfirmModal } from "#components/overwrite-confirm-modal/overwrite-confirm-modal.tsx";
@@ -33,6 +34,7 @@ import { useDirectoryListing } from "./use-directory-listing.ts";
 import { useEntrySelectionAndDrag } from "./use-entry-selection-and-drag.ts";
 import { useFileDropzone } from "./use-file-dropzone.ts";
 import { useFileUpload } from "./use-file-upload.ts";
+import { useFoundryPendingStatus } from "./use-foundry-pending-status.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 
@@ -46,7 +48,11 @@ export const FileBrowser = (): JSX.Element => {
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
   const [isReconciliationModalOpen, setReconciliationModalOpen] = useState<boolean>(false);
+  const [isFoundryModalOpen, setFoundryModalOpen] = useState<boolean>(false);
   const [syncHistoryRefreshTrigger, setSyncHistoryRefreshTrigger] = useState<number>(0);
+
+  const { hasPendingFoundryMacro, refreshFoundryPendingStatus } =
+    useFoundryPendingStatus(syncHistoryRefreshTrigger);
 
   const {
     viewMode,
@@ -185,6 +191,8 @@ export const FileBrowser = (): JSX.Element => {
                   onConvert={() => setConvertModalOpen(true)}
                   onSync={() => setSyncModalOpen(true)}
                   onReconcile={() => setReconciliationModalOpen(true)}
+                  onFoundry={() => setFoundryModalOpen(true)}
+                  hasPendingFoundryMacro={hasPendingFoundryMacro}
                 />
                 {searchResults === null && tagFilterResults === null && (
                   <ViewControls
@@ -310,6 +318,12 @@ export const FileBrowser = (): JSX.Element => {
             )}
             {isReconciliationModalOpen && (
               <ReconciliationModal onClose={() => setReconciliationModalOpen(false)} />
+            )}
+            {isFoundryModalOpen && (
+              <FoundryModal
+                onClose={() => setFoundryModalOpen(false)}
+                onMarkedApplied={refreshFoundryPendingStatus}
+              />
             )}
             {conflictingFileNames && (
               <OverwriteConfirmModal

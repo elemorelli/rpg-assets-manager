@@ -13,11 +13,22 @@
 }
 
 .contentActions button {
+  position: relative;
   border: 1px solid var(--color-border);
   border-radius: 0;
   margin-left: -1px;
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--font-size-md);
+}
+
+.pendingBadge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-sync-pending);
 }
 
 .contentActions button:first-of-type {

@@ -23,6 +23,7 @@ const uploadFileMock = vi.mocked(api.uploadFile);
 const searchEntriesMock = vi.mocked(api.searchEntries);
 const rescanMock = vi.mocked(api.rescan);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
+const fetchFoundryWorldsMock = vi.mocked(api.fetchFoundryWorlds);
 const fetchTagsMock = vi.mocked(api.fetchTags);
 const setAssetTagsMock = vi.mocked(api.setAssetTags);
 const fetchFilesByTagMock = vi.mocked(api.fetchFilesByTag);
@@ -64,6 +65,7 @@ describe("FileBrowser", () => {
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
     fetchSyncRunsMock.mockResolvedValue([]);
+    fetchFoundryWorldsMock.mockResolvedValue([]);
     fetchTagsMock.mockResolvedValue(["npc", "loot"]);
     setAssetTagsMock.mockResolvedValue([]);
     fetchFilesByTagMock.mockResolvedValue([]);

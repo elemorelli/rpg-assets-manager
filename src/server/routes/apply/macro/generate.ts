@@ -1,7 +1,7 @@
 import type { RenamePair } from "#server/routes/diff/index.ts";
 import { joinUrl } from "#server/utils/url.ts";
 
-import { buildMacroTemplate } from "./macro-template.ts";
+import { buildMacroTemplate } from "./template.ts";
 
 const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -26,7 +26,7 @@ const buildRenameEntries = (renamed: RenamePair[], baseUrl: string): [string, st
 const buildWorldHeaderLine = (worldNames: string[]): string =>
   worldNames.length > 0
     ? ` * Run once in each of these worlds: ${worldNames.join(", ")}.`
-    : " * No worlds configured (set FOUNDRY_WORLD_NAMES). Run once per world manually.";
+    : " * No world specified. Run once per world manually.";
 
 export const generateMacro = (
   renamed: RenamePair[],

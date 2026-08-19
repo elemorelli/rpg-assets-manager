@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { generateMacro } from "../generate-macro.ts";
+import { generateMacro } from "../generate.ts";
 
 describe("generateMacro", () => {
   it("returns null when there are no renames", () => {
@@ -55,14 +55,14 @@ describe("generateMacro", () => {
     expect(macro).toContain("kingmaker, stolen-fate");
   });
 
-  it("notes when no world names are configured", () => {
+  it("notes when no world name is given", () => {
     const macro = generateMacro(
       [{ oldPath: "a.png", newPath: "b.png" }],
       "https://assets.example.com",
       [],
     );
 
-    expect(macro).toContain("No worlds configured");
+    expect(macro).toContain("No world specified");
   });
 
   it("defaults DRY_RUN to true", () => {

@@ -13,6 +13,7 @@ vi.mock("./requests/index.ts");
 const checkSessionMock = vi.mocked(api.checkSession);
 const listDirectoryMock = vi.mocked(api.listDirectory);
 const fetchSyncRunsMock = vi.mocked(api.fetchSyncRuns);
+const fetchFoundryWorldsMock = vi.mocked(api.fetchFoundryWorlds);
 const fetchTagsMock = vi.mocked(api.fetchTags);
 const logoutMock = vi.mocked(api.logout);
 
@@ -21,6 +22,7 @@ describe("App", () => {
     vi.clearAllMocks();
     listDirectoryMock.mockResolvedValue([]);
     fetchSyncRunsMock.mockResolvedValue([]);
+    fetchFoundryWorldsMock.mockResolvedValue([]);
     fetchTagsMock.mockResolvedValue([]);
     logoutMock.mockResolvedValue(undefined);
     FakeEventSource.reset();

@@ -10,7 +10,7 @@ import {
   useTempDir,
 } from "#server/test-utils/integration-lifecycle.ts";
 
-import { convertAssets } from "../convert-assets.ts";
+import { convertAssets } from "../convert.ts";
 
 const MINIMAL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";

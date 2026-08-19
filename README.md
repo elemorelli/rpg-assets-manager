@@ -63,10 +63,10 @@ against a real remote.
    AUTH_SESSION_SECRET=<node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
    ```
 
-   Everything else (`RCLONE_*`, `CF_*`, `ASSETS_PUBLIC_BASE_URL`,
-   `FOUNDRY_WORLD_NAMES`) is only required for real sync/conversion/macro
-   testing; see `docs/deploy.md` for the dev-bucket setup that exercises
-   those safely against a throwaway R2 bucket.
+   Everything else (`RCLONE_*`, `CF_*`, `ASSETS_PUBLIC_BASE_URL`) is only
+   required for real sync/conversion/macro testing; see `docs/deploy.md`
+   for the dev-bucket setup that exercises those safely against a
+   throwaway R2 bucket.
 
 4. Run migrations, then start the app:
 

@@ -9,7 +9,6 @@ import { rcloneDestination } from "#server/rclone/index.ts";
 import { runTrackedJob } from "../jobs/index.ts";
 import { applyBatch } from "./batch.ts";
 import { dryRun } from "./config.ts";
-import { foundryWorldNames } from "./macro/config.ts";
 
 export const applyBatchHandler = (assetTreeRoot: string) => async () => {
   const purge = async (urls: string[]): Promise<void> => {
@@ -29,7 +28,6 @@ export const applyBatchHandler = (assetTreeRoot: string) => async () => {
         baseUrl: assetsPublicBaseUrl,
         dryRun,
         purge,
-        foundryWorldNames,
       },
       onProgress,
     ),

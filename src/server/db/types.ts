@@ -26,6 +26,13 @@ export type JsonValue = JsonArray | JsonObject | JsonPrimitive;
 
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export interface AssetRenames {
+  id: Generated<Int8>;
+  new_path: string;
+  old_path: string;
+  renamed_at: Generated<Timestamp>;
+}
+
 export interface Assets {
   hash: string;
   id: Generated<Int8>;
@@ -34,6 +41,13 @@ export interface Assets {
   scanned_at: Generated<Timestamp>;
   size: Int8;
   tags: Generated<string[]>;
+}
+
+export interface FoundryWorlds {
+  acknowledged_at: Generated<Timestamp>;
+  active: Generated<boolean>;
+  id: Generated<Int8>;
+  name: string;
 }
 
 export interface Pgmigrations {
@@ -54,18 +68,18 @@ export interface SyncRuns {
   added_count: Generated<number>;
   deleted_count: Generated<number>;
   finished_at: Timestamp | null;
-  generated_macro: string | null;
   id: Generated<Int8>;
   modified_count: Generated<number>;
   outcome: Generated<string>;
   purged_urls: Generated<Json>;
   renamed_count: Generated<number>;
   started_at: Generated<Timestamp>;
-  world_acknowledgements: Generated<Json>;
 }
 
 export interface DB {
+  asset_renames: AssetRenames;
   assets: Assets;
+  foundry_worlds: FoundryWorlds;
   pgmigrations: Pgmigrations;
   remote_assets: RemoteAssets;
   sync_runs: SyncRuns;

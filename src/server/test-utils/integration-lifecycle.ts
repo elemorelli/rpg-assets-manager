@@ -44,6 +44,17 @@ export const cleanupAssetsByPrefix = (
   });
 };
 
+export const cleanupAssetRenamesByPrefix = (pathPrefix: string): void => {
+  afterEach(async () => {
+    await db
+      .deleteFrom("asset_renames")
+      .where((eb) =>
+        eb.or([eb("old_path", "like", `${pathPrefix}%`), eb("new_path", "like", `${pathPrefix}%`)]),
+      )
+      .execute();
+  });
+};
+
 export const useCreatedSyncRunIds = (): number[] => {
   const syncRunIds: number[] = [];
 

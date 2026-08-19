@@ -24,9 +24,7 @@ describe("startSyncRun", () => {
     const syncRunId = await startSyncRun(db);
 
     expect(syncRunId).toBe(1);
-    expect(db.rows("sync_runs")).toMatchObject([
-      { id: "1", finished_at: null, generated_macro: null },
-    ]);
+    expect(db.rows("sync_runs")).toMatchObject([{ id: "1", finished_at: null }]);
   });
 });
 
@@ -35,7 +33,7 @@ describe("finishSyncRun", () => {
     const db = createFakeDb();
     const syncRunId = await startSyncRun(db);
 
-    await finishSyncRun(db, syncRunId, "applied", emptyDiff, [], null, {});
+    await finishSyncRun(db, syncRunId, "applied", emptyDiff, []);
 
     const [row] = db.rows("sync_runs");
 

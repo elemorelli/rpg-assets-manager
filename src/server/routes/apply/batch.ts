@@ -4,10 +4,9 @@ import { invalidateRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import type { DB } from "#server/db/index.ts";
 
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
-import type { SyncRunWorldAcknowledgements } from "./build-finish-sync-run-update.ts";
-import { generateMacro } from "./macro/generate-macro.ts";
 import { mirrorRemoteAssets } from "./mirror-remote-assets.ts";
 import { buildPurgeUrls } from "./purge-urls.ts";
+import { recordAssetRenames } from "./record-asset-renames.ts";
 import { countRcloneSteps, runRcloneOperations } from "./run-rclone-operations.ts";
 import { failSyncRun, finishSyncRun, type SyncRunOutcome, startSyncRun } from "./sync-run.ts";
 
@@ -33,11 +32,7 @@ export interface ApplyBatchDependencies {
   baseUrl: string;
   dryRun: boolean;
   purge: (urls: string[]) => Promise<void>;
-  foundryWorldNames: string[];
 }
-
-const buildInitialWorldAcknowledgements = (worldNames: string[]): SyncRunWorldAcknowledgements =>
-  Object.fromEntries(worldNames.map((worldName) => [worldName, false]));
 
 const summaryFor = (
   diff: BatchDiffResult,
@@ -66,31 +61,21 @@ export const applyBatch = async (
   onProgress?.({ done: 0, total });
 
   if (deps.dryRun) {
-    await finishSyncRun(db, syncRunId, "dry_run", diff, purgeUrls, null, {});
+    await finishSyncRun(db, syncRunId, "dry_run", diff, purgeUrls);
 
     return summaryFor(diff, "dry_run", syncRunId);
   }
 
   try {
     await runRcloneOperations(deps.rootDir, deps.destinationRoot, diff, onProgress);
-    await db.transaction().execute((trx) => mirrorRemoteAssets(trx, diff));
+    await db.transaction().execute(async (trx) => {
+      await mirrorRemoteAssets(trx, diff);
+      await recordAssetRenames(trx, diff.renamed);
+    });
     invalidateRemoteHashIndex(db);
     await deps.purge(purgeUrls);
 
-    const generatedMacro = generateMacro(diff.renamed, deps.baseUrl, deps.foundryWorldNames);
-    const worldAcknowledgements = generatedMacro
-      ? buildInitialWorldAcknowledgements(deps.foundryWorldNames)
-      : {};
-
-    await finishSyncRun(
-      db,
-      syncRunId,
-      "applied",
-      diff,
-      purgeUrls,
-      generatedMacro,
-      worldAcknowledgements,
-    );
+    await finishSyncRun(db, syncRunId, "applied", diff, purgeUrls);
 
     return summaryFor(diff, "applied", syncRunId);
   } catch (error) {

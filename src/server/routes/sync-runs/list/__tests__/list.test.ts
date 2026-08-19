@@ -18,8 +18,6 @@ describe("listSyncRuns", () => {
         deleted_count: 0,
         renamed_count: 0,
         outcome: "dry_run",
-        generated_macro: null,
-        world_acknowledgements: {},
       },
       {
         id: "2",
@@ -30,25 +28,14 @@ describe("listSyncRuns", () => {
         deleted_count: 0,
         renamed_count: 0,
         outcome: "applied",
-        generated_macro: "// generated macro",
-        world_acknowledgements: { kingmaker: false },
       },
     ]);
 
     const runs = await listSyncRuns(db);
 
     expect(runs.map((run) => run.id)).toEqual([2, 1]);
-    expect(runs[0]).toMatchObject({
-      outcome: "applied",
-      addedCount: 1,
-      generatedMacro: "// generated macro",
-      worldAcknowledgements: { kingmaker: false },
-    });
-    expect(runs[1]).toMatchObject({
-      outcome: "dry_run",
-      generatedMacro: null,
-      worldAcknowledgements: {},
-    });
+    expect(runs[0]).toMatchObject({ outcome: "applied", addedCount: 1 });
+    expect(runs[1]).toMatchObject({ outcome: "dry_run" });
   });
 
   it("returns an empty list when there are no sync runs", async () => {
