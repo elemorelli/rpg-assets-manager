@@ -36,3 +36,8 @@
 .active {
   color: var(--color-accent);
 }
+
+.directionIcon {
+  font-size: 0.6em;
+  margin-left: var(--spacing-xs);
+}

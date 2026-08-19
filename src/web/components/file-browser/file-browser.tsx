@@ -6,6 +6,7 @@ import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { ConvertModal } from "#components/convert-modal/convert-modal.tsx";
 import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
+import { FolderActionsMenu } from "#components/folder-actions-menu/folder-actions-menu.tsx";
 import { FoundryModal } from "#components/foundry-modal/foundry-modal.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
@@ -22,7 +23,9 @@ import { joinRelativePath } from "#utils/paths.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
 import { initialSelectionState } from "#web/utils/row-selection.ts";
-import { sortEntries } from "#web/utils/sort-entries.ts";
+import type { SortCriterion } from "#web/utils/sort-entries.ts";
+import { getNextSort, sortEntries } from "#web/utils/sort-entries.ts";
+import { useContextMenu } from "#web/utils/use-context-menu.ts";
 import { useViewPreferences } from "#web/utils/use-view-preferences.ts";
 
 import styles from "./file-browser.module.css";
@@ -73,6 +76,13 @@ export const FileBrowser = (): JSX.Element => {
 
   const handleOpenDirectory = (name: string): void => {
     navigateToPath(joinRelativePath(currentPath, name));
+  };
+
+  const handleSortCriterionClick = (criterion: SortCriterion): void => {
+    const nextSort = getNextSort(criterion, { criterion: sortCriterion, direction: sortDirection });
+
+    setSortCriterion(nextSort.criterion);
+    setSortDirection(nextSort.direction);
   };
 
   const {
@@ -150,6 +160,8 @@ export const FileBrowser = (): JSX.Element => {
     handleDropzoneDrop,
   } = useFileDropzone({ onFilesDropped: handleFilesDropped });
 
+  const folderContextMenu = useContextMenu();
+
   return (
     <>
       <div className={styles.breadcrumbBar}>
@@ -193,9 +205,8 @@ export const FileBrowser = (): JSX.Element => {
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                     sortCriterion={sortCriterion}
-                    onSortCriterionChange={setSortCriterion}
                     sortDirection={sortDirection}
-                    onSortDirectionChange={setSortDirection}
+                    onSortCriterionClick={handleSortCriterionClick}
                     groupCriterion={groupCriterion}
                     onGroupCriterionChange={setGroupCriterion}
                   />
@@ -229,7 +240,15 @@ export const FileBrowser = (): JSX.Element => {
               onDragEnter={handleDropzoneDragEnter}
               onDragOver={handleDropzoneDragOver}
               onDragLeave={handleDropzoneDragLeave}
-              onDrop={handleDropzoneDrop}>
+              onDrop={handleDropzoneDrop}
+              onContextMenu={busy ? undefined : folderContextMenu.open}>
+              <FolderActionsMenu
+                position={folderContextMenu.position}
+                onClose={folderContextMenu.close}
+                onCreateDirectory={handleCreateDirectory}
+                onUploadFile={handleUploadFile}
+                onConvert={() => setConvertModalOpen(true)}
+              />
               {isDropzoneActive && (
                 <div className={styles.dropzoneOverlay}>
                   {`Drop files to upload to ${currentPath === "" ? "root" : currentPath}`}
@@ -257,6 +276,9 @@ export const FileBrowser = (): JSX.Element => {
                       selectedNames={selection.selectedNames}
                       onSelectRow={handleSelectRow}
                       onOpenLightbox={handleOpenLightbox}
+                      sortCriterion={sortCriterion}
+                      sortDirection={sortDirection}
+                      onSortCriterionClick={handleSortCriterionClick}
                     />
                   ) : (
                     <DirectoryGrid

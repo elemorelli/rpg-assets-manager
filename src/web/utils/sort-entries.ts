@@ -4,6 +4,22 @@ import { extensionOf } from "#utils/preview.ts";
 export type SortCriterion = "name" | "type" | "size";
 export type SortDirection = "asc" | "desc";
 
+export interface SortState {
+  criterion: SortCriterion;
+  direction: SortDirection;
+}
+
+export const getNextSort = (clickedCriterion: SortCriterion, currentSort: SortState): SortState => {
+  if (clickedCriterion !== currentSort.criterion) {
+    return { criterion: clickedCriterion, direction: "asc" };
+  }
+
+  return {
+    criterion: clickedCriterion,
+    direction: currentSort.direction === "asc" ? "desc" : "asc",
+  };
+};
+
 type Comparator = (a: DirectoryEntry, b: DirectoryEntry) => number;
 
 const compareByName: Comparator = (a, b) =>

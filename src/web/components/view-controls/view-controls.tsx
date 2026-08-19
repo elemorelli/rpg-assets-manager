@@ -1,6 +1,6 @@
 import {
-  faArrowDownWideShort,
-  faArrowUpWideShort,
+  faArrowDown,
+  faArrowUp,
   faFileLines,
   faFont,
   faList,
@@ -24,9 +24,8 @@ export interface ViewControlsProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   sortCriterion: SortCriterion;
-  onSortCriterionChange: (criterion: SortCriterion) => void;
   sortDirection: SortDirection;
-  onSortDirectionChange: (direction: SortDirection) => void;
+  onSortCriterionClick: (criterion: SortCriterion) => void;
   groupCriterion: GroupCriterion;
   onGroupCriterionChange: (criterion: GroupCriterion) => void;
 }
@@ -52,75 +51,71 @@ export const ViewControls = ({
   viewMode,
   onViewModeChange,
   sortCriterion,
-  onSortCriterionChange,
   sortDirection,
-  onSortDirectionChange,
+  onSortCriterionClick,
   groupCriterion,
   onGroupCriterionChange,
-}: ViewControlsProps): JSX.Element => {
-  const toggleSortDirection = (): void => {
-    onSortDirectionChange(sortDirection === "asc" ? "desc" : "asc");
-  };
-
-  return (
-    <div className={styles.controls}>
-      <div className={styles.group} role="group" aria-label="View">
-        <button
-          type="button"
-          aria-label="Table view"
-          title="Table view"
-          aria-pressed={viewMode === "table"}
-          className={clsx(viewMode === "table" && styles.active)}
-          onClick={() => onViewModeChange("table")}>
-          <FontAwesomeIcon icon={faTableList} />
-        </button>
-        <button
-          type="button"
-          aria-label="Grid view"
-          title="Grid view"
-          aria-pressed={viewMode === "grid"}
-          className={clsx(viewMode === "grid" && styles.active)}
-          onClick={() => onViewModeChange("grid")}>
-          <FontAwesomeIcon icon={faTableCells} />
-        </button>
-      </div>
-      <div className={styles.group} role="group" aria-label="Sort">
-        {SORT_CRITERIA.map(({ criterion, label, icon }) => (
-          <button
-            key={criterion}
-            type="button"
-            aria-label={label}
-            title={label}
-            aria-pressed={sortCriterion === criterion}
-            className={clsx(sortCriterion === criterion && styles.active)}
-            onClick={() => onSortCriterionChange(criterion)}>
-            <FontAwesomeIcon icon={icon} />
-          </button>
-        ))}
-        <button
-          type="button"
-          aria-label={sortDirection === "asc" ? "Ascending" : "Descending"}
-          title={sortDirection === "asc" ? "Ascending" : "Descending"}
-          onClick={toggleSortDirection}>
-          <FontAwesomeIcon
-            icon={sortDirection === "asc" ? faArrowUpWideShort : faArrowDownWideShort}
-          />
-        </button>
-      </div>
-      <div className={styles.group} role="group" aria-label="Group by">
-        {GROUP_CRITERIA.map(({ criterion, label, icon }) => (
-          <button
-            key={criterion}
-            type="button"
-            aria-label={label}
-            title={label}
-            aria-pressed={groupCriterion === criterion}
-            className={clsx(groupCriterion === criterion && styles.active)}
-            onClick={() => onGroupCriterionChange(criterion)}>
-            <FontAwesomeIcon icon={icon} />
-          </button>
-        ))}
-      </div>
+}: ViewControlsProps): JSX.Element => (
+  <div className={styles.controls}>
+    <div className={styles.group} role="group" aria-label="View">
+      <button
+        type="button"
+        aria-label="Table view"
+        title="Table view"
+        aria-pressed={viewMode === "table"}
+        className={clsx(viewMode === "table" && styles.active)}
+        onClick={() => onViewModeChange("table")}>
+        <FontAwesomeIcon icon={faTableList} />
+      </button>
+      <button
+        type="button"
+        aria-label="Grid view"
+        title="Grid view"
+        aria-pressed={viewMode === "grid"}
+        className={clsx(viewMode === "grid" && styles.active)}
+        onClick={() => onViewModeChange("grid")}>
+        <FontAwesomeIcon icon={faTableCells} />
+      </button>
     </div>
-  );
-};
+    <div className={styles.group} role="group" aria-label="Sort">
+      {SORT_CRITERIA.map(({ criterion, label, icon }) => {
+        const isActive = sortCriterion === criterion;
+
+        return (
+          <button
+            key={criterion}
+            type="button"
+            aria-label={label}
+            title={label}
+            aria-pressed={isActive}
+            className={clsx(isActive && styles.active)}
+            onClick={() => onSortCriterionClick(criterion)}>
+            <FontAwesomeIcon icon={icon} />
+            {isActive && (
+              <FontAwesomeIcon
+                icon={sortDirection === "asc" ? faArrowUp : faArrowDown}
+                className={styles.directionIcon}
+                aria-hidden="true"
+                data-testid={`sort-direction-icon-${criterion}`}
+              />
+            )}
+          </button>
+        );
+      })}
+    </div>
+    <div className={styles.group} role="group" aria-label="Group by">
+      {GROUP_CRITERIA.map(({ criterion, label, icon }) => (
+        <button
+          key={criterion}
+          type="button"
+          aria-label={label}
+          title={label}
+          aria-pressed={groupCriterion === criterion}
+          className={clsx(groupCriterion === criterion && styles.active)}
+          onClick={() => onGroupCriterionChange(criterion)}>
+          <FontAwesomeIcon icon={icon} />
+        </button>
+      ))}
+    </div>
+  </div>
+);

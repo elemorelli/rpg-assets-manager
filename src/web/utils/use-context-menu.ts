@@ -9,6 +9,7 @@ export interface ContextMenuTriggerEvent {
   clientX: number;
   clientY: number;
   preventDefault: () => void;
+  stopPropagation: () => void;
 }
 
 export interface UseContextMenuResult {
@@ -22,6 +23,7 @@ export const useContextMenu = (): UseContextMenuResult => {
 
   const open = (event: ContextMenuTriggerEvent): void => {
     event.preventDefault();
+    event.stopPropagation();
     setPosition({ x: event.clientX, y: event.clientY });
   };
 

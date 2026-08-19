@@ -154,6 +154,7 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
+    await user.click(screen.getByRole("button", { name: "Folder actions" }));
     await user.click(screen.getByRole("button", { name: "New folder" }));
 
     await waitFor(() => {
@@ -186,6 +187,33 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(deleteEntryMock).toHaveBeenCalledWith("tiles");
     });
+  });
+
+  it("opens the folder actions menu when right-clicking empty space in the file list", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    fireEvent.contextMenu(screen.getByTestId("directory-dropzone"));
+
+    expect(screen.getByRole("button", { name: "New folder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Upload file" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Convert" })).toBeInTheDocument();
+  });
+
+  it("does not open the folder actions menu when right-clicking a row", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const row = screen.getByText("map.png").closest("tr");
+
+    if (!row) {
+      throw new Error("map.png row not found");
+    }
+
+    fireEvent.contextMenu(row);
+
+    expect(screen.queryByRole("button", { name: "New folder" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
   });
 
   it("does not delete an entry when the user cancels the confirmation", async () => {
@@ -607,6 +635,36 @@ describe("FileBrowser", () => {
     await user.click(screen.getByRole("button", { name: "Grid view" }));
 
     expect(await screen.findByTestId("tile-map.png")).toBeInTheDocument();
+  });
+
+  it("sorts the table by clicking the Name column header, toggling direction on repeated clicks", async () => {
+    const user = userEvent.setup();
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "b.png", type: "file", size: 10 },
+              { name: "a.png", type: "file", size: 20 },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    const table = screen.getByRole("table");
+    const namesInOrder = (): string[] =>
+      within(table)
+        .getAllByRole("row")
+        .slice(1)
+        .map((row) => within(row).getByText(/\.png$/).textContent ?? "");
+
+    expect(namesInOrder()).toEqual(["a.png", "b.png"]);
+
+    await user.click(within(table).getByRole("button", { name: "Name" }));
+
+    expect(namesInOrder()).toEqual(["b.png", "a.png"]);
   });
 
   it("keeps the view preference isolated per folder", async () => {

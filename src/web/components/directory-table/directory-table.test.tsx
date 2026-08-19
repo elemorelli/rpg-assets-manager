@@ -24,6 +24,9 @@ const baseProps = {
   selectedNames: new Set<string>(),
   onSelectRow: vi.fn(),
   onOpenLightbox: vi.fn(),
+  sortCriterion: "name" as const,
+  sortDirection: "asc" as const,
+  onSortCriterionClick: vi.fn(),
 };
 
 const getRow = (text: string): HTMLElement => {
@@ -583,5 +586,35 @@ describe("DirectoryTable", () => {
     await user.click(screen.getByRole("button", { name: "View" }));
 
     expect(onOpenLightbox).toHaveBeenCalledWith(fileEntry);
+  });
+
+  it("calls onSortCriterionClick with the clicked column", async () => {
+    const user = userEvent.setup();
+    const onSortCriterionClick = vi.fn();
+
+    render(
+      <DirectoryTable
+        {...baseProps}
+        onSortCriterionClick={onSortCriterionClick}
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Size" }));
+
+    expect(onSortCriterionClick).toHaveBeenCalledWith("size");
+  });
+
+  it("shows a direction indicator only on the active sort column header", () => {
+    render(
+      <DirectoryTable
+        {...baseProps}
+        sortCriterion="type"
+        groups={[{ label: null, entries: [fileEntry] }]}
+      />,
+    );
+
+    expect(screen.getByTestId("table-sort-direction-icon-type")).toBeInTheDocument();
+    expect(screen.queryByTestId("table-sort-direction-icon-name")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("table-sort-direction-icon-size")).not.toBeInTheDocument();
   });
 });

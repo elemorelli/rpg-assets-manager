@@ -48,10 +48,6 @@
   z-index: 1;
 }
 
-.hiddenInput {
-  display: none;
-}
-
 .toggleActive {
   color: var(--color-accent);
 }

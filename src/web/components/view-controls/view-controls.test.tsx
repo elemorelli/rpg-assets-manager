@@ -9,9 +9,8 @@ const defaultProps: ViewControlsProps = {
   viewMode: "table",
   onViewModeChange: vi.fn(),
   sortCriterion: "name",
-  onSortCriterionChange: vi.fn(),
   sortDirection: "asc",
-  onSortDirectionChange: vi.fn(),
+  onSortCriterionClick: vi.fn(),
   groupCriterion: "none",
   onGroupCriterionChange: vi.fn(),
 };
@@ -40,30 +39,22 @@ describe("ViewControls", () => {
     expect(onViewModeChange).toHaveBeenCalledWith("grid");
   });
 
-  it("calls onSortCriterionChange with the clicked criterion", async () => {
+  it("calls onSortCriterionClick with the clicked criterion", async () => {
     const user = userEvent.setup();
-    const onSortCriterionChange = vi.fn();
+    const onSortCriterionClick = vi.fn();
 
-    render(<ViewControls {...defaultProps} onSortCriterionChange={onSortCriterionChange} />);
+    render(<ViewControls {...defaultProps} onSortCriterionClick={onSortCriterionClick} />);
     await user.click(screen.getByRole("button", { name: "Sort by size" }));
 
-    expect(onSortCriterionChange).toHaveBeenCalledWith("size");
+    expect(onSortCriterionClick).toHaveBeenCalledWith("size");
   });
 
-  it("toggles the sort direction from ascending to descending", async () => {
-    const user = userEvent.setup();
-    const onSortDirectionChange = vi.fn();
+  it("shows a direction indicator only on the active sort criterion button", () => {
+    render(<ViewControls {...defaultProps} sortCriterion="name" />);
 
-    render(<ViewControls {...defaultProps} onSortDirectionChange={onSortDirectionChange} />);
-    await user.click(screen.getByRole("button", { name: "Ascending" }));
-
-    expect(onSortDirectionChange).toHaveBeenCalledWith("desc");
-  });
-
-  it("shows the Descending label when direction is desc", () => {
-    render(<ViewControls {...defaultProps} sortDirection="desc" />);
-
-    expect(screen.getByRole("button", { name: "Descending" })).toBeInTheDocument();
+    expect(screen.getByTestId("sort-direction-icon-name")).toBeInTheDocument();
+    expect(screen.queryByTestId("sort-direction-icon-type")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("sort-direction-icon-size")).not.toBeInTheDocument();
   });
 
   it("calls onGroupCriterionChange with the clicked criterion", async () => {

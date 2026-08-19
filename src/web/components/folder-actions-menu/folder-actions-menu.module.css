@@ -1,0 +1,24 @@
+.items {
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+}
+
+.item {
+  background: none;
+  border: none;
+  color: var(--color-text);
+  text-align: left;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font: inherit;
+  cursor: pointer;
+}
+
+.item:hover,
+.item:focus-visible {
+  background: var(--color-surface);
+}
+
+.hiddenInput {
+  display: none;
+}

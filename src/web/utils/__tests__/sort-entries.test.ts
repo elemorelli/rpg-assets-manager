@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 
-import { sortEntries } from "../sort-entries.ts";
+import { getNextSort, sortEntries } from "../sort-entries.ts";
 
 const dir = (name: string): DirectoryEntry => ({ name, type: "directory" });
 const file = (name: string, size: number): DirectoryEntry => ({ name, type: "file", size });
@@ -83,5 +83,28 @@ describe("sortEntries", () => {
       "README",
       "a.png",
     ]);
+  });
+});
+
+describe("getNextSort", () => {
+  it("switches to the clicked criterion and resets to ascending when it differs from the current one", () => {
+    expect(getNextSort("size", { criterion: "name", direction: "desc" })).toEqual({
+      criterion: "size",
+      direction: "asc",
+    });
+  });
+
+  it("toggles from ascending to descending when the clicked criterion is already active", () => {
+    expect(getNextSort("name", { criterion: "name", direction: "asc" })).toEqual({
+      criterion: "name",
+      direction: "desc",
+    });
+  });
+
+  it("toggles from descending to ascending when the clicked criterion is already active", () => {
+    expect(getNextSort("name", { criterion: "name", direction: "desc" })).toEqual({
+      criterion: "name",
+      direction: "asc",
+    });
   });
 });

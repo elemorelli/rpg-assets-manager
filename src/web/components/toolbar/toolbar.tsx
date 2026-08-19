@@ -2,15 +2,16 @@ import {
   faArrowsRotate,
   faCloudArrowUp,
   faDiceD20,
-  faFolderPlus,
+  faEllipsisVertical,
   faHashtag,
-  faRightLeft,
   faScaleBalanced,
-  faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type ChangeEvent, type JSX, useRef, useState } from "react";
+import { type JSX, useState } from "react";
+
+import { FolderActionsMenu } from "#components/folder-actions-menu/folder-actions-menu.tsx";
+import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
 import styles from "./toolbar.module.css";
 
@@ -37,50 +38,12 @@ export const Toolbar = ({
   onFoundry,
   hasPendingFoundryMacro,
 }: ToolbarProps): JSX.Element => {
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [forceRehash, setForceRehash] = useState<boolean>(false);
-
-  const handleCreateDirectoryClick = (): void => {
-    const name = window.prompt("New folder name");
-
-    if (name) {
-      onCreateDirectory(name);
-    }
-  };
-
-  const handleUploadClick = (): void => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileSelected = (event: ChangeEvent<HTMLInputElement>): void => {
-    const file = event.target.files?.[0];
-
-    if (file) {
-      onUploadFile(file);
-    }
-
-    event.target.value = "";
-  };
+  const folderActionsMenu = useContextMenu();
 
   return (
     <div className={clsx(styles.toolbar, busy && styles.busy)}>
       <div className={styles.contentActions}>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="New folder"
-          title="New folder"
-          onClick={handleCreateDirectoryClick}>
-          <FontAwesomeIcon icon={faFolderPlus} />
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="Upload file"
-          title="Upload file"
-          onClick={handleUploadClick}>
-          <FontAwesomeIcon icon={faUpload} />
-        </button>
         <button
           type="button"
           disabled={busy}
@@ -98,14 +61,6 @@ export const Toolbar = ({
           className={clsx(forceRehash && styles.toggleActive)}
           onClick={() => setForceRehash((current) => !current)}>
           <FontAwesomeIcon icon={faHashtag} />
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="Convert"
-          title="Convert"
-          onClick={onConvert}>
-          <FontAwesomeIcon icon={faRightLeft} />
         </button>
         <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
           <FontAwesomeIcon icon={faCloudArrowUp} />
@@ -133,11 +88,20 @@ export const Toolbar = ({
             />
           )}
         </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          className={styles.hiddenInput}
-          onChange={handleFileSelected}
+        <button
+          type="button"
+          disabled={busy}
+          aria-label="Folder actions"
+          title="Folder actions"
+          onClick={folderActionsMenu.open}>
+          <FontAwesomeIcon icon={faEllipsisVertical} />
+        </button>
+        <FolderActionsMenu
+          position={folderActionsMenu.position}
+          onClose={folderActionsMenu.close}
+          onCreateDirectory={onCreateDirectory}
+          onUploadFile={onUploadFile}
+          onConvert={onConvert}
         />
       </div>
     </div>

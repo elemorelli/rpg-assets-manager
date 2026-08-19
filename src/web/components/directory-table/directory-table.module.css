@@ -105,3 +105,24 @@
   flex: 1;
   min-width: 80px;
 }
+
+.sortableHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  font-weight: bold;
+  padding: 0;
+}
+
+.sortActive {
+  color: var(--color-accent);
+}
+
+.directionIcon {
+  font-size: 0.6em;
+}
