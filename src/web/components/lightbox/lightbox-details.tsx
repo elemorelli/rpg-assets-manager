@@ -2,7 +2,7 @@ import { faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useState } from "react";
 
-import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
+import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
@@ -97,25 +97,25 @@ export const LightboxDetails = ({
       </div>
 
       <div className={styles.dangerZone}>
-        {confirmingDelete ? (
-          <ConfirmDelete
-            entryName={entry.name}
-            containerClassName={styles.confirmDelete}
-            messageClassName={styles.confirmMessage}
-            buttonClassName={styles.actionButton}
-            onConfirm={handleConfirmDelete}
-            onCancel={() => setConfirmingDelete(false)}
-          />
-        ) : (
-          <button
-            type="button"
-            className={styles.deleteButton}
-            onClick={() => setConfirmingDelete(true)}>
-            <FontAwesomeIcon icon={faTrash} />
-            Delete
-          </button>
-        )}
+        <button
+          type="button"
+          className={styles.deleteButton}
+          onClick={() => setConfirmingDelete(true)}>
+          <FontAwesomeIcon icon={faTrash} />
+          Delete
+        </button>
       </div>
+
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete file"
+          icon={faTrash}
+          message={`Delete "${entry.name}"?`}
+          danger
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
+      )}
     </div>
   );
 };

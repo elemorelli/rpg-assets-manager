@@ -52,15 +52,6 @@
   color: var(--color-accent);
 }
 
-.actionButton {
-  background: none;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  color: var(--color-text);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  cursor: pointer;
-}
-
 .fields {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -95,17 +86,6 @@
   justify-content: center;
   padding-top: var(--spacing-sm);
   border-top: 1px solid var(--color-border);
-}
-
-.confirmDelete {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.confirmMessage {
-  margin: 0;
-  font-size: var(--font-size-sm);
 }
 
 .deleteButton {

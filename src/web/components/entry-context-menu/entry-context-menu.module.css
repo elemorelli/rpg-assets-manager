@@ -1,5 +1,4 @@
-.items,
-.confirmDelete {
+.items {
   display: flex;
   flex-direction: column;
   min-width: 160px;
@@ -18,12 +17,6 @@
 .item:hover,
 .item:focus-visible {
   background: var(--color-surface);
-}
-
-.confirmMessage {
-  margin: 0;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-sm);
 }
 
 .tagsSection {

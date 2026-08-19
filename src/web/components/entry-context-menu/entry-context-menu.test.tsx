@@ -40,7 +40,7 @@ describe("EntryContextMenu", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("shows a confirmation step on Delete without closing the menu", async () => {
+  it("opens a delete confirmation popup and closes the menu when Delete is clicked", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onDelete = vi.fn();
@@ -52,32 +52,29 @@ describe("EntryContextMenu", () => {
 
     expect(screen.getByText('Delete "map.png"?')).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
-    expect(onClose).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
   });
 
-  it("calls onDelete and onClose when Confirm is clicked", async () => {
+  it("calls onDelete when Confirm is clicked in the popup", async () => {
     const user = userEvent.setup();
-    const onClose = vi.fn();
     const onDelete = vi.fn();
 
-    render(
-      <EntryContextMenu {...baseProps} entry={fileEntry} onClose={onClose} onDelete={onDelete} />,
-    );
+    render(<EntryContextMenu {...baseProps} entry={fileEntry} onDelete={onDelete} />);
     await user.click(screen.getByRole("button", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
     expect(onDelete).toHaveBeenCalledWith(fileEntry);
-    expect(onClose).toHaveBeenCalled();
   });
 
-  it("returns to the item list when Cancel is clicked", async () => {
+  it("dismisses the confirmation popup without calling onDelete when Cancel is clicked", async () => {
     const user = userEvent.setup();
+    const onDelete = vi.fn();
 
-    render(<EntryContextMenu {...baseProps} entry={fileEntry} />);
+    render(<EntryContextMenu {...baseProps} entry={fileEntry} onDelete={onDelete} />);
     await user.click(screen.getByRole("button", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
-    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
     expect(screen.queryByText('Delete "map.png"?')).not.toBeInTheDocument();
   });
 

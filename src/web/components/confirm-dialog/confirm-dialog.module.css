@@ -1,0 +1,9 @@
+.message {
+  font-size: var(--font-size-sm);
+}
+
+.dangerButton {
+  background: var(--color-danger);
+  border-color: var(--color-danger);
+  color: var(--color-surface);
+}

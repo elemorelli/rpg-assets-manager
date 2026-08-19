@@ -1,3 +1,4 @@
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, type MouseEvent, type ReactNode, useEffect } from "react";
@@ -7,6 +8,7 @@ import styles from "./modal.module.css";
 
 export interface ModalProps {
   title: string;
+  icon?: IconDefinition;
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
@@ -15,6 +17,7 @@ export interface ModalProps {
 
 export const Modal = ({
   title,
+  icon,
   onClose,
   children,
   footer,
@@ -48,8 +51,13 @@ export const Modal = ({
     <div className={styles.backdrop} data-testid="modal-backdrop" onClick={handleBackdropClick}>
       <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
         <div className={styles.header}>
-          <span className={styles.title} title={title}>
-            {title}
+          <span className={styles.titleGroup}>
+            {icon && (
+              <FontAwesomeIcon className={styles.titleIcon} icon={icon} aria-hidden="true" />
+            )}
+            <span className={styles.title} title={title}>
+              {title}
+            </span>
           </span>
           {dismissible && (
             <button

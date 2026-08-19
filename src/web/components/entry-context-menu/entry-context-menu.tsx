@@ -1,6 +1,7 @@
-import { type JSX, useEffect, useState } from "react";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { type JSX, useState } from "react";
 
-import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
+import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
@@ -31,12 +32,6 @@ export const EntryContextMenu = ({
 }: EntryContextMenuProps): JSX.Element => {
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (!position) {
-      setConfirmingDelete(false);
-    }
-  }, [position]);
-
   const isPreviewable = isPreviewableEntry(entry);
 
   const handleView = (): void => {
@@ -49,23 +44,19 @@ export const EntryContextMenu = ({
     onClose();
   };
 
+  const handleDeleteRequested = (): void => {
+    onClose();
+    setConfirmingDelete(true);
+  };
+
   const handleConfirmDelete = (): void => {
     onDelete(entry);
-    onClose();
+    setConfirmingDelete(false);
   };
 
   return (
-    <ContextMenu position={position} onClose={onClose}>
-      {confirmingDelete ? (
-        <ConfirmDelete
-          entryName={entry.name}
-          containerClassName={styles.confirmDelete}
-          messageClassName={styles.confirmMessage}
-          buttonClassName={styles.item}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmingDelete(false)}
-        />
-      ) : (
+    <>
+      <ContextMenu position={position} onClose={onClose}>
         <div className={styles.items}>
           {isPreviewable && (
             <button type="button" className={styles.item} onClick={handleView}>
@@ -75,7 +66,7 @@ export const EntryContextMenu = ({
           <button type="button" className={styles.item} onClick={handleRename}>
             Rename
           </button>
-          <button type="button" className={styles.item} onClick={() => setConfirmingDelete(true)}>
+          <button type="button" className={styles.item} onClick={handleDeleteRequested}>
             Delete
           </button>
           {entry.type === "file" && (
@@ -89,7 +80,17 @@ export const EntryContextMenu = ({
             </div>
           )}
         </div>
+      </ContextMenu>
+      {confirmingDelete && (
+        <ConfirmDialog
+          title="Delete file"
+          icon={faTrash}
+          message={`Delete "${entry.name}"?`}
+          danger
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setConfirmingDelete(false)}
+        />
       )}
-    </ContextMenu>
+    </>
   );
 };
