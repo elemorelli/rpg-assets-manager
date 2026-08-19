@@ -1,6 +1,7 @@
 import type { Kysely } from "kysely";
 
-import type { DB } from "#server/db/index.ts";
+import { assetsPublicBaseUrl } from "#server/cloudflare/index.ts";
+import { type DB, db } from "#server/db/index.ts";
 import { generateMacro } from "#server/routes/apply/macro/generate.ts";
 import type { RenamePair } from "#server/routes/diff/index.ts";
 
@@ -50,3 +51,5 @@ export const listFoundryWorlds = async (
 
   return summaries;
 };
+
+export const listFoundryWorldsHandler = async () => listFoundryWorlds(db, assetsPublicBaseUrl);

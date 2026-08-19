@@ -6,7 +6,7 @@ import {
   invalidateLocalHashIndex,
   invalidateRemoteHashIndex,
 } from "#server/asset-index-cache/index.ts";
-import type { DB } from "#server/db/index.ts";
+import { type DB, db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
@@ -63,3 +63,6 @@ export const bootstrapAssets = async (
 
   return { inserted, skipped };
 };
+
+export const bootstrapHandler = (assetTreeRoot: string) => async () =>
+  bootstrapAssets(db, assetTreeRoot);

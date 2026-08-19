@@ -1,1 +1,1 @@
-export { bootstrapHandler } from "./handler.ts";
+export { bootstrapHandler } from "./bootstrap.ts";

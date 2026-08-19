@@ -1,6 +1,6 @@
 import { type Kysely, sql } from "kysely";
 
-import type { DB } from "#server/db/index.ts";
+import { type DB, db } from "#server/db/index.ts";
 
 import {
   buildHashGroups,
@@ -64,3 +64,5 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
 
   return { added, deleted, modified, renamed, ambiguousWarnings };
 };
+
+export const diffHandler = async () => computeBatchDiff(db);

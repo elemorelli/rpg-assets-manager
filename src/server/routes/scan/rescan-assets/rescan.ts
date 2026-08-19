@@ -1,10 +1,12 @@
 import fs from "node:fs/promises";
 import path from "node:path";
+import type { FastifyRequest } from "fastify";
 import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import type { DB } from "#server/db/index.ts";
+import { type DB, db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
+import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
 import { walkAssetTree } from "../walk-asset-tree.ts";
@@ -114,4 +116,16 @@ export const rescanAssets = async (
     removed: removedPaths.length,
     renamed: renamePairs.length,
   };
+};
+
+interface RescanRequestBody {
+  forceRehash?: boolean;
+}
+
+export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
+  const body = request.body as RescanRequestBody | undefined;
+
+  return runTrackedJob("rescan", "hashing", "rescan failed", (onProgress) =>
+    rescanAssets(db, assetTreeRoot, { forceRehash: body?.forceRehash ?? false }, onProgress),
+  );
 };

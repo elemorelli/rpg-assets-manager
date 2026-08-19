@@ -1,1 +1,1 @@
-export { searchEntriesHandler } from "./handler.ts";
+export { searchEntriesHandler } from "./search-entries.ts";

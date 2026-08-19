@@ -1,7 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 
-import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
+import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
+import type { FilesPathQuery } from "#server/routes/files/path-body.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
@@ -34,3 +35,14 @@ export const resolveThumbnail = async (
 
   return cachePath;
 };
+
+export const thumbnailHandler = (assetTreeRoot: string, thumbnailCacheDir: string) =>
+  withHttpErrorHandling(async (request, reply) => {
+    const query = request.query as FilesPathQuery;
+    const cachePath = await resolveThumbnail(assetTreeRoot, thumbnailCacheDir, query.path ?? "");
+    const content = await fs.readFile(cachePath);
+
+    reply.type("image/webp");
+
+    return content;
+  });

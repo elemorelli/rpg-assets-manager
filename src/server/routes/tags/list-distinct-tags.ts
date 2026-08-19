@@ -9,3 +9,5 @@ export const listDistinctTags = async (): Promise<string[]> => {
 
   return rows.map((row) => row.tag);
 };
+
+export const listTagsHandler = async (): Promise<string[]> => listDistinctTags();

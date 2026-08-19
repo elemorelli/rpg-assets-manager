@@ -1,1 +1,1 @@
-export { thumbnailHandler } from "./handler.ts";
+export { thumbnailHandler } from "./resolve-thumbnail.ts";

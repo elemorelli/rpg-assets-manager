@@ -1,3 +1,5 @@
+import type { FastifyRequest } from "fastify";
+
 import { walkDirectory } from "#server/utils/walk-directory.ts";
 
 import { type SearchableEntry, searchEntriesByName } from "./searchable-entries.ts";
@@ -21,4 +23,14 @@ export const searchEntries = async (rootDir: string, query: string): Promise<Sea
   }
 
   return searchEntriesByName(allEntries, normalizedQuery);
+};
+
+interface SearchQuery {
+  q?: string;
+}
+
+export const searchEntriesHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
+  const query = request.query as SearchQuery;
+
+  return searchEntries(assetTreeRoot, query.q ?? "");
 };

@@ -1,1 +1,1 @@
-export { listFoundryWorldsHandler } from "./handler.ts";
+export { listFoundryWorldsHandler } from "./list-foundry-worlds.ts";

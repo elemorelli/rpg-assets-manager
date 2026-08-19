@@ -1,1 +1,1 @@
-export { convertAssetsHandler } from "./handler.ts";
+export { convertAssetsHandler } from "./convert.ts";
