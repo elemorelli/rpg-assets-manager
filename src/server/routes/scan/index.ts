@@ -1,4 +1,4 @@
-export { bootstrapHandler } from "./bootstrap-assets/index.ts";
+export { bootstrapHandler } from "./bootstrap.ts";
 export {
   type RescanProgress,
   type RescanSummary,

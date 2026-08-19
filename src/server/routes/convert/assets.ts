@@ -10,7 +10,7 @@ import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 
-import { getConversionPlan } from "./plan/index.ts";
+import { getConversionPlan } from "./plan.ts";
 import { convertToOgg } from "./to-ogg.ts";
 import { convertToWebp } from "./to-webp.ts";
 

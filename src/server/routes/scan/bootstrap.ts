@@ -10,7 +10,7 @@ import { type DB, db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
-import { walkAssetTree } from "../walk-asset-tree.ts";
+import { walkAssetTree } from "./walk-asset-tree.ts";
 
 export interface BootstrapSummary {
   inserted: number;

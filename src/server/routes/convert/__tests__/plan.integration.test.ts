@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { getConversionPlan } from "../index.ts";
+import { getConversionPlan } from "../plan.ts";
 
 describe("getConversionPlan", () => {
   let tempDir = "";
