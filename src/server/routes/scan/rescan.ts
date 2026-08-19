@@ -9,9 +9,9 @@ import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/re
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
-import { walkAssetTree } from "../walk-asset-tree.ts";
 import { classifyHashedCandidates, type HashedCandidate } from "./classify.ts";
 import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
+import { walkAssetTree } from "./walk-asset-tree.ts";
 
 export interface RescanSummary {
   hashed: number;

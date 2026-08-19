@@ -1,11 +1,11 @@
 export { rawFileHandler } from "./content/raw.ts";
-export { thumbnailHandler } from "./content/thumbnail/index.ts";
+export { thumbnailHandler } from "./content/resolve-thumbnail.ts";
 export { uploadFileHandler } from "./content/upload.ts";
 export { createDirectoryHandler } from "./directory/create.ts";
 export { listDirectoryHandler } from "./directory/list.ts";
 export { deleteEntryHandler } from "./entry/delete.ts";
 export { moveEntryHandler } from "./entry/move.ts";
 export { renameEntryHandler } from "./entry/rename.ts";
-export { searchEntriesHandler } from "./entry/search/index.ts";
+export { searchEntriesHandler } from "./entry/search-entries.ts";
 export { filesByTagHandler } from "./tags/by-tag.ts";
 export { setAssetTagsHandler } from "./tags/set.ts";
