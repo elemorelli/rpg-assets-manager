@@ -23,6 +23,7 @@ export interface RescanSummary {
 export interface RescanProgress {
   done: number;
   total: number;
+  detail?: string;
 }
 
 export const rescanAssets = async (
@@ -46,11 +47,11 @@ export const rescanAssets = async (
   const plan = computeRescanPlan(previous, current, options);
   const total = plan.toHash.length;
 
-  onProgress?.({ done: 0, total });
-
   const hashedCandidates: HashedCandidate[] = [];
 
   for (const [index, file] of plan.toHash.entries()) {
+    onProgress?.({ done: index, total, detail: file.relativePath });
+
     const absolutePath = path.join(rootDir, file.relativePath);
     const content = await fs.readFile(absolutePath);
     const hash = await hashBuffer(content);
@@ -61,9 +62,9 @@ export const rescanAssets = async (
       mtimeMs: file.mtimeMs,
       hash,
     });
-
-    onProgress?.({ done: index + 1, total });
   }
+
+  onProgress?.({ done: total, total });
 
   const { modified, renamePairs, added, removedPaths } = classifyHashedCandidates(
     previous,

@@ -21,6 +21,7 @@ import { failSyncRun, finishSyncRun, type SyncRunOutcome, startSyncRun } from ".
 export interface ApplyProgress {
   done: number;
   total: number;
+  detail?: string;
 }
 
 export type ApplyOutcome = Exclude<SyncRunOutcome, "in_progress" | "failed">;

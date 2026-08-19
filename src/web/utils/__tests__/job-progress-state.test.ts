@@ -17,10 +17,47 @@ describe("nextJobDisplayState", () => {
       stage: "hashing",
       done: 3,
       total: 10,
+      startedAt: 1000,
       error: null,
     });
 
-    expect(next).toEqual({ kind: "running", type: "rescan", stage: "hashing", done: 3, total: 10 });
+    expect(next).toEqual({
+      kind: "running",
+      type: "rescan",
+      stage: "hashing",
+      detail: undefined,
+      done: 3,
+      total: 10,
+      startedAt: 1000,
+      indeterminate: false,
+    });
+  });
+
+  it("carries the current file/step detail when one is given", () => {
+    const next = nextJobDisplayState(IDLE, {
+      type: "rescan",
+      stage: "hashing",
+      detail: "assets/goblin.png",
+      done: 3,
+      total: 10,
+      startedAt: 1000,
+      error: null,
+    });
+
+    expect(next).toMatchObject({ detail: "assets/goblin.png" });
+  });
+
+  it("marks progress indeterminate when the total is unknown", () => {
+    const next = nextJobDisplayState(IDLE, {
+      type: "reconcile",
+      stage: "checking",
+      done: 0,
+      total: 0,
+      startedAt: 1000,
+      error: null,
+    });
+
+    expect(next).toMatchObject({ indeterminate: true });
   });
 
   it("stays running with updated progress on a later job update", () => {
@@ -28,18 +65,31 @@ describe("nextJobDisplayState", () => {
       kind: "running",
       type: "rescan",
       stage: "hashing",
+      detail: undefined,
       done: 3,
       total: 10,
+      startedAt: 1000,
+      indeterminate: false,
     };
     const next = nextJobDisplayState(running, {
       type: "rescan",
       stage: "hashing",
       done: 7,
       total: 10,
+      startedAt: 1000,
       error: null,
     });
 
-    expect(next).toEqual({ kind: "running", type: "rescan", stage: "hashing", done: 7, total: 10 });
+    expect(next).toEqual({
+      kind: "running",
+      type: "rescan",
+      stage: "hashing",
+      detail: undefined,
+      done: 7,
+      total: 10,
+      startedAt: 1000,
+      indeterminate: false,
+    });
   });
 
   it("moves to succeeded when a running job is cleared to null", () => {
@@ -47,8 +97,11 @@ describe("nextJobDisplayState", () => {
       kind: "running",
       type: "rescan",
       stage: "hashing",
+      detail: undefined,
       done: 10,
       total: 10,
+      startedAt: 1000,
+      indeterminate: false,
     };
     const next = nextJobDisplayState(running, null);
 
@@ -61,10 +114,30 @@ describe("nextJobDisplayState", () => {
       stage: "hashing",
       done: 3,
       total: 10,
+      startedAt: 1000,
       error: "disk full",
     });
 
-    expect(next).toEqual({ kind: "failed", type: "rescan", error: "disk full" });
+    expect(next).toEqual({ kind: "failed", type: "rescan", detail: undefined, error: "disk full" });
+  });
+
+  it("carries the file/step detail that was in progress when the job failed", () => {
+    const next = nextJobDisplayState(IDLE, {
+      type: "rescan",
+      stage: "hashing",
+      detail: "assets/goblin.png",
+      done: 3,
+      total: 10,
+      startedAt: 1000,
+      error: "disk full",
+    });
+
+    expect(next).toEqual({
+      kind: "failed",
+      type: "rescan",
+      detail: "assets/goblin.png",
+      error: "disk full",
+    });
   });
 
   it("goes back to idle when null arrives without a running job before it", () => {

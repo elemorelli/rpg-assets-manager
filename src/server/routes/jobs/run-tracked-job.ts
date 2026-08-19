@@ -5,6 +5,7 @@ import { setCurrentJob } from "./store.ts";
 interface TrackedJobProgress {
   done: number;
   total: number;
+  detail?: string;
 }
 
 export const runTrackedJob = async <T>(
@@ -18,7 +19,7 @@ export const runTrackedJob = async <T>(
 
   try {
     const result = await operation((progress) => {
-      job = advanceJob({ ...job, total: progress.total }, progress.done);
+      job = advanceJob({ ...job, total: progress.total }, progress.done, progress.detail);
       setCurrentJob(job);
     });
 

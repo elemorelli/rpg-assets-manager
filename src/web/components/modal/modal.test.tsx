@@ -85,4 +85,42 @@ describe("Modal", () => {
 
     expect(onClose).toHaveBeenCalled();
   });
+
+  it("hides the close button when dismissible is false", () => {
+    render(
+      <Modal title="Convert assets" onClose={vi.fn()} dismissible={false}>
+        <p>Body content</p>
+      </Modal>,
+    );
+
+    expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
+  });
+
+  it("does not call onClose from the backdrop when dismissible is false", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <Modal title="Convert assets" onClose={onClose} dismissible={false}>
+        <p>Body content</p>
+      </Modal>,
+    );
+    await user.click(screen.getByTestId("modal-backdrop"));
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("does not call onClose from Escape when dismissible is false", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <Modal title="Convert assets" onClose={onClose} dismissible={false}>
+        <p>Body content</p>
+      </Modal>,
+    );
+    await user.keyboard("{Escape}");
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

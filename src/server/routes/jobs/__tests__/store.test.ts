@@ -12,7 +12,7 @@ describe("jobStore", () => {
   });
 
   it("returns the job that was set", () => {
-    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, error: null };
+    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, startedAt: 0, error: null };
 
     setCurrentJob(job);
 
@@ -22,7 +22,7 @@ describe("jobStore", () => {
   it("notifies subscribers when the job changes", () => {
     const listener = vi.fn();
     subscribeToJobChanges(listener);
-    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, error: null };
+    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, startedAt: 0, error: null };
 
     setCurrentJob(job);
 
@@ -34,7 +34,14 @@ describe("jobStore", () => {
     const unsubscribe = subscribeToJobChanges(listener);
 
     unsubscribe();
-    setCurrentJob({ type: "rescan", stage: "hashing", done: 0, total: 10, error: null });
+    setCurrentJob({
+      type: "rescan",
+      stage: "hashing",
+      done: 0,
+      total: 10,
+      startedAt: 0,
+      error: null,
+    });
 
     expect(listener).not.toHaveBeenCalled();
   });

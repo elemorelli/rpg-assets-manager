@@ -22,6 +22,7 @@ export interface ConversionSummary {
 export interface ConversionProgress {
   done: number;
   total: number;
+  detail?: string;
 }
 
 // Candidate paths are relative to the (possibly folder-scoped) rootDir used for
@@ -39,9 +40,9 @@ export const convertAssets = async (
   const plan = await getConversionPlan(rootDir);
   const total = plan.candidates.length;
 
-  onProgress?.({ done: 0, total });
-
   for (const [index, candidate] of plan.candidates.entries()) {
+    onProgress?.({ done: index, total, detail: candidate.relativePath });
+
     const sourcePath = path.join(rootDir, candidate.relativePath);
     const destinationPath = path.join(rootDir, candidate.destinationPath);
 
@@ -80,9 +81,9 @@ export const convertAssets = async (
         }),
       )
       .execute();
-
-    onProgress?.({ done: index + 1, total });
   }
+
+  onProgress?.({ done: total, total });
 
   if (plan.candidates.length > 0) {
     invalidateLocalHashIndex(db);

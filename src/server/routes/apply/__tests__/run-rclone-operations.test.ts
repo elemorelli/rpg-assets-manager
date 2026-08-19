@@ -123,7 +123,7 @@ describe("runRcloneOperations", () => {
   });
 
   it("reports cumulative progress across copy, delete and each rename", async () => {
-    const progressUpdates: { done: number; total: number }[] = [];
+    const progressUpdates: { done: number; total: number; detail?: string }[] = [];
 
     await runRcloneOperations(
       "/root",
@@ -139,8 +139,11 @@ describe("runRcloneOperations", () => {
     );
 
     expect(progressUpdates).toEqual([
+      { done: 0, total: 3, detail: "Copying 1 file(s)" },
       { done: 1, total: 3 },
+      { done: 1, total: 3, detail: "Deleting 1 file(s)" },
       { done: 2, total: 3 },
+      { done: 2, total: 3, detail: "Renaming c.png → c2.png" },
       { done: 3, total: 3 },
     ]);
   });

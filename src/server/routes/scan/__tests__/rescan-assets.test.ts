@@ -119,11 +119,12 @@ describe("rescanAssets", () => {
     await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
     await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");
 
-    const progressUpdates: { done: number; total: number }[] = [];
+    const progressUpdates: { done: number; total: number; detail?: string }[] = [];
 
     await rescanAssets(db, tempDir, {}, (progress) => progressUpdates.push(progress));
 
-    expect(progressUpdates[0]).toEqual({ done: 0, total: 2 });
+    expect(progressUpdates[0]).toMatchObject({ done: 0, total: 2 });
+    expect(progressUpdates[0]?.detail).toMatch(/\.png$/);
     expect(progressUpdates.at(-1)).toEqual({ done: 2, total: 2 });
   });
 

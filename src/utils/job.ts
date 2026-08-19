@@ -1,8 +1,10 @@
 export interface JobState {
   type: string;
   stage: string;
+  detail?: string;
   done: number;
   total: number;
+  startedAt: number;
   error: string | null;
 }
 
@@ -11,14 +13,17 @@ export type CurrentJob = JobState | null;
 export const startJob = (type: string, stage: string, total: number): JobState => ({
   type,
   stage,
+  detail: undefined,
   done: 0,
   total,
+  startedAt: Date.now(),
   error: null,
 });
 
-export const advanceJob = (job: JobState, done: number): JobState => ({
+export const advanceJob = (job: JobState, done: number, detail?: string): JobState => ({
   ...job,
   done,
+  detail,
 });
 
 export const failJob = (job: JobState, error: string): JobState => ({

@@ -44,11 +44,18 @@ describe("jobsStreamHandler", () => {
     const reply = createReply();
 
     jobsStreamHandler(request, reply);
-    setCurrentJob({ type: "rescan", stage: "hashing", done: 1, total: 10, error: null });
+    setCurrentJob({
+      type: "rescan",
+      stage: "hashing",
+      done: 1,
+      total: 10,
+      startedAt: 0,
+      error: null,
+    });
 
     expect(reply.chunks).toEqual([
       "data: null\n\n",
-      'data: {"type":"rescan","stage":"hashing","done":1,"total":10,"error":null}\n\n',
+      'data: {"type":"rescan","stage":"hashing","done":1,"total":10,"startedAt":0,"error":null}\n\n',
     ]);
   });
 
@@ -58,7 +65,14 @@ describe("jobsStreamHandler", () => {
 
     jobsStreamHandler(request, reply);
     request.raw.emit("close");
-    setCurrentJob({ type: "rescan", stage: "hashing", done: 1, total: 10, error: null });
+    setCurrentJob({
+      type: "rescan",
+      stage: "hashing",
+      done: 1,
+      total: 10,
+      startedAt: 0,
+      error: null,
+    });
 
     expect(reply.chunks).toEqual(["data: null\n\n"]);
   });

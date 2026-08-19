@@ -10,10 +10,21 @@ export interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  dismissible?: boolean;
 }
 
-export const Modal = ({ title, onClose, children, footer }: ModalProps): JSX.Element => {
+export const Modal = ({
+  title,
+  onClose,
+  children,
+  footer,
+  dismissible = true,
+}: ModalProps): JSX.Element => {
   useEffect(() => {
+    if (!dismissible) {
+      return;
+    }
+
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (event.key === "Escape") {
         onClose();
@@ -25,10 +36,10 @@ export const Modal = ({ title, onClose, children, footer }: ModalProps): JSX.Ele
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [onClose]);
+  }, [dismissible, onClose]);
 
   const handleBackdropClick = (event: MouseEvent<HTMLDivElement>): void => {
-    if (event.target === event.currentTarget) {
+    if (dismissible && event.target === event.currentTarget) {
       onClose();
     }
   };
@@ -40,9 +51,15 @@ export const Modal = ({ title, onClose, children, footer }: ModalProps): JSX.Ele
           <span className={styles.title} title={title}>
             {title}
           </span>
-          <button type="button" className={styles.closeButton} aria-label="Close" onClick={onClose}>
-            <FontAwesomeIcon icon={faXmark} />
-          </button>
+          {dismissible && (
+            <button
+              type="button"
+              className={styles.closeButton}
+              aria-label="Close"
+              onClick={onClose}>
+              <FontAwesomeIcon icon={faXmark} />
+            </button>
+          )}
         </div>
         <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
