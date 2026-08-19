@@ -66,6 +66,10 @@
   vertical-align: middle;
 }
 
+.row {
+  cursor: pointer;
+}
+
 .dragOver {
   outline: 2px dashed var(--color-accent);
   outline-offset: -2px;

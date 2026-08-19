@@ -83,7 +83,11 @@ export const DirectoryTableRow = ({
     <tr
       draggable={!isDeleted}
       aria-selected={isSelected}
-      className={clsx(isDropTarget && dragOver && styles.dragOver, isSelected && styles.selected)}
+      className={clsx(
+        !isDeleted && styles.row,
+        isDropTarget && dragOver && styles.dragOver,
+        isSelected && styles.selected,
+      )}
       onClick={isDeleted ? undefined : handleClick}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}

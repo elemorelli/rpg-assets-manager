@@ -110,23 +110,25 @@ export const Lightbox = ({
         <button type="button" className={styles.closeButton} aria-label="Close" onClick={onClose}>
           <FontAwesomeIcon icon={faXmark} />
         </button>
-        <button
-          type="button"
-          className={styles.navButton}
-          aria-label="Previous"
-          disabled={!hasPrev}
-          onClick={onPrev}>
-          <FontAwesomeIcon icon={faChevronLeft} />
-        </button>
-        <div className={styles.preview}>{preview}</div>
-        <button
-          type="button"
-          className={styles.navButton}
-          aria-label="Next"
-          disabled={!hasNext}
-          onClick={onNext}>
-          <FontAwesomeIcon icon={faChevronRight} />
-        </button>
+        <div className={styles.mediaRow}>
+          <button
+            type="button"
+            className={styles.navButton}
+            aria-label="Previous"
+            disabled={!hasPrev}
+            onClick={onPrev}>
+            <FontAwesomeIcon icon={faChevronLeft} />
+          </button>
+          <div className={styles.preview}>{preview}</div>
+          <button
+            type="button"
+            className={styles.navButton}
+            aria-label="Next"
+            disabled={!hasNext}
+            onClick={onNext}>
+            <FontAwesomeIcon icon={faChevronRight} />
+          </button>
+        </div>
         <LightboxDetails
           entry={entry}
           onRename={onRename}

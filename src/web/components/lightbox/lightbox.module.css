@@ -11,7 +11,7 @@
 .content {
   position: relative;
   display: grid;
-  grid-template-columns: auto 1fr auto auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: var(--spacing-md);
   max-width: 90vw;
@@ -21,8 +21,15 @@
   border-radius: 4px;
 }
 
+.mediaRow {
+  display: flex;
+  align-items: center;
+  min-width: min(640px, 70vw);
+}
+
 .preview {
   display: flex;
+  flex: 1;
   align-items: center;
   justify-content: center;
   min-width: 0;
@@ -36,7 +43,6 @@
 
 .audio {
   width: 100%;
-  min-width: min(640px, 70vw);
 }
 
 .closeButton {
@@ -51,11 +57,13 @@
 }
 
 .navButton {
+  flex-shrink: 0;
   background: none;
   border: none;
   color: var(--color-text);
   cursor: pointer;
   font-size: var(--font-size-lg);
+  padding: var(--spacing-sm);
 }
 
 .navButton:disabled {

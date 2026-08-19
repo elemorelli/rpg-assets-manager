@@ -7,6 +7,8 @@ import {
   useState,
 } from "react";
 
+import { extensionOf } from "#utils/preview.ts";
+
 export interface UseInlineRenameResult {
   isRenaming: boolean;
   renameDraft: string;
@@ -26,11 +28,17 @@ export const useInlineRename = (
   const renameInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (isRenaming) {
-      renameInputRef.current?.focus();
-      renameInputRef.current?.select();
+    const input = renameInputRef.current;
+
+    if (isRenaming && input) {
+      const extension = extensionOf(name);
+      const hasExtension = extension.length > 0 && extension.length < name.length;
+      const selectionEnd = hasExtension ? name.length - extension.length : name.length;
+
+      input.focus();
+      input.setSelectionRange(0, selectionEnd);
     }
-  }, [isRenaming]);
+  }, [isRenaming, name]);
 
   const startRenaming = (): void => {
     setRenameDraft(name);

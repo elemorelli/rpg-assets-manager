@@ -14,12 +14,23 @@
 .name {
   font-weight: 600;
   font-size: var(--font-size-md);
+  line-height: 1.2;
   word-break: break-all;
 }
 
 .renameInput {
   flex: 1;
-  font: inherit;
+  min-width: 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-bottom: 1px solid var(--color-accent);
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
 }
 
 .renameIconButton {
