@@ -1,2 +1,2 @@
-export { listFoundryWorldsHandler } from "./list-foundry-worlds.ts";
+export { listFoundryWorldsHandler } from "./list.ts";
 export { markFoundryWorldAppliedHandler } from "./mark-applied.ts";

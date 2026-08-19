@@ -1,1 +1,1 @@
-export { listTagsHandler } from "./list-distinct-tags.ts";
+export { listTagsHandler } from "./list.ts";

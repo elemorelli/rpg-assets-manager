@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { createFakeDb } from "#server/test-utils/fake-db.ts";
 
-import { listFoundryWorlds } from "../list-foundry-worlds.ts";
+import { listFoundryWorlds } from "../list.ts";
 
 const BASE_URL = "https://assets.example.com";
 const EARLIER = new Date("2026-01-01T00:00:00Z");

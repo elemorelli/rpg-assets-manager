@@ -6,7 +6,7 @@ import {
   destroyDbAfterAll,
 } from "#server/test-utils/integration-lifecycle.ts";
 
-import { listDistinctTags } from "../list-distinct-tags.ts";
+import { listDistinctTags } from "../list.ts";
 
 describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres)", () => {
   cleanupAssetsByPrefix("distinct-tags-test/");
