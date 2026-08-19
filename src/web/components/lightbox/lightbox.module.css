@@ -36,6 +36,7 @@
 
 .audio {
   width: 100%;
+  min-width: min(640px, 70vw);
 }
 
 .closeButton {

@@ -113,6 +113,32 @@
   color: var(--color-accent);
 }
 
+.audioPreviewArea {
+  position: relative;
+  display: inline-flex;
+}
+
+.audioIconLarge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 128px;
+  font-size: 64px;
+  color: var(--color-text-muted);
+}
+
+.audioIconOpenable {
+  cursor: pointer;
+}
+
+.audioButtonOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
 .placeholder {
   display: inline-block;
   width: 20px;

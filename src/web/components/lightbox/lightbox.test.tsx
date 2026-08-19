@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 
@@ -24,6 +24,10 @@ const baseProps = {
 };
 
 describe("Lightbox", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("renders an image for an image entry", () => {
     render(<Lightbox {...baseProps} entry={imageEntry} />);
 
@@ -40,6 +44,37 @@ describe("Lightbox", () => {
       "src",
       "/api/files/raw?path=audio%2Fambient.wav",
     );
+  });
+
+  it("autoplays the audio entry when it is opened", () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
+
+    render(<Lightbox {...baseProps} entry={audioEntry} relativePath="audio/ambient.wav" />);
+
+    expect(playSpy).toHaveBeenCalled();
+  });
+
+  it("autoplays again when navigating to a different audio entry", () => {
+    const playSpy = vi
+      .spyOn(HTMLMediaElement.prototype, "play")
+      .mockImplementation(() => Promise.resolve());
+    const nextAudioEntry: DirectoryEntry = {
+      name: "battle.wav",
+      type: "file",
+      size: 1024,
+      tags: [],
+    };
+
+    const { rerender } = render(
+      <Lightbox {...baseProps} entry={audioEntry} relativePath="audio/ambient.wav" />,
+    );
+
+    playSpy.mockClear();
+    rerender(<Lightbox {...baseProps} entry={nextAudioEntry} relativePath="audio/battle.wav" />);
+
+    expect(playSpy).toHaveBeenCalled();
   });
 
   it("disables Previous/Next per hasPrev/hasNext", () => {

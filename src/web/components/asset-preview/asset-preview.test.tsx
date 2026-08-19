@@ -187,7 +187,7 @@ describe("AssetPreview", () => {
     expect(onOpen).toHaveBeenCalledWith(entry);
   });
 
-  it("does not make an audio preview interactive even when onOpen is given", () => {
+  it("does not make a small audio preview interactive even when onOpen is given", () => {
     render(
       <AssetPreview
         entry={{ name: "ambient.wav", type: "file", size: SIZE_ABOVE_THRESHOLD }}
@@ -197,5 +197,57 @@ describe("AssetPreview", () => {
     );
 
     expect(document.querySelector("audio")).not.toHaveAttribute("tabindex");
+  });
+
+  it("renders an openable music icon for a large audio preview", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "ambient.wav", type: "file", size: SIZE_ABOVE_THRESHOLD }}
+        relativePath="audio/ambient.wav"
+        size="large"
+        onOpen={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "ambient.wav" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
+  });
+
+  it("calls onOpen when a large audio preview's icon is clicked", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const entry = { name: "ambient.wav", type: "file" as const, size: SIZE_ABOVE_THRESHOLD };
+
+    render(
+      <AssetPreview entry={entry} relativePath="audio/ambient.wav" size="large" onOpen={onOpen} />,
+    );
+    await user.click(screen.getByRole("button", { name: "ambient.wav" }));
+
+    expect(onOpen).toHaveBeenCalledWith(entry);
+  });
+
+  it("does not open the lightbox when the large audio preview's play button is clicked", async () => {
+    const user = userEvent.setup();
+    const onOpen = vi.fn();
+    const entry = { name: "ambient.wav", type: "file" as const, size: SIZE_ABOVE_THRESHOLD };
+
+    render(
+      <AssetPreview entry={entry} relativePath="audio/ambient.wav" size="large" onOpen={onOpen} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Play" }));
+
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("does not make the large audio icon interactive when onOpen is omitted", () => {
+    render(
+      <AssetPreview
+        entry={{ name: "ambient.wav", type: "file", size: SIZE_ABOVE_THRESHOLD }}
+        relativePath="audio/ambient.wav"
+        size="large"
+      />,
+    );
+
+    expect(screen.queryByRole("button", { name: "ambient.wav" })).not.toBeInTheDocument();
   });
 });

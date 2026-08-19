@@ -1,3 +1,5 @@
+import { faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useState } from "react";
 
 import { ConfirmDelete } from "#components/confirm-delete/confirm-delete.tsx";
@@ -41,7 +43,7 @@ export const LightboxDetails = ({
 
   return (
     <div className={styles.details}>
-      <div className={styles.nameRow}>
+      <div className={styles.header}>
         {isRenaming ? (
           <input
             ref={renameInputRef}
@@ -56,12 +58,17 @@ export const LightboxDetails = ({
         ) : (
           <>
             <span className={styles.name}>{entry.name}</span>
-            <button type="button" className={styles.actionButton} onClick={startRenaming}>
-              Rename
+            <button
+              type="button"
+              className={styles.renameIconButton}
+              aria-label="Rename"
+              onClick={startRenaming}>
+              <FontAwesomeIcon icon={faPen} />
             </button>
           </>
         )}
       </div>
+
       <dl className={styles.fields}>
         <dt>Type</dt>
         <dd>{entry.type}</dd>
@@ -78,29 +85,37 @@ export const LightboxDetails = ({
           </>
         )}
       </dl>
-      <TagEditor
-        entryKey={entry.name}
-        tags={entry.tags ?? []}
-        availableTags={availableTags}
-        onChange={(tags) => onTagsChange(entry, tags)}
-      />
-      {confirmingDelete ? (
-        <ConfirmDelete
-          entryName={entry.name}
-          containerClassName={styles.confirmDelete}
-          messageClassName={styles.confirmMessage}
-          buttonClassName={styles.actionButton}
-          onConfirm={handleConfirmDelete}
-          onCancel={() => setConfirmingDelete(false)}
+
+      <div className={styles.tagsSection}>
+        <span className={styles.sectionLabel}>Tags</span>
+        <TagEditor
+          entryKey={entry.name}
+          tags={entry.tags ?? []}
+          availableTags={availableTags}
+          onChange={(tags) => onTagsChange(entry, tags)}
         />
-      ) : (
-        <button
-          type="button"
-          className={styles.deleteButton}
-          onClick={() => setConfirmingDelete(true)}>
-          Delete
-        </button>
-      )}
+      </div>
+
+      <div className={styles.dangerZone}>
+        {confirmingDelete ? (
+          <ConfirmDelete
+            entryName={entry.name}
+            containerClassName={styles.confirmDelete}
+            messageClassName={styles.confirmMessage}
+            buttonClassName={styles.actionButton}
+            onConfirm={handleConfirmDelete}
+            onCancel={() => setConfirmingDelete(false)}
+          />
+        ) : (
+          <button
+            type="button"
+            className={styles.deleteButton}
+            onClick={() => setConfirmingDelete(true)}>
+            <FontAwesomeIcon icon={faTrash} />
+            Delete
+          </button>
+        )}
+      </div>
     </div>
   );
 };

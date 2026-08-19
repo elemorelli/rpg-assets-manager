@@ -80,6 +80,12 @@ describe("LightboxDetails", () => {
     expect(onDelete).toHaveBeenCalledWith(entry);
   });
 
+  it("labels the tags section", () => {
+    render(<LightboxDetails {...baseProps} entry={entry} />);
+
+    expect(screen.getByText("Tags")).toBeInTheDocument();
+  });
+
   it("forwards tag changes via TagEditor", async () => {
     const user = userEvent.setup();
     const onTagsChange = vi.fn();

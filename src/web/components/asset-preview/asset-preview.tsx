@@ -1,4 +1,9 @@
-import { faFile, faFileCircleExclamation, faFolder } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFile,
+  faFileCircleExclamation,
+  faFolder,
+  faMusic,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import { type JSX, type KeyboardEvent, useState } from "react";
@@ -112,7 +117,39 @@ export const AssetPreview = ({
   }
 
   if (previewSource.kind === "audio") {
-    return <AudioPreviewButton relativePath={relativePath} />;
+    if (!isLarge) {
+      return <AudioPreviewButton relativePath={relativePath} />;
+    }
+
+    const isOpenable = onOpen !== undefined;
+
+    const handleOpenClick = (): void => {
+      onOpen?.(entry);
+    };
+
+    const handleOpenKeyDown = (event: KeyboardEvent<HTMLSpanElement>): void => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onOpen?.(entry);
+      }
+    };
+
+    return (
+      <span data-size={size} className={styles.audioPreviewArea}>
+        <span
+          aria-label={entry.name}
+          role={isOpenable ? "button" : undefined}
+          tabIndex={isOpenable ? 0 : undefined}
+          className={clsx(styles.audioIconLarge, isOpenable && styles.audioIconOpenable)}
+          onClick={isOpenable ? handleOpenClick : undefined}
+          onKeyDown={isOpenable ? handleOpenKeyDown : undefined}>
+          <FontAwesomeIcon icon={faMusic} />
+        </span>
+        <span className={styles.audioButtonOverlay}>
+          <AudioPreviewButton relativePath={relativePath} />
+        </span>
+      </span>
+    );
   }
 
   return (

@@ -67,4 +67,21 @@ describe("AudioPreviewButton", () => {
 
     expect(screen.getByRole("button", { name: "Play" })).toBeInTheDocument();
   });
+
+  it("pauses a sibling instance's audio element when playback starts", () => {
+    const pauseSpy = vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => {});
+
+    render(
+      <>
+        <AudioPreviewButton relativePath="audio/ambient.wav" />
+        <AudioPreviewButton relativePath="audio/battle.wav" />
+      </>,
+    );
+    const [firstAudio, secondAudio] = document.querySelectorAll("audio");
+
+    fireEvent.play(firstAudio);
+    fireEvent.play(secondAudio);
+
+    expect(pauseSpy).toHaveBeenCalled();
+  });
 });

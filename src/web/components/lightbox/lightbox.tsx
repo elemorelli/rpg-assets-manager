@@ -1,10 +1,11 @@
 import { faChevronLeft, faChevronRight, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type JSX, type MouseEvent, useEffect } from "react";
+import { type JSX, type MouseEvent, type SyntheticEvent, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
+import { claimExclusivePlayback } from "#web/utils/exclusive-audio-playback.ts";
 
 import styles from "./lightbox.module.css";
 import { LightboxDetails } from "./lightbox-details.tsx";
@@ -39,6 +40,8 @@ export const Lightbox = ({
   availableTags,
   onTagsChange,
 }: LightboxProps): JSX.Element => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent): void => {
       if (isTextInput(event.target)) {
@@ -69,9 +72,26 @@ export const Lightbox = ({
 
   const previewSource = resolvePreviewSource(entry);
 
+  useEffect(() => {
+    if (previewSource.kind === "audio") {
+      audioRef.current?.play()?.catch(() => {});
+    }
+  }, [entry, previewSource.kind]);
+
+  const handleAudioPlay = (event: SyntheticEvent<HTMLAudioElement>): void => {
+    claimExclusivePlayback(event.currentTarget);
+  };
+
   const preview =
     previewSource.kind === "audio" ? (
-      <audio controls preload="none" src={buildRawFileUrl(relativePath)} className={styles.audio} />
+      <audio
+        ref={audioRef}
+        controls
+        preload="none"
+        src={buildRawFileUrl(relativePath)}
+        className={styles.audio}
+        onPlay={handleAudioPlay}
+      />
     ) : previewSource.kind === "image" ? (
       <img
         src={

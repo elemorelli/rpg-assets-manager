@@ -1,8 +1,9 @@
 import { faPause, faPlay } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type JSX, type MouseEvent, useRef, useState } from "react";
+import { type JSX, type MouseEvent, type SyntheticEvent, useRef, useState } from "react";
 
 import { buildRawFileUrl } from "#utils/preview.ts";
+import { claimExclusivePlayback } from "#web/utils/exclusive-audio-playback.ts";
 
 import styles from "./asset-preview.module.css";
 
@@ -30,6 +31,11 @@ export const AudioPreviewButton = ({ relativePath }: AudioPreviewButtonProps): J
     }
   };
 
+  const handlePlay = (event: SyntheticEvent<HTMLAudioElement>): void => {
+    claimExclusivePlayback(event.currentTarget);
+    setIsPlaying(true);
+  };
+
   return (
     <span className={styles.audio}>
       <audio
@@ -37,7 +43,7 @@ export const AudioPreviewButton = ({ relativePath }: AudioPreviewButtonProps): J
         preload="none"
         className={styles.audioElement}
         src={buildRawFileUrl(relativePath)}
-        onPlay={() => setIsPlaying(true)}
+        onPlay={handlePlay}
         onPause={() => setIsPlaying(false)}
         onEnded={() => setIsPlaying(false)}
       />
