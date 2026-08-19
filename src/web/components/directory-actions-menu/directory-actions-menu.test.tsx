@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FolderActionsMenu } from "./folder-actions-menu.tsx";
+import { DirectoryActionsMenu } from "./directory-actions-menu.tsx";
 
 const baseProps = {
   position: { x: 10, y: 20 },
@@ -13,7 +13,7 @@ const baseProps = {
   onConvert: vi.fn(),
 };
 
-describe("FolderActionsMenu", () => {
+describe("DirectoryActionsMenu", () => {
   let promptSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -24,31 +24,39 @@ describe("FolderActionsMenu", () => {
     promptSpy.mockRestore();
   });
 
-  it("asks for a folder name, forwards it, and closes the menu on confirmation", async () => {
+  it("asks for a directory name, forwards it, and closes the menu on confirmation", async () => {
     const user = userEvent.setup();
     const onCreateDirectory = vi.fn();
     const onClose = vi.fn();
     promptSpy.mockReturnValue("legacy-pack");
 
     render(
-      <FolderActionsMenu {...baseProps} onCreateDirectory={onCreateDirectory} onClose={onClose} />,
+      <DirectoryActionsMenu
+        {...baseProps}
+        onCreateDirectory={onCreateDirectory}
+        onClose={onClose}
+      />,
     );
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await user.click(screen.getByRole("button", { name: "New directory" }));
 
     expect(onCreateDirectory).toHaveBeenCalledWith("legacy-pack");
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("does not create a folder but still closes the menu when the prompt is dismissed", async () => {
+  it("does not create a directory but still closes the menu when the prompt is dismissed", async () => {
     const user = userEvent.setup();
     const onCreateDirectory = vi.fn();
     const onClose = vi.fn();
     promptSpy.mockReturnValue(null);
 
     render(
-      <FolderActionsMenu {...baseProps} onCreateDirectory={onCreateDirectory} onClose={onClose} />,
+      <DirectoryActionsMenu
+        {...baseProps}
+        onCreateDirectory={onCreateDirectory}
+        onClose={onClose}
+      />,
     );
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await user.click(screen.getByRole("button", { name: "New directory" }));
 
     expect(onCreateDirectory).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
@@ -60,7 +68,7 @@ describe("FolderActionsMenu", () => {
     const onClose = vi.fn();
     const file = new File(["content"], "map.png", { type: "image/png" });
 
-    render(<FolderActionsMenu {...baseProps} onUploadFile={onUploadFile} onClose={onClose} />);
+    render(<DirectoryActionsMenu {...baseProps} onUploadFile={onUploadFile} onClose={onClose} />);
     const hiddenInput = document.querySelector('input[type="file"]');
 
     if (!hiddenInput) {
@@ -78,7 +86,7 @@ describe("FolderActionsMenu", () => {
     const onConvert = vi.fn();
     const onClose = vi.fn();
 
-    render(<FolderActionsMenu {...baseProps} onConvert={onConvert} onClose={onClose} />);
+    render(<DirectoryActionsMenu {...baseProps} onConvert={onConvert} onClose={onClose} />);
     await user.click(screen.getByRole("button", { name: "Convert" }));
 
     expect(onConvert).toHaveBeenCalled();

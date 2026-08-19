@@ -2,9 +2,9 @@ import { type ChangeEvent, type JSX, useRef } from "react";
 
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 
-import styles from "./folder-actions-menu.module.css";
+import styles from "./directory-actions-menu.module.css";
 
-export interface FolderActionsMenuProps {
+export interface DirectoryActionsMenuProps {
   position: { x: number; y: number } | null;
   onClose: () => void;
   onCreateDirectory: (name: string) => void;
@@ -12,17 +12,17 @@ export interface FolderActionsMenuProps {
   onConvert: () => void;
 }
 
-export const FolderActionsMenu = ({
+export const DirectoryActionsMenu = ({
   position,
   onClose,
   onCreateDirectory,
   onUploadFile,
   onConvert,
-}: FolderActionsMenuProps): JSX.Element => {
+}: DirectoryActionsMenuProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleCreateDirectoryClick = (): void => {
-    const name = window.prompt("New folder name");
+    const name = window.prompt("New directory name");
 
     if (name) {
       onCreateDirectory(name);
@@ -55,7 +55,7 @@ export const FolderActionsMenu = ({
     <ContextMenu position={position} onClose={onClose}>
       <div className={styles.items}>
         <button type="button" className={styles.item} onClick={handleCreateDirectoryClick}>
-          New folder
+          New directory
         </button>
         <button type="button" className={styles.item} onClick={handleUploadClick}>
           Upload file

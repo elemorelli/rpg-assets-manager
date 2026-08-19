@@ -1,10 +1,10 @@
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, useMemo } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import * as api from "#web/requests/index.ts";
 import type { RcloneCheckResult } from "#web/requests/reconcile/check.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
 import styles from "./reconciliation-modal.module.css";
 
@@ -36,15 +36,7 @@ const buildResultRows = (result: RcloneCheckResult): ScrollListRow[] => [
 ];
 
 export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.Element => {
-  const [result, setResult] = useState<RcloneCheckResult | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .reconcile()
-      .then(setResult)
-      .catch((caught: unknown) => setError(describeError(caught)));
-  }, []);
+  const { data: result, error } = useFetchOnMount<RcloneCheckResult>(() => api.reconcile(), []);
 
   const resultRows = useMemo(() => (result ? buildResultRows(result) : []), [result]);
 

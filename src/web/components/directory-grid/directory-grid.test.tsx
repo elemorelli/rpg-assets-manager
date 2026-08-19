@@ -362,13 +362,13 @@ describe("DirectoryGrid", () => {
       <DirectoryGrid
         {...baseProps}
         groups={[
-          { label: "Folders", entries: [directoryEntry] },
+          { label: "Directories", entries: [directoryEntry] },
           { label: "npc", entries: [fileEntry] },
         ]}
       />,
     );
 
-    expect(screen.getByRole("heading", { name: "Folders" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Directories" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "npc" })).toBeInTheDocument();
   });
 

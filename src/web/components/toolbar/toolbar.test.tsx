@@ -96,7 +96,7 @@ describe("Toolbar", () => {
     expect(screen.getByRole("button", { name: "Sync" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Reconcile" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Foundry" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Folder actions" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Directory actions" })).toBeDisabled();
   });
 
   it("triggers onSync when Sync is clicked", async () => {
@@ -201,7 +201,7 @@ describe("Toolbar", () => {
     expect(screen.queryByTestId("foundry-pending-badge")).not.toBeInTheDocument();
   });
 
-  it("opens the folder actions menu when Folder actions is clicked", async () => {
+  it("opens the directory actions menu when Directory actions is clicked", async () => {
     const user = userEvent.setup();
 
     render(
@@ -218,11 +218,11 @@ describe("Toolbar", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "New folder" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New directory" })).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Folder actions" }));
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
 
-    expect(screen.getByRole("button", { name: "New folder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New directory" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Convert" })).toBeInTheDocument();
   });

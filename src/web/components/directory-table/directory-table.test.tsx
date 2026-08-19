@@ -419,13 +419,13 @@ describe("DirectoryTable", () => {
       <DirectoryTable
         {...baseProps}
         groups={[
-          { label: "Folders", entries: [directoryEntry] },
+          { label: "Directories", entries: [directoryEntry] },
           { label: "npc", entries: [fileEntry] },
         ]}
       />,
     );
 
-    expect(screen.getByRole("columnheader", { name: "Folders" })).toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: "Directories" })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "npc" })).toBeInTheDocument();
   });
 

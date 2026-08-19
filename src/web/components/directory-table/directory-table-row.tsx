@@ -1,20 +1,15 @@
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import type { JSX, MouseEvent } from "react";
+import type { JSX } from "react";
 
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { getEntrySyncFlags } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
-import { createEntrySelectionHandlers } from "#web/utils/entry-selection-handlers.ts";
-import { formatFileSize } from "#web/utils/format-file-size.ts";
 import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
-import { useContextMenu } from "#web/utils/use-context-menu.ts";
-import { useEntryDragAndDrop } from "#web/utils/use-entry-drag-and-drop.ts";
-import { useInlineRename } from "#web/utils/use-inline-rename.ts";
+import { useDirectoryEntryInteractions } from "#web/utils/use-directory-entry-interactions.ts";
 
 import styles from "./directory-table.module.css";
 
@@ -59,24 +54,30 @@ export const DirectoryTableRow = ({
     commitRename,
     handleRenameKeyDown,
     handleRenameDraftChange,
-  } = useInlineRename(entry.name, (newName) => onRename(entry, newName));
-  const { isDeleted, isNew, isRenamed, isPending } = getEntrySyncFlags(entry);
-  const { dragOver, handleDragOver, handleDragLeave, handleDrop, handleDragStart } =
-    useEntryDragAndDrop<HTMLTableRowElement>({ entry, isDropTarget, onDragStart, onDropEntry });
-  const { handleClick, handleNameClick } = createEntrySelectionHandlers<HTMLTableRowElement>({
-    entry,
     isDeleted,
-    onSelectRow,
+    isNew,
+    isRenamed,
+    isPending,
+    dragOver,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleDragStart,
+    handleClick,
+    handleNameClick,
+    contextMenu,
+    sizeLabel,
+    handleMenuButtonClick,
+  } = useDirectoryEntryInteractions<HTMLTableRowElement>({
+    entry,
+    isDropTarget,
     onOpenDirectory,
+    onRename,
+    onDragStart,
+    onDropEntry,
+    onSelectRow,
     onOpenLightbox,
   });
-  const contextMenu = useContextMenu();
-  const sizeLabel = entry.size !== undefined ? formatFileSize(entry.size) : "";
-
-  const handleMenuButtonClick = (event: MouseEvent<HTMLButtonElement>): void => {
-    event.stopPropagation();
-    contextMenu.open(event);
-  };
 
   return (
     <tr

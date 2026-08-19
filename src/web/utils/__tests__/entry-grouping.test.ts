@@ -14,12 +14,12 @@ describe("groupEntries", () => {
     expect(groupEntries(entries, "none")).toEqual([{ label: null, entries }]);
   });
 
-  it("puts all directories into a Folders group first", () => {
+  it("puts all directories into a Directories group first", () => {
     const entries = [dir("tiles"), file("a.png", ["npc"])];
 
     const groups = groupEntries(entries, "tag");
 
-    expect(groups[0]).toEqual({ label: "Folders", entries: [dir("tiles")] });
+    expect(groups[0]).toEqual({ label: "Directories", entries: [dir("tiles")] });
   });
 
   it("creates one group per tag, sorted alphabetically", () => {
@@ -46,10 +46,10 @@ describe("groupEntries", () => {
     expect(groups.some((group) => group.label === "Untagged")).toBe(false);
   });
 
-  it("omits the Folders group when there are no directories", () => {
+  it("omits the Directories group when there are no directories", () => {
     const groups = groupEntries([file("a.png", ["npc"])], "tag");
 
-    expect(groups.some((group) => group.label === "Folders")).toBe(false);
+    expect(groups.some((group) => group.label === "Directories")).toBe(false);
   });
 
   it("repeats a multi-tagged file in every one of its tag groups", () => {

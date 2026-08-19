@@ -155,8 +155,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await user.click(screen.getByRole("button", { name: "Folder actions" }));
-    await user.click(screen.getByRole("button", { name: "New folder" }));
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
+    await user.click(screen.getByRole("button", { name: "New directory" }));
 
     await waitFor(() => {
       expect(createDirectoryMock).toHaveBeenCalledWith("new-folder");
@@ -190,18 +190,18 @@ describe("FileBrowser", () => {
     });
   });
 
-  it("opens the folder actions menu when right-clicking empty space in the file list", async () => {
+  it("opens the directory actions menu when right-clicking empty space in the file list", async () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
     fireEvent.contextMenu(screen.getByTestId("directory-dropzone"));
 
-    expect(screen.getByRole("button", { name: "New folder" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "New directory" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Convert" })).toBeInTheDocument();
   });
 
-  it("does not open the folder actions menu when right-clicking a row", async () => {
+  it("does not open the directory actions menu when right-clicking a row", async () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
@@ -213,7 +213,7 @@ describe("FileBrowser", () => {
 
     fireEvent.contextMenu(row);
 
-    expect(screen.queryByRole("button", { name: "New folder" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "New directory" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();
   });
 
@@ -338,7 +338,9 @@ describe("FileBrowser", () => {
     await user.click(tilesCell);
     await screen.findAllByText("legacy-pack");
 
-    const legacyPackCell = screen.getAllByText("legacy-pack").find((el) => el.closest("tr") !== null);
+    const legacyPackCell = screen
+      .getAllByText("legacy-pack")
+      .find((el) => el.closest("tr") !== null);
 
     if (!legacyPackCell) {
       throw new Error("legacy-pack name button not found");
@@ -347,7 +349,9 @@ describe("FileBrowser", () => {
     await screen.findByText("forest.png");
 
     const sourceRow = screen.getByText("forest.png").closest("tr");
-    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "tiles" });
+    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", {
+      name: "tiles",
+    });
 
     if (!sourceRow) {
       throw new Error("row not found");
@@ -358,7 +362,10 @@ describe("FileBrowser", () => {
     fireEvent.drop(tilesCrumb);
 
     await waitFor(() => {
-      expect(moveEntryMock).toHaveBeenCalledWith("tiles/legacy-pack/forest.png", "tiles/forest.png");
+      expect(moveEntryMock).toHaveBeenCalledWith(
+        "tiles/legacy-pack/forest.png",
+        "tiles/forest.png",
+      );
     });
   });
 
@@ -377,7 +384,9 @@ describe("FileBrowser", () => {
     await screen.findByText("forest.png");
 
     const sourceRow = screen.getByText("forest.png").closest("tr");
-    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", { name: "tiles" });
+    const tilesCrumb = within(screen.getByRole("navigation")).getByRole("button", {
+      name: "tiles",
+    });
 
     if (!sourceRow) {
       throw new Error("row not found");
@@ -699,7 +708,7 @@ describe("FileBrowser", () => {
     expect(namesInOrder()).toEqual(["b.png", "a.png"]);
   });
 
-  it("keeps the view preference isolated per folder", async () => {
+  it("keeps the view preference isolated per directory", async () => {
     const user = userEvent.setup();
     listDirectoryMock.mockImplementation((path: string) =>
       Promise.resolve(
@@ -727,7 +736,7 @@ describe("FileBrowser", () => {
     );
   });
 
-  it("restores a previously saved per-folder view preference when the folder is revisited", async () => {
+  it("restores a previously saved per-directory view preference when the directory is revisited", async () => {
     const user = userEvent.setup();
     const { unmount } = renderFileBrowser();
 

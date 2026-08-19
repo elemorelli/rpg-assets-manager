@@ -29,8 +29,8 @@ export const AssetPreview = ({
     return (
       <span
         data-size={size}
-        aria-label="Folder"
-        className={clsx(styles.folderIcon, isLarge && styles.folderIconLarge)}>
+        aria-label="Directory"
+        className={clsx(styles.directoryIcon, isLarge && styles.directoryIconLarge)}>
         <FontAwesomeIcon icon={faFolder} />
       </span>
     );

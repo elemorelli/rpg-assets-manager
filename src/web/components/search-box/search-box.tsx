@@ -27,7 +27,7 @@ export const SearchBox = ({ onSearch }: SearchBoxProps): JSX.Element => {
     <input
       type="search"
       className={styles.searchInput}
-      placeholder="Search files and folders"
+      placeholder="Search files and directories"
       aria-label="Search"
       value={query}
       onChange={handleChange}

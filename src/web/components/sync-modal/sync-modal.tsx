@@ -1,10 +1,11 @@
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, useMemo } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { useBusyAction } from "#web/utils/use-busy-action.ts";
+import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
 import styles from "./sync-modal.module.css";
 
@@ -37,31 +38,18 @@ const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
 ];
 
 export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element => {
-  const [diff, setDiff] = useState<BatchDiff | null>(null);
-  const [busy, setBusy] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .fetchDiff()
-      .then(setDiff)
-      .catch((caught: unknown) => setError(describeError(caught)));
-  }, []);
+  const { data: diff, error, setError } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(), []);
+  const { busy, runBusyAction } = useBusyAction(setError);
 
   const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
 
   const handleApply = (): void => {
-    setBusy(true);
-    setError(null);
-
-    api
-      .applyBatch()
-      .then(() => {
+    runBusyAction(() =>
+      api.applyBatch().then(() => {
         onApplied();
         onClose();
-      })
-      .catch((caught: unknown) => setError(describeError(caught)))
-      .finally(() => setBusy(false));
+      }),
+    );
   };
 
   const hasNothingToSync =

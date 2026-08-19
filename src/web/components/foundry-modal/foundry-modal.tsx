@@ -1,9 +1,10 @@
-import { type JSX, useEffect, useState } from "react";
+import type { JSX } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
 import type { FoundryWorld } from "#web/requests/foundry-worlds/list.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
+import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
 import styles from "./foundry-modal.module.css";
 
@@ -13,15 +14,12 @@ export interface FoundryModalProps {
 }
 
 export const FoundryModal = ({ onClose, onMarkedApplied }: FoundryModalProps): JSX.Element => {
-  const [worlds, setWorlds] = useState<FoundryWorld[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .fetchFoundryWorlds()
-      .then(setWorlds)
-      .catch((caught: unknown) => setError(describeError(caught)));
-  }, []);
+  const {
+    data: worlds,
+    setData: setWorlds,
+    error,
+    setError,
+  } = useFetchOnMount<FoundryWorld[]>(() => api.fetchFoundryWorlds(), []);
 
   const handleMarkApplied = (worldId: number): void => {
     api

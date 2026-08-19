@@ -10,7 +10,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import { type JSX, useState } from "react";
 
-import { FolderActionsMenu } from "#components/folder-actions-menu/folder-actions-menu.tsx";
+import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
 import styles from "./toolbar.module.css";
@@ -39,7 +39,7 @@ export const Toolbar = ({
   hasPendingFoundryMacro,
 }: ToolbarProps): JSX.Element => {
   const [forceRehash, setForceRehash] = useState<boolean>(false);
-  const folderActionsMenu = useContextMenu();
+  const directoryActionsMenu = useContextMenu();
 
   return (
     <div className={clsx(styles.toolbar, busy && styles.busy)}>
@@ -91,14 +91,14 @@ export const Toolbar = ({
         <button
           type="button"
           disabled={busy}
-          aria-label="Folder actions"
-          title="Folder actions"
-          onClick={folderActionsMenu.open}>
+          aria-label="Directory actions"
+          title="Directory actions"
+          onClick={directoryActionsMenu.open}>
           <FontAwesomeIcon icon={faEllipsisVertical} />
         </button>
-        <FolderActionsMenu
-          position={folderActionsMenu.position}
-          onClose={folderActionsMenu.close}
+        <DirectoryActionsMenu
+          position={directoryActionsMenu.position}
+          onClose={directoryActionsMenu.close}
           onCreateDirectory={onCreateDirectory}
           onUploadFile={onUploadFile}
           onConvert={onConvert}

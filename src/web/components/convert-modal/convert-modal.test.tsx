@@ -21,7 +21,7 @@ describe("ConvertModal", () => {
     vi.restoreAllMocks();
   });
 
-  it("fetches the plan for the current folder as soon as it opens", () => {
+  it("fetches the plan for the current directory as soon as it opens", () => {
     fetchConversionPlanMock.mockResolvedValue({ candidates: [] });
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);

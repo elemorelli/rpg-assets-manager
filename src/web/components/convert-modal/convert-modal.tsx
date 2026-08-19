@@ -1,10 +1,11 @@
-import { type JSX, useEffect, useMemo, useState } from "react";
+import { type JSX, useMemo } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { ConversionCandidate, ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { useBusyAction } from "#web/utils/use-busy-action.ts";
+import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
 import styles from "./convert-modal.module.css";
 
@@ -26,32 +27,23 @@ export const ConvertModal = ({
   onClose,
   onConverted,
 }: ConvertModalProps): JSX.Element => {
-  const [plan, setPlan] = useState<ConversionPlan | null>(null);
-  const [busy, setBusy] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api
-      .fetchConversionPlan(currentPath)
-      .then(setPlan)
-      .catch((caught: unknown) => setError(describeError(caught)));
-  }, [currentPath]);
+  const {
+    data: plan,
+    error,
+    setError,
+  } = useFetchOnMount<ConversionPlan>(() => api.fetchConversionPlan(currentPath), [currentPath]);
+  const { busy, runBusyAction } = useBusyAction(setError);
 
   const handleConvert = (): void => {
-    setBusy(true);
-    setError(null);
-
-    api
-      .convert(currentPath)
-      .then(() => {
+    runBusyAction(() =>
+      api.convert(currentPath).then(() => {
         onConverted();
         onClose();
-      })
-      .catch((caught: unknown) => setError(describeError(caught)))
-      .finally(() => setBusy(false));
+      }),
+    );
   };
 
-  const folderLabel = currentPath === "" ? "root" : currentPath;
+  const directoryLabel = currentPath === "" ? "root" : currentPath;
   const hasNothingToConvert = plan !== null && plan.candidates.length === 0;
   const candidateRows = useMemo(() => (plan ? buildCandidateRows(plan.candidates) : []), [plan]);
 
@@ -72,7 +64,7 @@ export const ConvertModal = ({
     );
 
   return (
-    <Modal title={`Convert assets in ${folderLabel}`} onClose={onClose} footer={footer}>
+    <Modal title={`Convert assets in ${directoryLabel}`} onClose={onClose} footer={footer}>
       {error && <p className={styles.error}>{error}</p>}
       {!plan && !error && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}

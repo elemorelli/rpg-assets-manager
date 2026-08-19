@@ -87,10 +87,10 @@ describe("AssetPreview", () => {
     expect(document.querySelector("audio")).not.toBeInTheDocument();
   });
 
-  it("renders a folder icon for a directory", () => {
+  it("renders a directory icon for a directory", () => {
     render(<AssetPreview entry={{ name: "tiles", type: "directory" }} relativePath="tiles" />);
 
-    expect(screen.getByLabelText("Folder")).toBeInTheDocument();
+    expect(screen.getByLabelText("Directory")).toBeInTheDocument();
   });
 
   it("marks the rendered image with the requested size", () => {

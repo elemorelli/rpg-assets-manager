@@ -7,7 +7,7 @@ export interface EntryGroup {
   entries: DirectoryEntry[];
 }
 
-const FOLDERS_LABEL = "Folders";
+const DIRECTORIES_LABEL = "Directories";
 const UNTAGGED_LABEL = "Untagged";
 
 const groupFilesByTag = (files: DirectoryEntry[]): EntryGroup[] => {
@@ -50,8 +50,8 @@ export const groupEntries = (
   const directories = sortedEntries.filter((entry) => entry.type === "directory");
   const files = sortedEntries.filter((entry) => entry.type === "file");
 
-  const folderGroup: EntryGroup[] =
-    directories.length > 0 ? [{ label: FOLDERS_LABEL, entries: directories }] : [];
+  const directoryGroup: EntryGroup[] =
+    directories.length > 0 ? [{ label: DIRECTORIES_LABEL, entries: directories }] : [];
 
-  return [...folderGroup, ...groupFilesByTag(files)];
+  return [...directoryGroup, ...groupFilesByTag(files)];
 };

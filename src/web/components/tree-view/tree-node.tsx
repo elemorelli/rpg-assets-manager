@@ -1,12 +1,13 @@
 import { faEllipsisVertical } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type DragEvent, type JSX, useEffect, useRef, useState } from "react";
+import type { JSX } from "react";
 
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
+import { useDragExpand } from "#web/utils/use-drag-expand.ts";
 import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
 import styles from "./tree-view.module.css";
@@ -64,7 +65,6 @@ export const TreeNode = ({
   availableTags,
   onTagsChange,
 }: TreeNodeProps): JSX.Element => {
-  const [dragOver, setDragOver] = useState<boolean>(false);
   const {
     isRenaming,
     renameDraft,
@@ -74,62 +74,21 @@ export const TreeNode = ({
     handleRenameKeyDown,
     handleRenameDraftChange,
   } = useInlineRename(name, (newName) => onRename(path, newName));
-  const dragExpandTimerRef = useRef<number | null>(null);
   const contextMenu = useContextMenu();
   const isExpanded = expandedPaths.has(path);
   const isActive = path === activePath;
   const isDropTarget = canDropOnPath(path);
   const state = childrenByPath[path];
   const nodeEntry: DirectoryEntry = { name, type: "directory" };
-  const hasSubfolders = !Array.isArray(state) || state.length > 0;
+  const hasSubdirectories = !Array.isArray(state) || state.length > 0;
 
-  const clearDragExpandTimer = (): void => {
-    if (dragExpandTimerRef.current !== null) {
-      window.clearTimeout(dragExpandTimerRef.current);
-      dragExpandTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      clearDragExpandTimer();
-    };
-  }, []);
-
-  const handleDragOver = (event: DragEvent<HTMLLIElement>): void => {
-    if (!isDropTarget) {
-      return;
-    }
-
-    event.preventDefault();
-
-    if (!dragOver) {
-      setDragOver(true);
-
-      if (!isExpanded && dragExpandTimerRef.current === null) {
-        dragExpandTimerRef.current = window.setTimeout(() => {
-          dragExpandTimerRef.current = null;
-          onToggle(path);
-        }, DRAG_EXPAND_DELAY_MS);
-      }
-    }
-  };
-
-  const handleDragLeave = (): void => {
-    setDragOver(false);
-    clearDragExpandTimer();
-  };
-
-  const handleDrop = (event: DragEvent<HTMLLIElement>): void => {
-    if (!isDropTarget) {
-      return;
-    }
-
-    event.preventDefault();
-    setDragOver(false);
-    clearDragExpandTimer();
-    onDropEntry(path);
-  };
+  const { dragOver, handleDragOver, handleDragLeave, handleDrop } = useDragExpand<HTMLLIElement>({
+    isDropTarget,
+    isExpanded,
+    delayMs: DRAG_EXPAND_DELAY_MS,
+    onExpand: () => onToggle(path),
+    onDrop: () => onDropEntry(path),
+  });
 
   return (
     <li onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}>
@@ -137,7 +96,7 @@ export const TreeNode = ({
         className={clsx(styles.row, isDropTarget && dragOver && styles.dragOver)}
         style={{ paddingLeft: depth * INDENT_PX }}
         onContextMenu={contextMenu.open}>
-        {hasSubfolders ? (
+        {hasSubdirectories ? (
           <button
             type="button"
             className={styles.toggle}
