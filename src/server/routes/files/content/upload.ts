@@ -12,6 +12,7 @@ import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregat
 import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
 import { createIncrementalHasher, type IncrementalHasher } from "#server/utils/hash.ts";
+import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { getParentPath } from "#utils/directory-path.ts";
 
@@ -28,6 +29,17 @@ const createHashingTransform = (hasher: IncrementalHasher): Transform =>
 const isFileAlreadyExistsError = (error: unknown): boolean =>
   error instanceof Error && "code" in error && error.code === "EEXIST";
 
+// Reads and discards whatever is left of the upload stream. A multipart file
+// part sits directly on the incoming HTTP request body: destroying it (which
+// is what an aborted pipeline() does) without first reading it to the end
+// leaves unread bytes on the wire. On a keep-alive connection those bytes get
+// misread as the start of the next request, hanging or breaking it.
+const drainStream = async (stream: UploadableStream): Promise<void> => {
+  for await (const _chunk of stream) {
+    // discarded
+  }
+};
+
 export const uploadFile = async (
   db: Kysely<DB>,
   rootDir: string,
@@ -42,6 +54,12 @@ export const uploadFile = async (
 
   await fs.mkdir(path.dirname(absolutePath), { recursive: true });
 
+  if (!overwrite && (await pathExists(absolutePath))) {
+    await drainStream(content);
+
+    throw new HttpError("File already exists", HTTP_STATUS.conflict);
+  }
+
   const hasher = await createIncrementalHasher();
 
   try {
@@ -51,6 +69,9 @@ export const uploadFile = async (
       createWriteStream(absolutePath, { flags: overwrite ? "w" : "wx" }),
     );
   } catch (caught) {
+    // Defense in depth for the race where the file is created between the
+    // pathExists() check above and this write: the stream has already been
+    // torn down by pipeline() at this point, so it can't be drained here too.
     if (isFileAlreadyExistsError(caught)) {
       throw new HttpError("File already exists", HTTP_STATUS.conflict);
     }
