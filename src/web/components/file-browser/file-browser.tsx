@@ -60,8 +60,16 @@ export const FileBrowser = (): JSX.Element => {
     setGroupCriterion,
   } = useViewPreferences(currentPath);
 
-  const { entries, busy, error, setBusy, setError, loadDirectory, runAction } =
-    useDirectoryListing(currentPath);
+  const {
+    entries,
+    busy,
+    error,
+    setBusy,
+    setError,
+    runAction,
+    treeRefreshTrigger,
+    refreshAfterMutation,
+  } = useDirectoryListing(currentPath);
   const { availableTags, refreshTags } = useAvailableTags();
 
   const navigateToPath = (path: string): void => {
@@ -73,7 +81,7 @@ export const FileBrowser = (): JSX.Element => {
       return;
     }
 
-    loadDirectory(currentPath);
+    refreshAfterMutation(currentPath);
 
     if (type === "sync") {
       setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
@@ -124,13 +132,16 @@ export const FileBrowser = (): JSX.Element => {
     canDropOnEntry,
     handleDropOnDirectory,
     handleDropOnEntry,
+    moveConflictingFileNames,
+    confirmMoveOverwrite,
+    cancelMoveOverwrite,
   } = useEntrySelectionAndDrag({
     entries,
     sortedEntries,
     currentPath,
     setBusy,
     setError,
-    loadDirectory,
+    refreshDirectory: refreshAfterMutation,
   });
 
   useEffect(() => {
@@ -157,7 +168,7 @@ export const FileBrowser = (): JSX.Element => {
     conflictingFileNames,
     confirmOverwrite,
     cancelOverwrite,
-  } = useFileUpload({ currentPath, setBusy, setError, loadDirectory });
+  } = useFileUpload({ currentPath, setBusy, setError, refreshDirectory: refreshAfterMutation });
 
   const {
     isDropzoneActive,
@@ -183,6 +194,7 @@ export const FileBrowser = (): JSX.Element => {
         sidebar={
           <TreeView
             activePath={currentPath}
+            refreshToken={treeRefreshTrigger}
             onNavigate={navigateToPath}
             canDropOnPath={canDropOnDirectory}
             onDropEntry={handleDropOnDirectory}
@@ -284,11 +296,11 @@ export const FileBrowser = (): JSX.Element => {
               currentPath={currentPath}
               isConvertModalOpen={isConvertModalOpen}
               onCloseConvertModal={() => setConvertModalOpen(false)}
-              onConverted={() => loadDirectory(currentPath)}
+              onConverted={() => refreshAfterMutation(currentPath)}
               isSyncModalOpen={isSyncModalOpen}
               onCloseSyncModal={() => setSyncModalOpen(false)}
               onSyncApplied={() => {
-                loadDirectory(currentPath);
+                refreshAfterMutation(currentPath);
                 setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
               }}
               isReconciliationModalOpen={isReconciliationModalOpen}
@@ -296,9 +308,9 @@ export const FileBrowser = (): JSX.Element => {
               isFoundryModalOpen={isFoundryModalOpen}
               onCloseFoundryModal={() => setFoundryModalOpen(false)}
               onFoundryMarkedApplied={refreshFoundryPendingStatus}
-              conflictingFileNames={conflictingFileNames}
-              onConfirmOverwrite={confirmOverwrite}
-              onCancelOverwrite={cancelOverwrite}
+              conflictingFileNames={conflictingFileNames ?? moveConflictingFileNames}
+              onConfirmOverwrite={conflictingFileNames ? confirmOverwrite : confirmMoveOverwrite}
+              onCancelOverwrite={conflictingFileNames ? cancelOverwrite : cancelMoveOverwrite}
             />
             {uploadProgress && (
               <ProgressModal

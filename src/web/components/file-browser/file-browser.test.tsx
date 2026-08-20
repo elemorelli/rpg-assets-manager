@@ -26,6 +26,10 @@ const fetchFoundryWorldsMock = vi.mocked(api.fetchFoundryWorlds);
 const fetchTagsMock = vi.mocked(api.fetchTags);
 const setAssetTagsMock = vi.mocked(api.setAssetTags);
 const fetchFilesByTagMock = vi.mocked(api.fetchFilesByTag);
+const fetchDiffMock = vi.mocked(api.fetchDiff);
+const applyBatchMock = vi.mocked(api.applyBatch);
+const fetchConversionPlanMock = vi.mocked(api.fetchConversionPlan);
+const convertMock = vi.mocked(api.convert);
 
 const renderFileBrowser = (initialPath = "/"): ReturnType<typeof render> =>
   render(
@@ -148,12 +152,20 @@ describe("FileBrowser", () => {
     expect(await screen.findByText("network down")).toBeInTheDocument();
   });
 
-  it("creates a directory via the toolbar prompt, then refreshes the listing", async () => {
+  it("creates a directory via the toolbar prompt, then refreshes both the listing and the tree", async () => {
     const user = userEvent.setup();
     const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("new-folder");
 
     renderFileBrowser();
     await screen.findAllByText("tiles");
+
+    // FileBrowser's own listing and TreeView's independent mount fetch have
+    // both already requested "" once by now; clear that baseline so the
+    // count below only reflects what the create action itself triggers.
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
 
     await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "New directory" }));
@@ -161,10 +173,8 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(createDirectoryMock).toHaveBeenCalledWith("new-folder");
     });
-    // TreeView independently loads path "" once on mount too, so the total
-    // call count for listDirectoryMock isn't just FileBrowser's own 1 (mount)
-    // + 1 (post-action refresh); assert the refresh happened by requiring at
-    // least a second call for that path, rather than an exact global count.
+    // Both FileBrowser's listing and TreeView's cache must refetch "" on
+    // their own: one call each, not a single shared refresh.
     await waitFor(() => {
       const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
 
@@ -173,11 +183,16 @@ describe("FileBrowser", () => {
     promptSpy.mockRestore();
   });
 
-  it("deletes an entry after confirming from the context menu", async () => {
+  it("deletes an entry after confirming from the context menu, and refreshes the tree", async () => {
     const user = userEvent.setup();
 
     renderFileBrowser();
     await screen.findAllByText("tiles");
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
 
     const table = screen.getByRole("table");
 
@@ -187,6 +202,11 @@ describe("FileBrowser", () => {
 
     await waitFor(() => {
       expect(deleteEntryMock).toHaveBeenCalledWith("tiles");
+    });
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -333,6 +353,90 @@ describe("FileBrowser", () => {
     });
   });
 
+  it("refreshes the tree after a drag-and-drop move", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
+
+    const sourceRow = screen.getByText("map.png").closest("tr");
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!sourceRow || !targetRow?.closest("tr")) {
+      throw new Error("rows not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("map.png", "tiles/map.png");
+    });
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("prompts to overwrite when a drop conflicts with an existing entry, and retries with overwrite on confirm", async () => {
+    moveEntryMock
+      .mockRejectedValueOnce(new ApiError("Destination already exists", CONFLICT_STATUS))
+      .mockResolvedValueOnce(undefined);
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const sourceRow = screen.getByText("map.png").closest("tr");
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!sourceRow || !targetRow?.closest("tr")) {
+      throw new Error("rows not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    expect(await screen.findByText("map.png", { selector: "li" })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole("button", { name: "Overwrite" }));
+
+    await waitFor(() => {
+      expect(moveEntryMock).toHaveBeenCalledWith("map.png", "tiles/map.png", true);
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("leaves the destination untouched when the move overwrite prompt is cancelled", async () => {
+    moveEntryMock.mockRejectedValueOnce(
+      new ApiError("Destination already exists", CONFLICT_STATUS),
+    );
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    const sourceRow = screen.getByText("map.png").closest("tr");
+    const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
+
+    if (!sourceRow || !targetRow?.closest("tr")) {
+      throw new Error("rows not found");
+    }
+
+    fireEvent.dragStart(sourceRow);
+    fireEvent.dragOver(targetRow.closest("tr") as HTMLElement);
+    fireEvent.drop(targetRow.closest("tr") as HTMLElement);
+
+    await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(
+      await screen.findByText("Skipped 1 item(s) that already exist at the destination: map.png"),
+    ).toBeInTheDocument();
+    expect(moveEntryMock).toHaveBeenCalledTimes(1);
+  });
+
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
     // Path-conditional rather than mockResolvedValueOnce: TreeView eagerly
@@ -468,6 +572,106 @@ describe("FileBrowser", () => {
       expect(uploadFileMock).toHaveBeenCalledWith("", file);
     });
     expect(screen.queryByText(/Drop files to upload/)).not.toBeInTheDocument();
+  });
+
+  it("refreshes the tree after applying sync changes from the Sync modal", async () => {
+    const user = userEvent.setup();
+    fetchDiffMock.mockResolvedValue({
+      added: ["new-file.png"],
+      deleted: [],
+      modified: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+    applyBatchMock.mockResolvedValue({
+      added: 1,
+      modified: 0,
+      deleted: 0,
+      renamed: 0,
+      outcome: "applied",
+      syncRunId: 1,
+    });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Sync" }));
+    await user.click(await screen.findByRole("button", { name: "Apply changes" }));
+
+    await waitFor(() => {
+      expect(applyBatchMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("refreshes the tree after converting assets from the Convert modal", async () => {
+    const user = userEvent.setup();
+    fetchConversionPlanMock.mockResolvedValue({
+      candidates: [
+        {
+          relativePath: "map.png",
+          kind: "image",
+          destinationPath: "map.webp",
+          willOverwrite: false,
+        },
+      ],
+    });
+    convertMock.mockResolvedValue({ converted: 1, overwritten: 0 });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
+
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
+    await user.click(screen.getByRole("button", { name: "Convert" }));
+    await user.click(await screen.findByRole("button", { name: "Convert 1 file(s)" }));
+
+    await waitFor(() => {
+      expect(convertMock).toHaveBeenCalled();
+    });
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+    });
+  });
+
+  it("refreshes the tree after an upload, so a newly created directory shows up", async () => {
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    await waitFor(() => {
+      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
+    });
+    listDirectoryMock.mockClear();
+
+    const file = new File(["content"], "new-map.png", { type: "image/png" });
+    const dropzone = screen.getByTestId("directory-dropzone");
+
+    fireEvent.dragEnter(dropzone, { dataTransfer: { types: ["Files"] } });
+    fireEvent.drop(dropzone, { dataTransfer: { types: ["Files"], files: [file] } });
+
+    await waitFor(() => {
+      expect(uploadFileMock).toHaveBeenCalledWith("", file);
+    });
+    await waitFor(() => {
+      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
+
+      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+    });
   });
 
   it("uploads files inside a dropped folder to the matching subdirectory", async () => {

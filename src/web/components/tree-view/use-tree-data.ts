@@ -13,10 +13,11 @@ export interface UseTreeDataResult {
   handleRetry: (path: string) => void;
 }
 
-export const useTreeData = (activePath: string): UseTreeDataResult => {
+export const useTreeData = (activePath: string, refreshToken: number): UseTreeDataResult => {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set([ROOT_PATH]));
   const [childrenByPath, setChildrenByPath] = useState<Record<string, TreeChildrenState>>({});
   const requestedPathsRef = useRef<Set<string>>(new Set());
+  const previousRefreshTokenRef = useRef<number>(refreshToken);
 
   // `requestedPathsRef` tracks in-flight/completed fetches synchronously, so
   // `loadPath` never needs to read `childrenByPath` state to decide whether to
@@ -51,6 +52,23 @@ export const useTreeData = (activePath: string): UseTreeDataResult => {
       loadPath(ROOT_PATH);
     }
   }, [loadPath]);
+
+  // A change elsewhere (sync, rescan, reconcile, convert) can flip a node's
+  // hasPendingSync flag or add/remove entries, but this tree only fetches
+  // each path once, so it goes stale until told otherwise via this token.
+  // Refetch every path already loaded rather than resetting the cache, so
+  // expanded nodes stay expanded through the refresh.
+  useEffect(() => {
+    if (refreshToken === previousRefreshTokenRef.current) {
+      return;
+    }
+
+    previousRefreshTokenRef.current = refreshToken;
+
+    for (const loadedPath of requestedPathsRef.current) {
+      loadPath(loadedPath);
+    }
+  }, [refreshToken, loadPath]);
 
   useEffect(() => {
     const ancestorPaths = buildBreadcrumbs(activePath).map((crumb) => crumb.path);

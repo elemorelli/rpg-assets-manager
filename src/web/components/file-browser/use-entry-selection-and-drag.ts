@@ -2,7 +2,6 @@ import { useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
-import * as api from "#web/requests/index.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
 import {
   applySelectionClick,
@@ -10,7 +9,8 @@ import {
   type SelectionClickModifier,
   type SelectionState,
 } from "#web/utils/row-selection.ts";
-import { runBatchOperation } from "#web/utils/run-batch-operation.ts";
+
+import { useBatchMove } from "./use-batch-move.ts";
 
 export interface UseEntrySelectionAndDragParams {
   entries: DirectoryEntry[];
@@ -18,7 +18,7 @@ export interface UseEntrySelectionAndDragParams {
   currentPath: string;
   setBusy: (busy: boolean) => void;
   setError: (error: string | null) => void;
-  loadDirectory: (path: string) => Promise<void>;
+  refreshDirectory: (path: string) => Promise<void>;
 }
 
 export interface UseEntrySelectionAndDragResult {
@@ -31,6 +31,9 @@ export interface UseEntrySelectionAndDragResult {
   canDropOnEntry: (targetEntry: DirectoryEntry) => boolean;
   handleDropOnDirectory: (targetDirectoryPath: string) => void;
   handleDropOnEntry: (targetEntry: DirectoryEntry) => void;
+  moveConflictingFileNames: string[] | null;
+  confirmMoveOverwrite: () => void;
+  cancelMoveOverwrite: () => void;
 }
 
 export const useEntrySelectionAndDrag = ({
@@ -39,10 +42,12 @@ export const useEntrySelectionAndDrag = ({
   currentPath,
   setBusy,
   setError,
-  loadDirectory,
+  refreshDirectory,
 }: UseEntrySelectionAndDragParams): UseEntrySelectionAndDragResult => {
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
   const [draggedEntries, setDraggedEntries] = useState<DirectoryEntry[]>([]);
+  const { runBatchMove, moveConflictingFileNames, confirmMoveOverwrite, cancelMoveOverwrite } =
+    useBatchMove({ currentPath, setBusy, setError, refreshDirectory });
 
   const handleSelectRow = (entry: DirectoryEntry, modifier: SelectionClickModifier): void => {
     const orderedNames = sortedEntries.map((candidate) => candidate.name);
@@ -78,35 +83,6 @@ export const useEntrySelectionAndDrag = ({
     );
   };
 
-  const runBatchMove = (entriesToMove: DirectoryEntry[], targetDirectoryPath: string): void => {
-    setBusy(true);
-    setError(null);
-
-    const performBatchMove = async (): Promise<void> => {
-      const { errorMessage } = await runBatchOperation(
-        entriesToMove,
-        (entry) =>
-          api.moveEntry(
-            joinRelativePath(currentPath, entry.name),
-            joinRelativePath(targetDirectoryPath, entry.name),
-          ),
-        (entry) => entry.name,
-        "Moved",
-      );
-
-      // loadDirectory clears the error on entry, so refresh before surfacing errorMessage or the refresh wipes it.
-      await loadDirectory(currentPath);
-
-      if (errorMessage) {
-        setError(errorMessage);
-      } else {
-        setSelection(initialSelectionState);
-      }
-    };
-
-    void performBatchMove();
-  };
-
   const handleDropOnDirectory = (targetDirectoryPath: string): void => {
     if (!canDropOnDirectory(targetDirectoryPath)) {
       setDraggedEntries([]);
@@ -117,7 +93,12 @@ export const useEntrySelectionAndDrag = ({
     const entriesToMove = draggedEntries;
 
     setDraggedEntries([]);
-    runBatchMove(entriesToMove, targetDirectoryPath);
+
+    void runBatchMove(entriesToMove, targetDirectoryPath).then((succeeded) => {
+      if (succeeded) {
+        setSelection(initialSelectionState);
+      }
+    });
   };
 
   const canDropOnEntry = (targetEntry: DirectoryEntry): boolean =>
@@ -138,5 +119,8 @@ export const useEntrySelectionAndDrag = ({
     canDropOnEntry,
     handleDropOnDirectory,
     handleDropOnEntry,
+    moveConflictingFileNames,
+    confirmMoveOverwrite,
+    cancelMoveOverwrite,
   };
 };

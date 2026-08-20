@@ -267,6 +267,136 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
     expect(newParent.folder_count).toBe(2);
   });
 
+  it("overwrites an existing file at the destination when overwrite is true", async () => {
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "source-bytes");
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "b.png"), "dest-bytes");
+
+    await moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}b.png`, true);
+
+    await expect(fs.stat(path.join(tempDir.path, "move-entry-test", "a.png"))).rejects.toThrow();
+    expect(await fs.readFile(path.join(tempDir.path, "move-entry-test", "b.png"), "utf8")).toBe(
+      "source-bytes",
+    );
+  });
+
+  it("carries the source asset row onto the overwritten destination path, without double counting file count", async () => {
+    const SOURCE_SIZE = 12;
+    const DEST_SIZE = 9;
+
+    await fs.mkdir(path.join(tempDir.path, "move-entry-test", "dir"), { recursive: true });
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "source-bytes-");
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "dir", "b.png"), "dest-bytes");
+    await db
+      .insertInto("assets")
+      .values([
+        { path: `${PREFIX}a.png`, size: SOURCE_SIZE, mtime: new Date(), hash: "source-hash" },
+        { path: `${PREFIX}dir/b.png`, size: DEST_SIZE, mtime: new Date(), hash: "dest-hash" },
+      ])
+      .execute();
+    await db
+      .insertInto("directories")
+      .values({
+        path: `${PREFIX}dir`,
+        parent_id: null,
+        total_size: DEST_SIZE,
+        file_count: 1,
+        folder_count: 0,
+      })
+      .execute();
+
+    await moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}dir/b.png`, true);
+
+    const movedRow = await db
+      .selectFrom("assets")
+      .select(["size", "hash"])
+      .where("path", "=", `${PREFIX}dir/b.png`)
+      .executeTakeFirstOrThrow();
+
+    expect(Number(movedRow.size)).toBe(SOURCE_SIZE);
+    expect(movedRow.hash).toBe("source-hash");
+
+    const destDir = await db
+      .selectFrom("directories")
+      .select(["total_size", "file_count"])
+      .where("path", "=", `${PREFIX}dir`)
+      .executeTakeFirstOrThrow();
+
+    expect(Number(destDir.total_size)).toBe(SOURCE_SIZE);
+    expect(destDir.file_count).toBe(1);
+  });
+
+  it("merges a directory into an existing directory when overwrite is true, keeping non-conflicting entries and overwriting conflicting ones", async () => {
+    await fs.mkdir(path.join(tempDir.path, "move-entry-test", "from", "shared"), {
+      recursive: true,
+    });
+    await fs.mkdir(path.join(tempDir.path, "move-entry-test", "to", "shared"), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(tempDir.path, "move-entry-test", "from", "only-in-source.png"),
+      "only-source",
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "move-entry-test", "from", "conflict.png"),
+      "source-version",
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "move-entry-test", "to", "conflict.png"),
+      "dest-version",
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "move-entry-test", "to", "only-in-dest.png"),
+      "only-dest",
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "move-entry-test", "from", "shared", "nested.png"),
+      "nested-source",
+    );
+
+    await moveEntry(db, tempDir.path, `${PREFIX}from`, `${PREFIX}to`, true);
+
+    await expect(fs.stat(path.join(tempDir.path, "move-entry-test", "from"))).rejects.toThrow();
+
+    expect(
+      await fs.readFile(
+        path.join(tempDir.path, "move-entry-test", "to", "only-in-source.png"),
+        "utf8",
+      ),
+    ).toBe("only-source");
+    expect(
+      await fs.readFile(path.join(tempDir.path, "move-entry-test", "to", "conflict.png"), "utf8"),
+    ).toBe("source-version");
+    expect(
+      await fs.readFile(
+        path.join(tempDir.path, "move-entry-test", "to", "only-in-dest.png"),
+        "utf8",
+      ),
+    ).toBe("only-dest");
+    expect(
+      await fs.readFile(
+        path.join(tempDir.path, "move-entry-test", "to", "shared", "nested.png"),
+        "utf8",
+      ),
+    ).toBe("nested-source");
+
+    const remainingSourceRow = await db
+      .selectFrom("directories")
+      .select("path")
+      .where("path", "=", `${PREFIX}from`)
+      .executeTakeFirst();
+
+    expect(remainingSourceRow).toBeUndefined();
+  });
+
+  it("rejects overwriting a directory with a file, and a file with a directory, even when overwrite is true", async () => {
+    await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "a");
+    await fs.mkdir(path.join(tempDir.path, "move-entry-test", "b"), { recursive: true });
+
+    await expect(moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}b`, true)).rejects.toThrow(
+      HttpError,
+    );
+  });
+
   it("invalidates the cached local hash index so a renamed path is reflected immediately", async () => {
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "forest.png"), "fake-png-bytes");
     await db

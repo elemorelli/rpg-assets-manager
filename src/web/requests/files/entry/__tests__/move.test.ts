@@ -13,7 +13,19 @@ describe("moveEntry", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/files/move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fromPath: "a.png", toPath: "tiles/a.png" }),
+      body: JSON.stringify({ fromPath: "a.png", toPath: "tiles/a.png", overwrite: false }),
+    });
+  });
+
+  it("POSTs overwrite as true when requested", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ moved: true })));
+
+    await moveEntry("a.png", "tiles/a.png", true);
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/files/move", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fromPath: "a.png", toPath: "tiles/a.png", overwrite: true }),
     });
   });
 });

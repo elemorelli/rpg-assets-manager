@@ -116,6 +116,23 @@ describe("file routes", () => {
     expect((await fs.stat(path.join(tempDir.path, "tiles", "forest.png"))).isFile()).toBe(true);
   });
 
+  it("overwrites the destination via POST /api/files/move when overwrite is true", async () => {
+    await fs.writeFile(path.join(tempDir.path, "a.png"), "source-bytes");
+    await fs.writeFile(path.join(tempDir.path, "b.png"), "dest-bytes");
+    const app = buildTestApp(tempDir);
+    const sessionCookie = await loginTestSession(app);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/files/move",
+      payload: { fromPath: "a.png", toPath: "b.png", overwrite: true },
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(await fs.readFile(path.join(tempDir.path, "b.png"), "utf8")).toBe("source-bytes");
+  });
+
   it("uploads a file via POST /api/files/upload", async () => {
     const app = buildTestApp(tempDir);
 
@@ -137,6 +154,60 @@ describe("file routes", () => {
     expect(response.json()).toEqual({ uploaded: "forest.png" });
     expect(await fs.readFile(path.join(tempDir.path, "tiles", "forest.png"), "utf8")).toBe(
       "fake-png-bytes",
+    );
+  });
+
+  it("overwrites an existing file when the overwrite field is sent before the file part", async () => {
+    await fs.mkdir(path.join(tempDir.path, "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir.path, "tiles", "forest.png"), "original-bytes");
+
+    const app = buildTestApp(tempDir);
+
+    await app.ready();
+
+    const sessionCookie = await loginTestSession(app);
+    const form = new FormData();
+    form.set("path", "tiles");
+    form.set("overwrite", "true");
+    form.set("file", new Blob([Buffer.from("replacement-bytes")]), "forest.png");
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/files/upload",
+      payload: form,
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(await fs.readFile(path.join(tempDir.path, "tiles", "forest.png"), "utf8")).toBe(
+      "replacement-bytes",
+    );
+  });
+
+  it("still rejects an existing file with 409 when overwrite is explicitly false", async () => {
+    await fs.mkdir(path.join(tempDir.path, "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir.path, "tiles", "forest.png"), "original-bytes");
+
+    const app = buildTestApp(tempDir);
+
+    await app.ready();
+
+    const sessionCookie = await loginTestSession(app);
+    const form = new FormData();
+    form.set("path", "tiles");
+    form.set("overwrite", "false");
+    form.set("file", new Blob([Buffer.from("replacement-bytes")]), "forest.png");
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/files/upload",
+      payload: form,
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.conflict);
+    expect(await fs.readFile(path.join(tempDir.path, "tiles", "forest.png"), "utf8")).toBe(
+      "original-bytes",
     );
   });
 

@@ -1,16 +1,14 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 
 import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
-import { ApiError } from "#web/requests/http-client.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
+import { isConflictError } from "#web/utils/is-conflict-error.ts";
 import type { DroppedFile } from "#web/utils/read-dropped-files.ts";
 
-const CONFLICT_STATUS = 409;
-const MIN_FILES_FOR_PROGRESS = 2;
+import { useOverwriteConfirmation } from "./use-overwrite-confirmation.ts";
 
-const isConflictError = (error: unknown): boolean =>
-  error instanceof ApiError && error.statusCode === CONFLICT_STATUS;
+const MIN_FILES_FOR_PROGRESS = 2;
 
 interface UploadItem {
   file: File;
@@ -28,7 +26,7 @@ export interface UseFileUploadParams {
   currentPath: string;
   setBusy: (busy: boolean) => void;
   setError: (error: string | null) => void;
-  loadDirectory: (path: string) => Promise<void>;
+  refreshDirectory: (path: string) => Promise<void>;
 }
 
 export interface UseFileUploadResult {
@@ -44,26 +42,11 @@ export const useFileUpload = ({
   currentPath,
   setBusy,
   setError,
-  loadDirectory,
+  refreshDirectory,
 }: UseFileUploadParams): UseFileUploadResult => {
-  const [conflictingItems, setConflictingItems] = useState<UploadItem[] | null>(null);
   const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null);
-  const overwriteDecisionRef = useRef<((overwrite: boolean) => void) | null>(null);
-
-  const askToOverwrite = (items: UploadItem[]): Promise<boolean> =>
-    new Promise((resolve) => {
-      overwriteDecisionRef.current = resolve;
-      setConflictingItems(items);
-    });
-
-  const resolveOverwriteDecision = (overwrite: boolean): void => {
-    overwriteDecisionRef.current?.(overwrite);
-    overwriteDecisionRef.current = null;
-    setConflictingItems(null);
-  };
-
-  const confirmOverwrite = (): void => resolveOverwriteDecision(true);
-  const cancelOverwrite = (): void => resolveOverwriteDecision(false);
+  const { conflictingFileNames, askToOverwrite, confirmOverwrite, cancelOverwrite } =
+    useOverwriteConfirmation<UploadItem>();
 
   const resolveTargetDir = (relativePath: string): string => {
     const parent = parentDirectory(relativePath);
@@ -125,7 +108,7 @@ export const useFileUpload = ({
       }
     }
 
-    await loadDirectory(currentPath);
+    await refreshDirectory(currentPath);
 
     if (errorMessage) {
       setError(errorMessage);
@@ -155,9 +138,7 @@ export const useFileUpload = ({
     handleUploadFile,
     handleFilesDropped,
     uploadProgress,
-    conflictingFileNames: conflictingItems
-      ? conflictingItems.map((item) => item.displayName)
-      : null,
+    conflictingFileNames,
     confirmOverwrite,
     cancelOverwrite,
   };

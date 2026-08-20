@@ -9,6 +9,7 @@ import { useTreeData } from "./use-tree-data.ts";
 
 export interface TreeViewProps {
   activePath: string;
+  refreshToken: number;
   onNavigate: (path: string) => void;
   canDropOnPath: (path: string) => boolean;
   onDropEntry: (path: string) => void;
@@ -20,6 +21,7 @@ export interface TreeViewProps {
 
 export const TreeView = ({
   activePath,
+  refreshToken,
   onNavigate,
   canDropOnPath,
   onDropEntry,
@@ -28,7 +30,10 @@ export const TreeView = ({
   availableTags,
   onTagsChange,
 }: TreeViewProps): JSX.Element => {
-  const { expandedPaths, childrenByPath, handleToggle, handleRetry } = useTreeData(activePath);
+  const { expandedPaths, childrenByPath, handleToggle, handleRetry } = useTreeData(
+    activePath,
+    refreshToken,
+  );
 
   const handleRootDragOver = (event: DragEvent<HTMLUListElement>): void => {
     if (!canDropOnPath(ROOT_PATH)) {
