@@ -6,10 +6,11 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type JSX, type KeyboardEvent, useState } from "react";
+import { type JSX, type KeyboardEvent, type MouseEvent, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
+import { modifierFromClick } from "#web/utils/row-selection.ts";
 
 import styles from "./asset-preview.module.css";
 import { AudioPreviewButton } from "./audio-preview-button.tsx";
@@ -70,7 +71,11 @@ export const AssetPreview = ({
       : buildRawFileUrl(relativePath);
     const isOpenable = onOpen !== undefined;
 
-    const handleOpenClick = (): void => {
+    const handleOpenClick = (event: MouseEvent<HTMLImageElement>): void => {
+      if (modifierFromClick(event) !== "replace") {
+        return;
+      }
+
       onOpen?.(entry);
     };
 
@@ -123,7 +128,11 @@ export const AssetPreview = ({
 
     const isOpenable = onOpen !== undefined;
 
-    const handleOpenClick = (): void => {
+    const handleOpenClick = (event: MouseEvent<HTMLSpanElement>): void => {
+      if (modifierFromClick(event) !== "replace") {
+        return;
+      }
+
       onOpen?.(entry);
     };
 

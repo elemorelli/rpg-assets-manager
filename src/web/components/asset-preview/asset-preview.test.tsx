@@ -163,6 +163,26 @@ describe("AssetPreview", () => {
     expect(onOpen).toHaveBeenCalledWith(entry);
   });
 
+  it("does not call onOpen when a small previewable image is ctrl-clicked", () => {
+    const onOpen = vi.fn();
+    const entry = { name: "forest.png", type: "file" as const, size: SIZE_UNDER_THRESHOLD };
+
+    render(<AssetPreview entry={entry} relativePath="tiles/forest.png" onOpen={onOpen} />);
+    fireEvent.click(screen.getByRole("button", { name: "forest.png" }), { ctrlKey: true });
+
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it("does not call onOpen when a small previewable image is shift-clicked", () => {
+    const onOpen = vi.fn();
+    const entry = { name: "forest.png", type: "file" as const, size: SIZE_UNDER_THRESHOLD };
+
+    render(<AssetPreview entry={entry} relativePath="tiles/forest.png" onOpen={onOpen} />);
+    fireEvent.click(screen.getByRole("button", { name: "forest.png" }), { shiftKey: true });
+
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
   it("does not make the image interactive when onOpen is omitted", () => {
     render(
       <AssetPreview
@@ -185,6 +205,18 @@ describe("AssetPreview", () => {
     await user.click(screen.getByRole("button", { name: "forest.png" }));
 
     expect(onOpen).toHaveBeenCalledWith(entry);
+  });
+
+  it("does not call onOpen when a large previewable image is ctrl-clicked", () => {
+    const onOpen = vi.fn();
+    const entry = { name: "forest.png", type: "file" as const, size: SIZE_UNDER_THRESHOLD };
+
+    render(
+      <AssetPreview entry={entry} relativePath="tiles/forest.png" size="large" onOpen={onOpen} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "forest.png" }), { ctrlKey: true });
+
+    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it("does not make a small audio preview interactive even when onOpen is given", () => {
@@ -224,6 +256,18 @@ describe("AssetPreview", () => {
     await user.click(screen.getByRole("button", { name: "ambient.wav" }));
 
     expect(onOpen).toHaveBeenCalledWith(entry);
+  });
+
+  it("does not call onOpen when a large audio preview's icon is ctrl-clicked", () => {
+    const onOpen = vi.fn();
+    const entry = { name: "ambient.wav", type: "file" as const, size: SIZE_ABOVE_THRESHOLD };
+
+    render(
+      <AssetPreview entry={entry} relativePath="audio/ambient.wav" size="large" onOpen={onOpen} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "ambient.wav" }), { ctrlKey: true });
+
+    expect(onOpen).not.toHaveBeenCalled();
   });
 
   it("does not open the lightbox when the large audio preview's play button is clicked", async () => {
