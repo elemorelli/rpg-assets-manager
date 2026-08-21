@@ -10,10 +10,11 @@ import { type JSX, useEffect, useRef, useState } from "react";
 
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { IconButton } from "#components/icon-button/icon-button.tsx";
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import type { FoundryWorld } from "#web/requests/foundry-worlds/list.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { describeErrorAsMessage } from "#web/utils/message.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
 import styles from "./foundry-modal.module.css";
@@ -30,8 +31,8 @@ export const FoundryModal = ({ onClose, onMarkedApplied }: FoundryModalProps): J
   const {
     data: worlds,
     setData: setWorlds,
-    error,
-    setError,
+    message,
+    setMessage,
   } = useFetchOnMount<FoundryWorld[]>(() => api.fetchFoundryWorlds(), []);
 
   const [copiedWorldId, setCopiedWorldId] = useState<number | null>(null);
@@ -59,7 +60,7 @@ export const FoundryModal = ({ onClose, onMarkedApplied }: FoundryModalProps): J
         );
         onMarkedApplied?.();
       })
-      .catch((caught: unknown) => setError(describeError(caught)));
+      .catch((caught: unknown) => setMessage(describeErrorAsMessage(caught)));
   };
 
   const handleCopyMacro = (worldId: number, macro: string): void => {
@@ -90,8 +91,8 @@ export const FoundryModal = ({ onClose, onMarkedApplied }: FoundryModalProps): J
         <FontAwesomeIcon className={styles.headingIcon} icon={faGlobe} aria-hidden="true" />
         Foundry worlds
       </h3>
-      {error && <p className={styles.error}>{error}</p>}
-      {!worlds && !error && <p>Checking Foundry worlds...</p>}
+      {message && <MessageBanner message={message} />}
+      {!worlds && !message && <p>Checking Foundry worlds...</p>}
       {worlds && worlds.length === 0 && <p>No Foundry worlds configured.</p>}
       {worlds && worlds.length > 0 && (
         <ul className={styles.worldList}>

@@ -47,8 +47,3 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
-
-.error {
-  font-size: var(--font-size-sm);
-  color: var(--color-danger);
-}

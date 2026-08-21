@@ -3,6 +3,7 @@ import { joinRelativePath } from "#utils/paths.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
 import { isConflictError } from "#web/utils/is-conflict-error.ts";
+import type { Message } from "#web/utils/message.ts";
 
 import { useOverwriteConfirmation } from "./use-overwrite-confirmation.ts";
 
@@ -15,7 +16,7 @@ interface MoveItem {
 export interface UseBatchMoveParams {
   currentPath: string;
   setBusy: (busy: boolean) => void;
-  setError: (error: string | null) => void;
+  setMessage: (message: Message | null) => void;
   refreshDirectory: (path: string) => Promise<void>;
 }
 
@@ -29,7 +30,7 @@ export interface UseBatchMoveResult {
 export const useBatchMove = ({
   currentPath,
   setBusy,
-  setError,
+  setMessage,
   refreshDirectory,
 }: UseBatchMoveParams): UseBatchMoveResult => {
   const {
@@ -42,7 +43,7 @@ export const useBatchMove = ({
   const moveBatch = async (items: MoveItem[]): Promise<boolean> => {
     let successCount = 0;
     const conflicts: MoveItem[] = [];
-    let errorMessage: string | null = null;
+    let resultMessage: Message | null = null;
 
     for (const item of items) {
       try {
@@ -54,12 +55,15 @@ export const useBatchMove = ({
           continue;
         }
 
-        errorMessage = `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`;
+        resultMessage = {
+          severity: "error",
+          summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+        };
         break;
       }
     }
 
-    if (errorMessage === null && conflicts.length > 0) {
+    if (resultMessage === null && conflicts.length > 0) {
       const overwriteConfirmed = await askToOverwrite(conflicts);
 
       if (overwriteConfirmed) {
@@ -68,22 +72,27 @@ export const useBatchMove = ({
             await api.moveEntry(item.fromPath, item.toPath, true);
             successCount += 1;
           } catch (caught) {
-            errorMessage = `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`;
+            resultMessage = {
+              severity: "error",
+              summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+            };
             break;
           }
         }
       } else {
-        const skippedNames = conflicts.map((item) => item.displayName).join(", ");
-
-        errorMessage = `Skipped ${conflicts.length} item(s) that already exist at the destination: ${skippedNames}`;
+        resultMessage = {
+          severity: "warning",
+          summary: `Skipped ${conflicts.length} item(s) that already exist at the destination`,
+          details: conflicts.map((item) => item.displayName),
+        };
       }
     }
 
-    // refreshDirectory clears the error on entry, so refresh before surfacing errorMessage or the refresh wipes it.
+    // refreshDirectory clears the message on entry, so refresh before surfacing resultMessage or the refresh wipes it.
     await refreshDirectory(currentPath);
 
-    if (errorMessage) {
-      setError(errorMessage);
+    if (resultMessage) {
+      setMessage(resultMessage);
 
       return false;
     }
@@ -96,7 +105,7 @@ export const useBatchMove = ({
     targetDirectoryPath: string,
   ): Promise<boolean> => {
     setBusy(true);
-    setError(null);
+    setMessage(null);
 
     return moveBatch(
       entriesToMove.map((entry) => ({

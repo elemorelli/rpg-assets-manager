@@ -6,13 +6,13 @@ import {
   useState,
 } from "react";
 
-import { describeError } from "#web/utils/describe-error.ts";
+import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
 
 export interface UseFetchOnMountResult<T> {
   data: T | null;
   setData: Dispatch<SetStateAction<T | null>>;
-  error: string | null;
-  setError: Dispatch<SetStateAction<string | null>>;
+  message: Message | null;
+  setMessage: Dispatch<SetStateAction<Message | null>>;
 }
 
 export const useFetchOnMount = <T>(
@@ -20,13 +20,13 @@ export const useFetchOnMount = <T>(
   deps: DependencyList,
 ): UseFetchOnMountResult<T> => {
   const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
 
   useEffect(() => {
     fetchFn()
       .then(setData)
-      .catch((caught: unknown) => setError(describeError(caught)));
+      .catch((caught: unknown) => setMessage(describeErrorAsMessage(caught)));
   }, deps);
 
-  return { data, setData, error, setError };
+  return { data, setData, message, setMessage };
 };

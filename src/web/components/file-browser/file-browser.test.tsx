@@ -496,8 +496,9 @@ describe("FileBrowser", () => {
     await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
 
     expect(
-      await screen.findByText("Skipped 1 item(s) that already exist at the destination: map.png"),
+      await screen.findByText("Skipped 1 item(s) that already exist at the destination"),
     ).toBeInTheDocument();
+    expect(screen.getByText("map.png", { selector: "li" })).toBeInTheDocument();
     expect(moveEntryMock).toHaveBeenCalledTimes(1);
   });
 
@@ -874,9 +875,8 @@ describe("FileBrowser", () => {
 
     await userEvent.click(await screen.findByRole("button", { name: "Cancel" }));
 
-    expect(
-      await screen.findByText("Skipped 1 file(s) that already exist: existing.png"),
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Skipped 1 file(s) that already exist")).toBeInTheDocument();
+    expect(screen.getByText("existing.png", { selector: "li" })).toBeInTheDocument();
     expect(uploadFileMock).toHaveBeenCalledTimes(1);
   });
 

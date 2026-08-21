@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import type { JSX } from "react";
 
 import { IconButton } from "#components/icon-button/icon-button.tsx";
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import * as api from "#web/requests/index.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
@@ -14,7 +15,7 @@ const formatTrackCount = (count: number): string =>
   count === SINGLE_TRACK_COUNT ? "1 track" : `${count} tracks`;
 
 export const FoundryPlaylistList = (): JSX.Element => {
-  const { data: tags, error } = useFetchOnMount(() => api.fetchFoundryPlaylistTags(), []);
+  const { data: tags, message } = useFetchOnMount(() => api.fetchFoundryPlaylistTags(), []);
 
   return (
     <div className={styles.section}>
@@ -22,8 +23,8 @@ export const FoundryPlaylistList = (): JSX.Element => {
         <FontAwesomeIcon className={styles.headingIcon} icon={faMusic} aria-hidden="true" />
         Playlists
       </h3>
-      {error && <p className={styles.error}>{error}</p>}
-      {!tags && !error && <p>Checking audio tags...</p>}
+      {message && <MessageBanner message={message} />}
+      {!tags && !message && <p>Checking audio tags...</p>}
       {tags && tags.length === 0 && <p>No audio assets tagged yet.</p>}
       {tags && tags.length > 0 && (
         <ul className={styles.tagList}>

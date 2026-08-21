@@ -19,11 +19,6 @@
   font-size: var(--font-size-sm);
 }
 
-.error {
-  font-size: var(--font-size-sm);
-  color: var(--color-danger);
-}
-
 .added {
   color: var(--color-sync-new);
 }

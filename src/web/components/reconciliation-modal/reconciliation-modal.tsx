@@ -1,5 +1,6 @@
 import { type JSX, useMemo } from "react";
 
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import * as api from "#web/requests/index.ts";
@@ -36,7 +37,7 @@ const buildResultRows = (result: RcloneCheckResult): ScrollListRow[] => [
 ];
 
 export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.Element => {
-  const { data: result, error } = useFetchOnMount<RcloneCheckResult>(() => api.reconcile(), []);
+  const { data: result, message } = useFetchOnMount<RcloneCheckResult>(() => api.reconcile(), []);
 
   const resultRows = useMemo(() => (result ? buildResultRows(result) : []), [result]);
 
@@ -55,8 +56,8 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
 
   return (
     <Modal title="Reconcile with R2" onClose={onClose} footer={footer}>
-      {error && <p className={styles.error}>{error}</p>}
-      {!result && !error && <p>Checking for differences...</p>}
+      {message && <MessageBanner message={message} />}
+      {!result && !message && <p>Checking for differences...</p>}
       {hasNoDifferences && <p>{`${result.matchCount} file(s) match. No differences found.`}</p>}
       {result && !hasNoDifferences && (
         <div className={styles.section}>

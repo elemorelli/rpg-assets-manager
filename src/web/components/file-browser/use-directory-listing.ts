@@ -2,14 +2,14 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
 
 export interface UseDirectoryListingResult {
   entries: DirectoryEntry[];
   busy: boolean;
-  error: string | null;
+  message: Message | null;
   setBusy: (busy: boolean) => void;
-  setError: (error: string | null) => void;
+  setMessage: (message: Message | null) => void;
   loadDirectory: (path: string) => Promise<void>;
   runAction: (action: () => Promise<void>) => void;
   treeRefreshTrigger: number;
@@ -19,7 +19,7 @@ export interface UseDirectoryListingResult {
 export const useDirectoryListing = (currentPath: string): UseDirectoryListingResult => {
   const [entries, setEntries] = useState<DirectoryEntry[]>([]);
   const [busy, setBusy] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
   const [treeRefreshTrigger, setTreeRefreshTrigger] = useState<number>(0);
 
   const bumpTreeRefresh = useCallback((): void => {
@@ -28,14 +28,14 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
 
   const loadDirectory = useCallback(async (path: string): Promise<void> => {
     setBusy(true);
-    setError(null);
+    setMessage(null);
 
     try {
       const listed = await api.listDirectory(path);
 
       setEntries(listed);
     } catch (caught) {
-      setError(describeError(caught));
+      setMessage(describeErrorAsMessage(caught));
     } finally {
       setBusy(false);
     }
@@ -58,12 +58,12 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
 
   const runAction = (action: () => Promise<void>): void => {
     setBusy(true);
-    setError(null);
+    setMessage(null);
 
     action()
       .then(() => refreshAfterMutation(currentPath))
       .catch((caught: unknown) => {
-        setError(describeError(caught));
+        setMessage(describeErrorAsMessage(caught));
         setBusy(false);
       });
   };
@@ -71,9 +71,9 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
   return {
     entries,
     busy,
-    error,
+    message,
     setBusy,
-    setError,
+    setMessage,
     loadDirectory,
     runAction,
     treeRefreshTrigger,

@@ -9,11 +9,6 @@
   font-size: var(--font-size-sm);
 }
 
-.error {
-  font-size: var(--font-size-sm);
-  color: var(--color-danger);
-}
-
 .missingDestination {
   color: var(--color-sync-new);
 }

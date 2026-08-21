@@ -4,11 +4,11 @@ import { useSearchParams } from "react-router";
 import { parentDirectory } from "#utils/paths.ts";
 import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
 
 export interface UseSearchAndTagFilterParams {
   onNavigate: (path: string) => void;
-  onError: (message: string) => void;
+  onError: (message: Message) => void;
 }
 
 export interface UseSearchAndTagFilterResult {
@@ -44,7 +44,7 @@ export const useSearchAndTagFilter = ({
     api
       .searchEntries(trimmedQuery)
       .then(setSearchResults)
-      .catch((caught: unknown) => onError(describeError(caught)));
+      .catch((caught: unknown) => onError(describeErrorAsMessage(caught)));
   }, [query, onError]);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export const useSearchAndTagFilter = ({
     api
       .fetchFilesByTag(selectedTags)
       .then(setTagFilterResults)
-      .catch((caught: unknown) => onError(describeError(caught)));
+      .catch((caught: unknown) => onError(describeErrorAsMessage(caught)));
     // selectedTags is a fresh array every render; depend on tagsParam instead to avoid refetching on every render.
   }, [tagsParam, onError]);
 

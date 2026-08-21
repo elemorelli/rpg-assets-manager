@@ -1,5 +1,6 @@
 import { type JSX, useMemo } from "react";
 
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { ConversionCandidate, ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
@@ -29,10 +30,10 @@ export const ConvertModal = ({
 }: ConvertModalProps): JSX.Element => {
   const {
     data: plan,
-    error,
-    setError,
+    message,
+    setMessage,
   } = useFetchOnMount<ConversionPlan>(() => api.fetchConversionPlan(currentPath), [currentPath]);
-  const { busy, runBusyAction } = useBusyAction(setError);
+  const { busy, runBusyAction } = useBusyAction(setMessage);
 
   const handleConvert = (): void => {
     runBusyAction(() =>
@@ -65,8 +66,8 @@ export const ConvertModal = ({
 
   return (
     <Modal title={`Convert assets in ${directoryLabel}`} onClose={onClose} footer={footer}>
-      {error && <p className={styles.error}>{error}</p>}
-      {!plan && !error && <p>Checking for conversions...</p>}
+      {message && <MessageBanner message={message} />}
+      {!plan && !message && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}
       {plan && !hasNothingToConvert && (
         <div className={styles.section}>

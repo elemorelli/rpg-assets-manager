@@ -1,7 +1,8 @@
 import { type FormEvent, type JSX, useState } from "react";
 
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
+import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
 
 import styles from "./login-form.module.css";
 
@@ -12,17 +13,17 @@ export interface LoginFormProps {
 export const LoginForm = ({ onLoggedIn }: LoginFormProps): JSX.Element => {
   const [password, setPassword] = useState<string>("");
   const [busy, setBusy] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<Message | null>(null);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault();
     setBusy(true);
-    setError(null);
+    setMessage(null);
 
     api
       .login(password)
       .then(onLoggedIn)
-      .catch((caught: unknown) => setError(describeError(caught)))
+      .catch((caught: unknown) => setMessage(describeErrorAsMessage(caught)))
       .finally(() => setBusy(false));
   };
 
@@ -41,7 +42,7 @@ export const LoginForm = ({ onLoggedIn }: LoginFormProps): JSX.Element => {
       <button type="submit" disabled={busy}>
         Log in
       </button>
-      {error && <p className={styles.error}>{error}</p>}
+      {message && <MessageBanner message={message} />}
     </form>
   );
 };

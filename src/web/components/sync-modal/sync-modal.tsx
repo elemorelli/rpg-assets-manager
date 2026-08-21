@@ -1,5 +1,6 @@
 import { type JSX, useMemo } from "react";
 
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
@@ -38,8 +39,8 @@ const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
 ];
 
 export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element => {
-  const { data: diff, error, setError } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(), []);
-  const { busy, runBusyAction } = useBusyAction(setError);
+  const { data: diff, message, setMessage } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(), []);
+  const { busy, runBusyAction } = useBusyAction(setMessage);
 
   const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
 
@@ -77,8 +78,8 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
 
   return (
     <Modal title="Sync changes" onClose={onClose} footer={footer}>
-      {error && <p className={styles.error}>{error}</p>}
-      {!diff && !error && <p>Checking for changes...</p>}
+      {message && <MessageBanner message={message} />}
+      {!diff && !message && <p>Checking for changes...</p>}
       {hasNothingToSync && <p>Nothing to sync.</p>}
       {diff && !hasNothingToSync && (
         <div className={styles.section}>

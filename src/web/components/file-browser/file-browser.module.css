@@ -24,9 +24,10 @@
   align-items: center;
 }
 
-.error {
-  color: var(--color-danger);
-  margin: 0;
+.messageBar {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
 }
 
 .dropzone {

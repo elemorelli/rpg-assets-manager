@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { isValidDropTarget } from "#web/utils/drag-drop.ts";
+import type { Message } from "#web/utils/message.ts";
 import {
   applySelectionClick,
   initialSelectionState,
@@ -27,7 +28,7 @@ export interface UseEntrySelectionAndDragParams {
   sortedEntries: DirectoryEntry[];
   currentPath: string;
   setBusy: (busy: boolean) => void;
-  setError: (error: string | null) => void;
+  setMessage: (message: Message | null) => void;
   refreshDirectory: (path: string) => Promise<void>;
 }
 
@@ -51,13 +52,13 @@ export const useEntrySelectionAndDrag = ({
   sortedEntries,
   currentPath,
   setBusy,
-  setError,
+  setMessage,
   refreshDirectory,
 }: UseEntrySelectionAndDragParams): UseEntrySelectionAndDragResult => {
   const [selection, setSelection] = useState<SelectionState>(initialSelectionState);
   const [draggedEntries, setDraggedEntries] = useState<DirectoryEntry[]>([]);
   const { runBatchMove, moveConflictingFileNames, confirmMoveOverwrite, cancelMoveOverwrite } =
-    useBatchMove({ currentPath, setBusy, setError, refreshDirectory });
+    useBatchMove({ currentPath, setBusy, setMessage, refreshDirectory });
 
   const handleSelectRow = (entry: DirectoryEntry, modifier: SelectionClickModifier): void => {
     const orderedNames = sortedEntries.map((candidate) => candidate.name);

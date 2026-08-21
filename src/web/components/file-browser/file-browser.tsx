@@ -6,6 +6,7 @@ import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
+import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { ProgressModal } from "#components/progress-modal/progress-modal.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
@@ -66,9 +67,9 @@ export const FileBrowser = (): JSX.Element => {
   const {
     entries,
     busy,
-    error,
+    message,
     setBusy,
-    setError,
+    setMessage,
     runAction,
     treeRefreshTrigger,
     refreshAfterMutation,
@@ -121,7 +122,7 @@ export const FileBrowser = (): JSX.Element => {
     handleSearch,
     handleToggleTag,
     handleOpenSearchResult,
-  } = useSearchAndTagFilter({ onNavigate: navigateToPath, onError: setError });
+  } = useSearchAndTagFilter({ onNavigate: navigateToPath, onError: setMessage });
 
   const sortedEntries = sortEntries(entries, sortCriterion, sortDirection);
   const groups = groupEntries(sortedEntries, groupCriterion);
@@ -144,7 +145,7 @@ export const FileBrowser = (): JSX.Element => {
     sortedEntries,
     currentPath,
     setBusy,
-    setError,
+    setMessage,
     refreshDirectory: refreshAfterMutation,
   });
 
@@ -172,7 +173,7 @@ export const FileBrowser = (): JSX.Element => {
     conflictingFileNames,
     confirmOverwrite,
     cancelOverwrite,
-  } = useFileUpload({ currentPath, setBusy, setError, refreshDirectory: refreshAfterMutation });
+  } = useFileUpload({ currentPath, setBusy, setMessage, refreshDirectory: refreshAfterMutation });
 
   const {
     isDropzoneActive,
@@ -234,18 +235,15 @@ export const FileBrowser = (): JSX.Element => {
               selectedTags={selectedTags}
               onToggleTag={handleToggleTag}
             />
-            {error && (
-              <p className={styles.error}>
-                {error}
+            {message && (
+              <div className={styles.messageBar}>
+                <MessageBanner message={message} />
                 {currentPath !== "" && (
-                  <>
-                    {" "}
-                    <button type="button" onClick={() => navigateToPath("")}>
-                      Back to root
-                    </button>
-                  </>
+                  <button type="button" onClick={() => navigateToPath("")}>
+                    Back to root
+                  </button>
                 )}
-              </p>
+              </div>
             )}
             <FileBrowserContent
               currentPath={currentPath}
