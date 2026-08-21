@@ -7,6 +7,7 @@ import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-l
 import type { OperationScope } from "#utils/operation-scope.ts";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
+import { describeScopedTitle } from "#web/utils/scope-title.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
@@ -87,7 +88,10 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
     );
 
   return (
-    <Modal title="Sync changes" onClose={onClose} footer={footer}>
+    <Modal
+      title={describeScopedTitle("Sync changes", scope, directoryLabel)}
+      onClose={onClose}
+      footer={footer}>
       <ScopeSelector scope={scope} onScopeChange={setScope} directoryLabel={directoryLabel} />
       {message && <MessageBanner message={message} />}
       {!diff && !message && <p>Checking for changes...</p>}

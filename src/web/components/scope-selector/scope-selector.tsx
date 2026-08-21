@@ -14,6 +14,7 @@ export interface ScopeSelectorProps {
 interface ScopeOption {
   scope: OperationScope;
   label: string;
+  title?: string;
 }
 
 export const ScopeSelector = ({
@@ -22,8 +23,8 @@ export const ScopeSelector = ({
   directoryLabel,
 }: ScopeSelectorProps): JSX.Element => {
   const options: ScopeOption[] = [
-    { scope: "folder", label: directoryLabel },
-    { scope: "subtree", label: `${directoryLabel} + subfolders` },
+    { scope: "folder", label: "This folder", title: directoryLabel },
+    { scope: "subtree", label: "+ Subfolders", title: `${directoryLabel} and its subfolders` },
     { scope: "all", label: "All folders" },
   ];
 
@@ -33,6 +34,7 @@ export const ScopeSelector = ({
         <button
           key={option.scope}
           type="button"
+          title={option.title}
           aria-pressed={scope === option.scope}
           className={clsx(styles.option, scope === option.scope && styles.active)}
           onClick={() => onScopeChange(option.scope)}>

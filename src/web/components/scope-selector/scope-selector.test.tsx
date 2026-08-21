@@ -12,22 +12,28 @@ const defaultProps: ScopeSelectorProps = {
 };
 
 describe("ScopeSelector", () => {
-  it("labels each option using the directory label", () => {
+  it("uses short generic labels, keeping the directory name in the title attribute", () => {
     render(<ScopeSelector {...defaultProps} />);
 
-    expect(screen.getByRole("button", { name: "tiles" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "tiles + subfolders" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "This folder" })).toHaveAttribute("title", "tiles");
+    expect(screen.getByRole("button", { name: "+ Subfolders" })).toHaveAttribute(
+      "title",
+      "tiles and its subfolders",
+    );
     expect(screen.getByRole("button", { name: "All folders" })).toBeInTheDocument();
   });
 
   it("marks the current scope as pressed", () => {
     render(<ScopeSelector {...defaultProps} scope="subtree" />);
 
-    expect(screen.getByRole("button", { name: "tiles + subfolders" })).toHaveAttribute(
+    expect(screen.getByRole("button", { name: "+ Subfolders" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(screen.getByRole("button", { name: "tiles" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "This folder" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(screen.getByRole("button", { name: "All folders" })).toHaveAttribute(
       "aria-pressed",
       "false",
