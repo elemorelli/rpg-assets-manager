@@ -26,7 +26,17 @@ describe("ConvertModal", () => {
 
     render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
 
-    expect(fetchConversionPlanMock).toHaveBeenCalledWith("tiles");
+    expect(fetchConversionPlanMock).toHaveBeenCalledWith("tiles", "folder");
+  });
+
+  it("refetches the plan for the newly selected scope when it changes", async () => {
+    const user = userEvent.setup();
+    fetchConversionPlanMock.mockResolvedValue({ candidates: [] });
+
+    render(<ConvertModal currentPath="tiles" onClose={vi.fn()} onConverted={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "All folders" }));
+
+    expect(fetchConversionPlanMock).toHaveBeenLastCalledWith("tiles", "all");
   });
 
   it("shows a colored list of candidates", async () => {
@@ -85,7 +95,7 @@ describe("ConvertModal", () => {
     await user.click(screen.getByRole("button", { name: "Convert 1 file(s)" }));
 
     await waitFor(() => {
-      expect(convertMock).toHaveBeenCalledWith("tiles");
+      expect(convertMock).toHaveBeenCalledWith("tiles", "folder");
     });
     expect(onConverted).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();

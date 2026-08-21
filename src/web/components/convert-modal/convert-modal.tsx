@@ -1,8 +1,10 @@
-import { type JSX, useMemo } from "react";
+import { type JSX, useMemo, useState } from "react";
 
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
+import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
+import type { OperationScope } from "#utils/operation-scope.ts";
 import type { ConversionCandidate, ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
@@ -28,23 +30,28 @@ export const ConvertModal = ({
   onClose,
   onConverted,
 }: ConvertModalProps): JSX.Element => {
+  const [scope, setScope] = useState<OperationScope>("folder");
+  const directoryLabel = currentPath === "" ? "root" : currentPath;
+
   const {
     data: plan,
     message,
     setMessage,
-  } = useFetchOnMount<ConversionPlan>(() => api.fetchConversionPlan(currentPath), [currentPath]);
+  } = useFetchOnMount<ConversionPlan>(
+    () => api.fetchConversionPlan(currentPath, scope),
+    [currentPath, scope],
+  );
   const { busy, runBusyAction } = useBusyAction(setMessage);
 
   const handleConvert = (): void => {
     runBusyAction(() =>
-      api.convert(currentPath).then(() => {
+      api.convert(currentPath, scope).then(() => {
         onConverted();
         onClose();
       }),
     );
   };
 
-  const directoryLabel = currentPath === "" ? "root" : currentPath;
   const hasNothingToConvert = plan !== null && plan.candidates.length === 0;
   const candidateRows = useMemo(() => (plan ? buildCandidateRows(plan.candidates) : []), [plan]);
 
@@ -66,6 +73,7 @@ export const ConvertModal = ({
 
   return (
     <Modal title={`Convert assets in ${directoryLabel}`} onClose={onClose} footer={footer}>
+      <ScopeSelector scope={scope} onScopeChange={setScope} directoryLabel={directoryLabel} />
       {message && <MessageBanner message={message} />}
       {!plan && !message && <p>Checking for conversions...</p>}
       {hasNothingToConvert && <p>Nothing to convert.</p>}

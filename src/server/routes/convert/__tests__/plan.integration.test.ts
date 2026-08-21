@@ -31,4 +31,22 @@ describe("getConversionPlan", () => {
       },
     ]);
   });
+
+  it("with recursive: false, ignores candidates in subfolders", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "convert-plan-test-"));
+    await fs.mkdir(path.join(tempDir, "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "fake-png-bytes");
+    await fs.writeFile(path.join(tempDir, "root.png"), "fake-png-bytes");
+
+    const plan = await getConversionPlan(tempDir, false);
+
+    expect(plan.candidates).toEqual([
+      {
+        relativePath: "root.png",
+        kind: "image",
+        destinationPath: "root.webp",
+        willOverwrite: false,
+      },
+    ]);
+  });
 });

@@ -1,5 +1,6 @@
 import fs from "node:fs/promises";
 
+import type { WalkDirectoryOptions } from "#server/utils/walk-directory.ts";
 import { walkDirectory } from "#server/utils/walk-directory.ts";
 
 interface WalkedFile {
@@ -8,8 +9,11 @@ interface WalkedFile {
   mtimeMs: number;
 }
 
-export const walkAssetTree = async (rootDir: string): Promise<WalkedFile[]> => {
-  const entries = await walkDirectory(rootDir);
+export const walkAssetTree = async (
+  rootDir: string,
+  options: WalkDirectoryOptions = {},
+): Promise<WalkedFile[]> => {
+  const entries = await walkDirectory(rootDir, options);
   const results: WalkedFile[] = [];
 
   for (const entry of entries) {

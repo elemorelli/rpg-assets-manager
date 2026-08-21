@@ -30,9 +30,25 @@ describe("SyncModal", () => {
       ambiguousWarnings: [],
     });
 
-    render(<SyncModal onClose={vi.fn()} onApplied={vi.fn()} />);
+    render(<SyncModal currentPath="tiles" onClose={vi.fn()} onApplied={vi.fn()} />);
 
-    expect(fetchDiffMock).toHaveBeenCalled();
+    expect(fetchDiffMock).toHaveBeenCalledWith("tiles", "folder");
+  });
+
+  it("refetches the diff for the newly selected scope when it changes", async () => {
+    const user = userEvent.setup();
+    fetchDiffMock.mockResolvedValue({
+      added: [],
+      modified: [],
+      deleted: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+
+    render(<SyncModal currentPath="tiles" onClose={vi.fn()} onApplied={vi.fn()} />);
+    await user.click(screen.getByRole("button", { name: "All folders" }));
+
+    expect(fetchDiffMock).toHaveBeenLastCalledWith("tiles", "all");
   });
 
   it("shows colored counts, the change list, and ambiguous warnings once the diff resolves", async () => {
@@ -44,7 +60,7 @@ describe("SyncModal", () => {
       ambiguousWarnings: [{ hash: "h1", localPaths: ["x.png"], remotePaths: ["y.png"] }],
     });
 
-    render(<SyncModal onClose={vi.fn()} onApplied={vi.fn()} />);
+    render(<SyncModal currentPath="tiles" onClose={vi.fn()} onApplied={vi.fn()} />);
 
     expect(await screen.findByText("1 added")).toBeInTheDocument();
     expect(screen.getByText("1 modified")).toBeInTheDocument();
@@ -67,7 +83,7 @@ describe("SyncModal", () => {
       ambiguousWarnings: [],
     });
 
-    render(<SyncModal onClose={vi.fn()} onApplied={vi.fn()} />);
+    render(<SyncModal currentPath="tiles" onClose={vi.fn()} onApplied={vi.fn()} />);
 
     expect(await screen.findByText("Nothing to sync.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Apply changes" })).not.toBeInTheDocument();
@@ -93,12 +109,12 @@ describe("SyncModal", () => {
       syncRunId: 1,
     });
 
-    render(<SyncModal onClose={onClose} onApplied={onApplied} />);
+    render(<SyncModal currentPath="tiles" onClose={onClose} onApplied={onApplied} />);
     await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Apply changes" }));
 
     await waitFor(() => {
-      expect(applyBatchMock).toHaveBeenCalled();
+      expect(applyBatchMock).toHaveBeenCalledWith("tiles", "folder");
     });
     expect(onApplied).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
@@ -115,7 +131,7 @@ describe("SyncModal", () => {
       ambiguousWarnings: [],
     });
 
-    render(<SyncModal onClose={onClose} onApplied={vi.fn()} />);
+    render(<SyncModal currentPath="tiles" onClose={onClose} onApplied={vi.fn()} />);
     await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
@@ -135,7 +151,7 @@ describe("SyncModal", () => {
     });
     applyBatchMock.mockRejectedValue(new Error("disk full"));
 
-    render(<SyncModal onClose={onClose} onApplied={vi.fn()} />);
+    render(<SyncModal currentPath="tiles" onClose={onClose} onApplied={vi.fn()} />);
     await screen.findByText("1 added");
     await user.click(screen.getByRole("button", { name: "Apply changes" }));
 

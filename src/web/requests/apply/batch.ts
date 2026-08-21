@@ -1,4 +1,6 @@
-import { requestJson } from "../http-client.ts";
+import type { OperationScope } from "#utils/operation-scope.ts";
+
+import { jsonInit, requestJson } from "../http-client.ts";
 
 export interface ApplyBatchSummary {
   added: number;
@@ -9,5 +11,8 @@ export interface ApplyBatchSummary {
   syncRunId: number;
 }
 
-export const applyBatch = (): Promise<ApplyBatchSummary> =>
-  requestJson<ApplyBatchSummary>("/api/apply", { method: "POST" });
+export const applyBatch = (path?: string, scope?: OperationScope): Promise<ApplyBatchSummary> =>
+  requestJson<ApplyBatchSummary>(
+    "/api/apply",
+    path === undefined ? { method: "POST" } : jsonInit("POST", { path, scope }),
+  );

@@ -1,8 +1,10 @@
-import { type JSX, useMemo } from "react";
+import { type JSX, useMemo, useState } from "react";
 
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
+import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
+import type { OperationScope } from "#utils/operation-scope.ts";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
@@ -11,6 +13,7 @@ import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 import styles from "./sync-modal.module.css";
 
 export interface SyncModalProps {
+  currentPath: string;
   onClose: () => void;
   onApplied: () => void;
 }
@@ -38,15 +41,22 @@ const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
   })),
 ];
 
-export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element => {
-  const { data: diff, message, setMessage } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(), []);
+export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): JSX.Element => {
+  const [scope, setScope] = useState<OperationScope>("folder");
+  const directoryLabel = currentPath === "" ? "root" : currentPath;
+
+  const {
+    data: diff,
+    message,
+    setMessage,
+  } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(currentPath, scope), [currentPath, scope]);
   const { busy, runBusyAction } = useBusyAction(setMessage);
 
   const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
 
   const handleApply = (): void => {
     runBusyAction(() =>
-      api.applyBatch().then(() => {
+      api.applyBatch(currentPath, scope).then(() => {
         onApplied();
         onClose();
       }),
@@ -78,6 +88,7 @@ export const SyncModal = ({ onClose, onApplied }: SyncModalProps): JSX.Element =
 
   return (
     <Modal title="Sync changes" onClose={onClose} footer={footer}>
+      <ScopeSelector scope={scope} onScopeChange={setScope} directoryLabel={directoryLabel} />
       {message && <MessageBanner message={message} />}
       {!diff && !message && <p>Checking for changes...</p>}
       {hasNothingToSync && <p>Nothing to sync.</p>}

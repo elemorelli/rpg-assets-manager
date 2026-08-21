@@ -196,6 +196,35 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
   });
 
+  it("with scope=folder, GET /api/convert/plan ignores candidates in subfolders", async () => {
+    await fs.mkdir(path.join(tempDir.path, "core-routes-test", "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir.path, "core-routes-test", "root.png"), "fake-bytes-root");
+    await fs.writeFile(
+      path.join(tempDir.path, "core-routes-test", "tiles", "forest.png"),
+      "fake-bytes-forest",
+    );
+    const app = buildTestApp(tempDir);
+    const sessionCookie = await loginTestSession(app);
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/convert/plan?path=core-routes-test&scope=folder",
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    expect(response.json()).toEqual({
+      candidates: [
+        {
+          relativePath: "root.png",
+          kind: "image",
+          destinationPath: "root.webp",
+          willOverwrite: false,
+        },
+      ],
+    });
+  });
+
   it("converts eligible files and publishes progress via POST /api/convert", async () => {
     const minimalPng = Buffer.from(
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -271,6 +300,31 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     const body = response.json();
 
     expect(body.added).toContain(`${PREFIX}added.png`);
+  });
+
+  it("with scope and path, GET /api/diff only reports changes under that folder", async () => {
+    const app = buildTestApp(tempDir);
+    const sessionCookie = await loginTestSession(app);
+
+    await db
+      .insertInto("assets")
+      .values([
+        { path: `${PREFIX}tiles/added.png`, size: 1, mtime: new Date(), hash: "hash-tiles" },
+        { path: `${PREFIX}monsters/added.png`, size: 1, mtime: new Date(), hash: "hash-monsters" },
+      ])
+      .execute();
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/diff?path=${PREFIX}tiles&scope=subtree`,
+      headers: { cookie: sessionCookie },
+    });
+
+    expect(response.statusCode).toBe(HTTP_STATUS.ok);
+    const body = response.json();
+
+    expect(body.added).toContain(`${PREFIX}tiles/added.png`);
+    expect(body.added).not.toContain(`${PREFIX}monsters/added.png`);
   });
 
   it("applies a batch in dry run mode via POST /api/apply, leaving remote_assets untouched", async () => {

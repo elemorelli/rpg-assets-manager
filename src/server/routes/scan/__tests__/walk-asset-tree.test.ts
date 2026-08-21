@@ -52,4 +52,16 @@ describe("walkAssetTree", () => {
 
     expect(files.map((file) => file.relativePath)).toEqual(["tiles/legacy-pack/.skip"]);
   });
+
+  it("with recursive: false, lists only direct children of rootDir", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "walk-asset-tree-"));
+
+    await fs.mkdir(path.join(tempDir, "tiles"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "tiles", "forest.png"), "nested");
+    await fs.writeFile(path.join(tempDir, "root-file.txt"), "hello");
+
+    const files = await walkAssetTree(tempDir, { recursive: false });
+
+    expect(files.map((file) => file.relativePath)).toEqual(["root-file.txt"]);
+  });
 });

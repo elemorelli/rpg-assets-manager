@@ -5,10 +5,11 @@ import type { Kysely } from "kysely";
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
 import { type DB, db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
-import type { FilesPathBody } from "#server/routes/files/path-body.ts";
+import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { OperationScope } from "#utils/operation-scope.ts";
 
 import { getConversionPlan } from "./plan.ts";
 import { convertToOgg } from "./to-ogg.ts";
@@ -36,8 +37,9 @@ export const convertAssets = async (
   rootDir: string,
   dbPathPrefix: string,
   onProgress?: (progress: ConversionProgress) => void,
+  recursive = true,
 ): Promise<ConversionSummary> => {
-  const plan = await getConversionPlan(rootDir);
+  const plan = await getConversionPlan(rootDir, recursive);
   const total = plan.candidates.length;
 
   for (const [index, candidate] of plan.candidates.entries()) {
@@ -103,11 +105,13 @@ export const convertAssets = async (
 
 export const convertAssetsHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
-    const body = request.body as FilesPathBody | undefined;
+    const body = request.body as FilesScopedPathBody | undefined;
     const relativeDir = resolveSafeRelativePath(body?.path ?? "");
-    const rootDir = path.join(assetTreeRoot, relativeDir);
+    const scope: OperationScope = body?.scope ?? "subtree";
+    const rootDir = scope === "all" ? assetTreeRoot : path.join(assetTreeRoot, relativeDir);
+    const dbPathPrefix = scope === "all" ? "" : relativeDir;
 
     return await runTrackedJob("convert", "converting", "conversion failed", (onProgress) =>
-      convertAssets(db, rootDir, relativeDir, onProgress),
+      convertAssets(db, rootDir, dbPathPrefix, onProgress, scope !== "folder"),
     );
   });

@@ -79,6 +79,43 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
     expect(diff.deleted.filter((path) => path.startsWith(PREFIX))).toEqual([]);
   });
 
+  it("with scope subtree, only reports changes under relativeDir", async () => {
+    const now = new Date();
+
+    await db
+      .insertInto("assets")
+      .values([
+        { path: `${PREFIX}tiles/added.png`, size: 1, mtime: now, hash: "hash-tiles-added" },
+        { path: `${PREFIX}monsters/added.png`, size: 1, mtime: now, hash: "hash-monsters-added" },
+      ])
+      .execute();
+
+    const diff = await computeBatchDiff(db, "subtree", `${PREFIX}tiles`);
+
+    expect(diff.added).toEqual([`${PREFIX}tiles/added.png`]);
+  });
+
+  it("with scope folder, excludes changes in deeper subfolders", async () => {
+    const now = new Date();
+
+    await db
+      .insertInto("assets")
+      .values([
+        { path: `${PREFIX}tiles/added.png`, size: 1, mtime: now, hash: "hash-tiles-direct" },
+        {
+          path: `${PREFIX}tiles/legacy/added.png`,
+          size: 1,
+          mtime: now,
+          hash: "hash-tiles-nested",
+        },
+      ])
+      .execute();
+
+    const diff = await computeBatchDiff(db, "folder", `${PREFIX}tiles`);
+
+    expect(diff.added).toEqual([`${PREFIX}tiles/added.png`]);
+  });
+
   it("flags an ambiguous rename group with a warning instead of guessing", async () => {
     const now = new Date();
 

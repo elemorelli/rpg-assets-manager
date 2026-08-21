@@ -49,7 +49,9 @@ export const FileBrowserModals = ({
         onConverted={onConverted}
       />
     )}
-    {isSyncModalOpen && <SyncModal onClose={onCloseSyncModal} onApplied={onSyncApplied} />}
+    {isSyncModalOpen && (
+      <SyncModal currentPath={currentPath} onClose={onCloseSyncModal} onApplied={onSyncApplied} />
+    )}
     {isReconciliationModalOpen && <ReconciliationModal onClose={onCloseReconciliationModal} />}
     {isFoundryModalOpen && (
       <FoundryModal onClose={onCloseFoundryModal} onMarkedApplied={onFoundryMarkedApplied} />

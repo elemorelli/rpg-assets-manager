@@ -1,3 +1,5 @@
+import type { OperationScope } from "#utils/operation-scope.ts";
+
 import { requestJson } from "../http-client.ts";
 
 export interface RenamePair {
@@ -19,4 +21,12 @@ export interface BatchDiff {
   ambiguousWarnings: AmbiguousWarning[];
 }
 
-export const fetchDiff = (): Promise<BatchDiff> => requestJson<BatchDiff>("/api/diff");
+export const fetchDiff = (path?: string, scope?: OperationScope): Promise<BatchDiff> => {
+  if (path === undefined) {
+    return requestJson<BatchDiff>("/api/diff");
+  }
+
+  const query = `path=${encodeURIComponent(path)}&scope=${encodeURIComponent(scope ?? "all")}`;
+
+  return requestJson<BatchDiff>(`/api/diff?${query}`);
+};

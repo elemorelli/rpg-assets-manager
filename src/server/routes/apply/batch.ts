@@ -7,7 +7,11 @@ import {
   purgeCloudflareCache,
 } from "#server/cloudflare/index.ts";
 import { type DB, db } from "#server/db/index.ts";
+import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
+import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
+import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { OperationScope } from "#utils/operation-scope.ts";
 
 import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
 import { runTrackedJob } from "../jobs/index.ts";
@@ -41,6 +45,8 @@ export interface ApplyBatchDependencies {
   baseUrl: string;
   dryRun: boolean;
   purge: (urls: string[]) => Promise<void>;
+  scope?: OperationScope;
+  relativeDir?: string;
 }
 
 const summaryFor = (
@@ -61,7 +67,7 @@ export const applyBatch = async (
   deps: ApplyBatchDependencies,
   onProgress?: (progress: ApplyProgress) => void,
 ): Promise<ApplyBatchSummary> => {
-  const diff = await computeBatchDiff(db);
+  const diff = await computeBatchDiff(db, deps.scope ?? "all", deps.relativeDir ?? "");
   const purgeUrls = buildPurgeUrls(diff, deps.baseUrl);
   const total = countRcloneSteps(diff);
 
@@ -94,26 +100,33 @@ export const applyBatch = async (
   }
 };
 
-export const applyBatchHandler = (assetTreeRoot: string) => async () => {
-  const purge = async (urls: string[]): Promise<void> => {
-    if (!cloudflareConfig) {
-      return;
-    }
+export const applyBatchHandler = (assetTreeRoot: string) =>
+  withHttpErrorHandling(async (request) => {
+    const body = request.body as FilesScopedPathBody | undefined;
+    const relativeDir = resolveSafeRelativePath(body?.path ?? "");
+    const scope: OperationScope = body?.scope ?? "all";
 
-    await purgeCloudflareCache(urls, cloudflareConfig);
-  };
+    const purge = async (urls: string[]): Promise<void> => {
+      if (!cloudflareConfig) {
+        return;
+      }
 
-  return runTrackedJob("sync", "applying", "sync failed", (onProgress) =>
-    applyBatch(
-      db,
-      {
-        rootDir: assetTreeRoot,
-        destinationRoot: rcloneDestination,
-        baseUrl: assetsPublicBaseUrl,
-        dryRun,
-        purge,
-      },
-      onProgress,
-    ),
-  );
-};
+      await purgeCloudflareCache(urls, cloudflareConfig);
+    };
+
+    return runTrackedJob("sync", "applying", "sync failed", (onProgress) =>
+      applyBatch(
+        db,
+        {
+          rootDir: assetTreeRoot,
+          destinationRoot: rcloneDestination,
+          baseUrl: assetsPublicBaseUrl,
+          dryRun,
+          purge,
+          scope,
+          relativeDir,
+        },
+        onProgress,
+      ),
+    );
+  });

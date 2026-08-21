@@ -8,10 +8,15 @@ export interface WalkedEntry {
   dirent: Dirent;
 }
 
+export interface WalkDirectoryOptions {
+  recursive?: boolean;
+}
+
 const collectEntries = async (
   rootDir: string,
   currentDir: string,
   results: WalkedEntry[],
+  recursive: boolean,
 ): Promise<void> => {
   const dirents = await fs.readdir(currentDir, { withFileTypes: true });
 
@@ -21,16 +26,19 @@ const collectEntries = async (
 
     results.push({ relativePath, entryPath, dirent });
 
-    if (dirent.isDirectory()) {
-      await collectEntries(rootDir, entryPath, results);
+    if (dirent.isDirectory() && recursive) {
+      await collectEntries(rootDir, entryPath, results, recursive);
     }
   }
 };
 
-export const walkDirectory = async (rootDir: string): Promise<WalkedEntry[]> => {
+export const walkDirectory = async (
+  rootDir: string,
+  options: WalkDirectoryOptions = {},
+): Promise<WalkedEntry[]> => {
   const results: WalkedEntry[] = [];
 
-  await collectEntries(rootDir, rootDir, results);
+  await collectEntries(rootDir, rootDir, results, options.recursive ?? true);
 
   return results;
 };
