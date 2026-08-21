@@ -21,6 +21,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Rescan" }));
@@ -43,6 +44,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
@@ -70,6 +72,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
@@ -90,6 +93,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
 
@@ -116,6 +120,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Sync" }));
@@ -138,6 +143,7 @@ describe("Toolbar", () => {
         onReconcile={onReconcile}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Reconcile" }));
@@ -160,6 +166,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={onFoundry}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
     await user.click(screen.getByRole("button", { name: "Foundry" }));
@@ -179,10 +186,30 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={true}
+        hasPendingSyncChanges={false}
       />,
     );
 
     expect(screen.getByTestId("foundry-pending-badge")).toBeInTheDocument();
+  });
+
+  it("shows a pending badge on the Sync button when changes are pending", () => {
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onConvert={vi.fn()}
+        onSync={vi.fn()}
+        onReconcile={vi.fn()}
+        onFoundry={vi.fn()}
+        hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={true}
+      />,
+    );
+
+    expect(screen.getByTestId("sync-pending-badge")).toBeInTheDocument();
   });
 
   it("hides the pending badge on the Foundry button when nothing is pending", () => {
@@ -197,10 +224,30 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
 
     expect(screen.queryByTestId("foundry-pending-badge")).not.toBeInTheDocument();
+  });
+
+  it("hides the pending badge on the Sync button when nothing is pending", () => {
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onConvert={vi.fn()}
+        onSync={vi.fn()}
+        onReconcile={vi.fn()}
+        onFoundry={vi.fn()}
+        hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
+      />,
+    );
+
+    expect(screen.queryByTestId("sync-pending-badge")).not.toBeInTheDocument();
   });
 
   it("opens the directory actions menu when Directory actions is clicked", async () => {
@@ -217,6 +264,7 @@ describe("Toolbar", () => {
         onReconcile={vi.fn()}
         onFoundry={vi.fn()}
         hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
       />,
     );
 

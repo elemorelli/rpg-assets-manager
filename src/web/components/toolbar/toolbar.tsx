@@ -14,6 +14,7 @@ import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
+import { PendingBadge } from "./pending-badge.tsx";
 import styles from "./toolbar.module.css";
 
 export interface ToolbarProps {
@@ -26,6 +27,7 @@ export interface ToolbarProps {
   onReconcile: () => void;
   onFoundry: () => void;
   hasPendingFoundryMacro: boolean;
+  hasPendingSyncChanges: boolean;
 }
 
 export const Toolbar = ({
@@ -38,6 +40,7 @@ export const Toolbar = ({
   onReconcile,
   onFoundry,
   hasPendingFoundryMacro,
+  hasPendingSyncChanges,
 }: ToolbarProps): JSX.Element => {
   const [confirmingRehash, setConfirmingRehash] = useState<boolean>(false);
   const directoryActionsMenu = useContextMenu();
@@ -68,6 +71,7 @@ export const Toolbar = ({
         </button>
         <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
           <FontAwesomeIcon icon={faCloudArrowUp} />
+          {hasPendingSyncChanges && <PendingBadge testId="sync-pending-badge" />}
         </button>
         <button
           type="button"
@@ -84,13 +88,7 @@ export const Toolbar = ({
           title="Foundry"
           onClick={onFoundry}>
           <FontAwesomeIcon icon={faDiceD20} />
-          {hasPendingFoundryMacro && (
-            <span
-              className={styles.pendingBadge}
-              data-testid="foundry-pending-badge"
-              aria-hidden="true"
-            />
-          )}
+          {hasPendingFoundryMacro && <PendingBadge testId="foundry-pending-badge" />}
         </button>
         <button
           type="button"

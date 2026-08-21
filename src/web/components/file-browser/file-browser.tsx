@@ -30,6 +30,7 @@ import { useFileUpload } from "./use-file-upload.ts";
 import { useFoundryPendingStatus } from "./use-foundry-pending-status.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
+import { useSyncPendingStatus } from "./use-sync-pending-status.ts";
 
 const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY = new Set(["sync", "rescan", "reconcile", "convert"]);
 
@@ -44,10 +45,12 @@ export const FileBrowser = (): JSX.Element => {
   const [isReconciliationModalOpen, setReconciliationModalOpen] = useState<boolean>(false);
   const [isFoundryModalOpen, setFoundryModalOpen] = useState<boolean>(false);
   const [foundryStatusRefreshTrigger, setFoundryStatusRefreshTrigger] = useState<number>(0);
+  const [syncStatusRefreshTrigger, setSyncStatusRefreshTrigger] = useState<number>(0);
 
   const { hasPendingFoundryMacro, refreshFoundryPendingStatus } = useFoundryPendingStatus(
     foundryStatusRefreshTrigger,
   );
+  const { hasPendingSyncChanges } = useSyncPendingStatus(syncStatusRefreshTrigger);
 
   const {
     viewMode,
@@ -82,6 +85,7 @@ export const FileBrowser = (): JSX.Element => {
     }
 
     refreshAfterMutation(currentPath);
+    setSyncStatusRefreshTrigger((trigger) => trigger + 1);
 
     if (type === "sync") {
       setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
@@ -216,6 +220,7 @@ export const FileBrowser = (): JSX.Element => {
               onReconcile={() => setReconciliationModalOpen(true)}
               onFoundry={() => setFoundryModalOpen(true)}
               hasPendingFoundryMacro={hasPendingFoundryMacro}
+              hasPendingSyncChanges={hasPendingSyncChanges}
               showViewControls={searchResults === null && tagFilterResults === null}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
@@ -302,6 +307,7 @@ export const FileBrowser = (): JSX.Element => {
               onSyncApplied={() => {
                 refreshAfterMutation(currentPath);
                 setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
+                setSyncStatusRefreshTrigger((trigger) => trigger + 1);
               }}
               isReconciliationModalOpen={isReconciliationModalOpen}
               onCloseReconciliationModal={() => setReconciliationModalOpen(false)}

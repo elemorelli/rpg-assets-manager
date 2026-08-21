@@ -68,6 +68,13 @@ describe("FileBrowser", () => {
     searchEntriesMock.mockResolvedValue([]);
     rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
     fetchFoundryWorldsMock.mockResolvedValue([]);
+    fetchDiffMock.mockResolvedValue({
+      added: [],
+      deleted: [],
+      modified: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
     fetchTagsMock.mockResolvedValue(["npc", "loot"]);
     setAssetTagsMock.mockResolvedValue([]);
     fetchFilesByTagMock.mockResolvedValue([]);
@@ -300,6 +307,63 @@ describe("FileBrowser", () => {
 
     await waitFor(() => {
       expect(listDirectoryMock.mock.calls.length).toBeGreaterThan(callsBeforeSync);
+    });
+  });
+
+  it("shows a pending badge on the Sync button when there are changes to sync", async () => {
+    fetchDiffMock.mockResolvedValue({
+      added: ["new-file.png"],
+      deleted: [],
+      modified: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+
+    expect(await screen.findByTestId("sync-pending-badge")).toBeInTheDocument();
+  });
+
+  it("refreshes the sync pending badge after a sync job succeeds", async () => {
+    fetchDiffMock.mockResolvedValueOnce({
+      added: ["new-file.png"],
+      deleted: [],
+      modified: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+
+    renderFileBrowser();
+    await screen.findAllByText("tiles");
+    expect(await screen.findByTestId("sync-pending-badge")).toBeInTheDocument();
+
+    fetchDiffMock.mockResolvedValueOnce({
+      added: [],
+      deleted: [],
+      modified: [],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+
+    const jobStream = FakeEventSource.instances[0];
+
+    act(() =>
+      jobStream?.emitMessage(
+        JSON.stringify({
+          type: "sync",
+          stage: "applying",
+          done: 1,
+          total: 1,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+    act(() => jobStream?.emitMessage("null"));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("sync-pending-badge")).not.toBeInTheDocument();
     });
   });
 

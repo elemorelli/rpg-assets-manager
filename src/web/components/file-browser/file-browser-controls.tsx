@@ -20,6 +20,7 @@ export interface FileBrowserControlsProps {
   onReconcile: () => void;
   onFoundry: () => void;
   hasPendingFoundryMacro: boolean;
+  hasPendingSyncChanges: boolean;
   showViewControls: boolean;
   viewMode: ViewMode;
   onViewModeChange: (viewMode: ViewMode) => void;
@@ -44,6 +45,7 @@ export const FileBrowserControls = ({
   onReconcile,
   onFoundry,
   hasPendingFoundryMacro,
+  hasPendingSyncChanges,
   showViewControls,
   viewMode,
   onViewModeChange,
@@ -69,6 +71,7 @@ export const FileBrowserControls = ({
         onReconcile={onReconcile}
         onFoundry={onFoundry}
         hasPendingFoundryMacro={hasPendingFoundryMacro}
+        hasPendingSyncChanges={hasPendingSyncChanges}
       />
       {showViewControls && (
         <ViewControls
