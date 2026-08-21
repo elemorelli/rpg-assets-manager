@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
@@ -8,9 +8,19 @@ import {
   initialSelectionState,
   type SelectionClickModifier,
   type SelectionState,
+  selectAll,
 } from "#web/utils/row-selection.ts";
 
 import { useBatchMove } from "./use-batch-move.ts";
+
+const TYPING_TARGET_TAG_NAMES = new Set(["INPUT", "TEXTAREA"]);
+
+const isTypingTarget = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  (TYPING_TARGET_TAG_NAMES.has(target.tagName) || target.isContentEditable);
+
+const isSelectAllShortcut = (event: KeyboardEvent): boolean =>
+  (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a";
 
 export interface UseEntrySelectionAndDragParams {
   entries: DirectoryEntry[];
@@ -54,6 +64,26 @@ export const useEntrySelectionAndDrag = ({
 
     setSelection((prev) => applySelectionClick(prev, orderedNames, entry.name, modifier));
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent): void => {
+      if (isTypingTarget(event.target) || !isSelectAllShortcut(event)) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const orderedNames = sortedEntries.map((candidate) => candidate.name);
+
+      setSelection(selectAll(orderedNames));
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [sortedEntries]);
 
   const handleDragStart = (entry: DirectoryEntry): void => {
     const isPartOfSelection = selection.selectedNames.has(entry.name);

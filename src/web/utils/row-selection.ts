@@ -10,6 +10,11 @@ export const initialSelectionState: SelectionState = {
   anchorName: null,
 };
 
+export const selectAll = (orderedNames: string[]): SelectionState => ({
+  selectedNames: new Set(orderedNames),
+  anchorName: null,
+});
+
 const applyReplace = (clickedName: string): SelectionState => ({
   selectedNames: new Set([clickedName]),
   anchorName: clickedName,

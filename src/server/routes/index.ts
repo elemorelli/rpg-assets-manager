@@ -19,6 +19,8 @@ import {
   uploadFileHandler,
 } from "./files/index.ts";
 import {
+  exportFoundryPlaylistHandler,
+  listFoundryPlaylistTagsHandler,
   listFoundryWorldsHandler,
   markFoundryWorldAppliedHandler,
 } from "./foundry-worlds/index.ts";
@@ -54,6 +56,8 @@ export const registerRoutes = (
   app.post("/api/apply", applyBatchHandler(assetTreeRoot));
   app.get("/api/foundry-worlds", listFoundryWorldsHandler);
   app.post("/api/foundry-worlds/:id/mark-applied", markFoundryWorldAppliedHandler);
+  app.get("/api/foundry-worlds/playlists", listFoundryPlaylistTagsHandler);
+  app.get("/api/foundry-worlds/playlists/:tag/export", exportFoundryPlaylistHandler);
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
   app.post("/api/files/mkdir", createDirectoryHandler(assetTreeRoot));

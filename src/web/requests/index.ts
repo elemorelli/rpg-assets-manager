@@ -16,6 +16,11 @@ export { searchEntries } from "./files/entry/search.ts";
 export { setAssetTags } from "./files/tags/set.ts";
 export { type FoundryWorld, fetchFoundryWorlds } from "./foundry-worlds/list.ts";
 export { markFoundryWorldApplied } from "./foundry-worlds/mark-applied.ts";
+export { buildFoundryPlaylistExportUrl } from "./foundry-worlds/playlist-export-url.ts";
+export {
+  type FoundryPlaylistTag,
+  fetchFoundryPlaylistTags,
+} from "./foundry-worlds/playlist-tags.ts";
 export { type RcloneCheckResult, reconcile } from "./reconcile/check.ts";
 export { rescan } from "./scan/rescan.ts";
 export { fetchTags } from "./tags/list.ts";

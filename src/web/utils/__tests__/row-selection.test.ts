@@ -5,6 +5,7 @@ import {
   initialSelectionState,
   modifierFromClick,
   type SelectionState,
+  selectAll,
 } from "../row-selection.ts";
 
 const orderedNames = ["a", "b", "c", "d", "e"];
@@ -67,6 +68,21 @@ describe("applySelectionClick", () => {
 
     expect([...next.selectedNames]).toEqual(["c"]);
     expect(next.anchorName).toBe("c");
+  });
+});
+
+describe("selectAll", () => {
+  it("selects every name and keeps no anchor", () => {
+    const next = selectAll(orderedNames);
+
+    expect([...next.selectedNames].sort()).toEqual(orderedNames);
+    expect(next.anchorName).toBeNull();
+  });
+
+  it("returns an empty selection when there are no names", () => {
+    const next = selectAll([]);
+
+    expect(next.selectedNames.size).toBe(0);
   });
 });
 

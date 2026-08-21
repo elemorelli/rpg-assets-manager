@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -11,14 +11,19 @@ vi.mock("#web/requests/index.ts");
 
 const fetchFoundryWorldsMock = vi.mocked(api.fetchFoundryWorlds);
 const markFoundryWorldAppliedMock = vi.mocked(api.markFoundryWorldApplied);
+const fetchFoundryPlaylistTagsMock = vi.mocked(api.fetchFoundryPlaylistTags);
+
+const COPY_FEEDBACK_DURATION_MS = 1500;
 
 describe("FoundryModal", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    fetchFoundryPlaylistTagsMock.mockResolvedValue([]);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it("checks for pending macros as soon as it opens", () => {
@@ -59,7 +64,7 @@ describe("FoundryModal", () => {
     expect(screen.getByRole("textbox")).toHaveValue("await migrate();");
   });
 
-  it("marks a world as applied and clears its pending macro", async () => {
+  it("asks for confirmation before marking a world as applied", async () => {
     const user = userEvent.setup();
     const onMarkedApplied = vi.fn();
     fetchFoundryWorldsMock.mockResolvedValue([
@@ -71,9 +76,59 @@ describe("FoundryModal", () => {
     await screen.findByRole("textbox");
     await user.click(screen.getByRole("button", { name: "Mark as applied" }));
 
+    expect(markFoundryWorldAppliedMock).not.toHaveBeenCalled();
+
+    const confirmButtons = screen.getAllByRole("button", { name: "Mark as applied" });
+    await user.click(confirmButtons[confirmButtons.length - 1]);
+
     expect(markFoundryWorldAppliedMock).toHaveBeenCalledWith(1);
     expect(await screen.findByText("Up to date.")).toBeInTheDocument();
     expect(onMarkedApplied).toHaveBeenCalled();
+  });
+
+  it("does not mark a world as applied when the confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    fetchFoundryWorldsMock.mockResolvedValue([
+      { id: 1, name: "kingmaker", pendingMacro: "await migrate();", pendingRenameCount: 1 },
+    ]);
+
+    render(<FoundryModal onClose={vi.fn()} />);
+    await screen.findByRole("textbox");
+    await user.click(screen.getByRole("button", { name: "Mark as applied" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(markFoundryWorldAppliedMock).not.toHaveBeenCalled();
+    expect(screen.getByText("1 rename(s) pending.")).toBeInTheDocument();
+  });
+
+  it("copies the macro to the clipboard and shows temporary feedback", async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+    fetchFoundryWorldsMock.mockResolvedValue([
+      { id: 1, name: "kingmaker", pendingMacro: "await migrate();", pendingRenameCount: 1 },
+    ]);
+
+    render(<FoundryModal onClose={vi.fn()} />);
+    await screen.findByRole("textbox");
+
+    vi.useFakeTimers();
+    fireEvent.click(screen.getByRole("button", { name: "Copy macro" }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(writeTextMock).toHaveBeenCalledWith("await migrate();");
+    expect(screen.getByRole("button", { name: "Copied" })).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(COPY_FEEDBACK_DURATION_MS);
+    });
+
+    expect(screen.getByRole("button", { name: "Copy macro" })).toBeInTheDocument();
+    vi.useRealTimers();
   });
 
   it("shows an error message when fetching worlds fails", async () => {

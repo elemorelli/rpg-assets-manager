@@ -1,31 +1,87 @@
+.heading {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  margin: 0 0 var(--spacing-sm);
+  font-size: var(--font-size-md);
+}
+
+.headingIcon {
+  color: var(--color-text-muted);
+}
+
 .worldList {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-sm);
 }
 
 .world {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
-  border: 1px solid var(--color-border);
-  padding: var(--spacing-xs);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.world:first-child {
+  padding-top: 0;
+}
+
+.world:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.worldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
 }
 
 .worldName {
+  min-width: 0;
+  overflow: hidden;
   margin: 0;
   font-weight: bold;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.summary {
-  margin: 0;
+.pendingBadge {
+  flex-shrink: 0;
   font-size: var(--font-size-sm);
+  color: var(--color-sync-pending);
+  white-space: nowrap;
 }
 
 .upToDate {
-  margin: 0;
+  flex-shrink: 0;
   font-size: var(--font-size-sm);
   color: var(--color-sync-new);
+  white-space: nowrap;
+}
+
+.macroBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.macroToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.macroActions {
+  display: flex;
+  gap: var(--spacing-xs);
+}
+
+.macroLabel {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 .macroText {
@@ -33,10 +89,6 @@
   min-height: 120px;
   font-family: monospace;
   font-size: var(--font-size-sm);
-}
-
-.markAppliedButton {
-  align-self: flex-start;
 }
 
 .error {
