@@ -3,11 +3,18 @@ export interface RemoteIndexRecord {
   size: number;
 }
 
+export interface LocalIndexRecord {
+  hash: string;
+  // Set when the file was converted to a new format: the hash it had before
+  // conversion, so it can still be matched against its old remote entry.
+  previousHash?: string;
+}
+
 export interface ComputeDirectorySyncStatusInput {
   relativeDir: string;
   fileNames: string[];
   directoryNames: string[];
-  localIndex: Map<string, string>;
+  localIndex: Map<string, LocalIndexRecord>;
   remoteIndex: Map<string, RemoteIndexRecord>;
 }
 
@@ -33,14 +40,14 @@ const buildDirectoryPrefix = (relativeDir: string): string =>
   relativeDir === "" ? "" : `${relativeDir}/`;
 
 const findChangedPaths = (
-  localIndex: Map<string, string>,
+  localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,
 ): Set<string> => {
   const allPaths = new Set([...localIndex.keys(), ...remoteIndex.keys()]);
   const changedPaths = new Set<string>();
 
   for (const candidatePath of allPaths) {
-    const localHash = localIndex.get(candidatePath);
+    const localHash = localIndex.get(candidatePath)?.hash;
     const remoteHash = remoteIndex.get(candidatePath)?.hash;
 
     if (localHash !== remoteHash) {
@@ -53,7 +60,7 @@ const findChangedPaths = (
 
 const findRenameMatches = (
   changedPaths: Set<string>,
-  localIndex: Map<string, string>,
+  localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,
 ): RenameMatches => {
   const localOnlyPaths = [...changedPaths]
@@ -81,9 +88,10 @@ const findRenameMatches = (
   const consumedRemotePaths = new Set<string>();
 
   for (const localPath of localOnlyPaths) {
-    const localHash = localIndex.get(localPath);
+    const localRecord = localIndex.get(localPath);
+    const matchHash = localRecord?.previousHash ?? localRecord?.hash;
     const availableMatches =
-      localHash === undefined ? undefined : availableRemotePathsByHash.get(localHash);
+      matchHash === undefined ? undefined : availableRemotePathsByHash.get(matchHash);
     const matchedRemotePath = availableMatches?.shift();
 
     if (matchedRemotePath !== undefined) {
@@ -98,7 +106,7 @@ const findRenameMatches = (
 const findFileSyncStatuses = (
   fileNames: string[],
   directoryPrefix: string,
-  localIndex: Map<string, string>,
+  localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,
   renamedLocalPaths: Set<string>,
 ): { pendingFileNames: Set<string>; newFileNames: Set<string>; renamedFileNames: Set<string> } => {
@@ -108,9 +116,9 @@ const findFileSyncStatuses = (
 
   for (const fileName of fileNames) {
     const filePath = `${directoryPrefix}${fileName}`;
-    const localHash = localIndex.get(filePath);
+    const localRecord = localIndex.get(filePath);
 
-    if (localHash === undefined) {
+    if (localRecord === undefined) {
       continue;
     }
 
@@ -126,7 +134,7 @@ const findFileSyncStatuses = (
       continue;
     }
 
-    if (remoteRecord.hash !== localHash) {
+    if (remoteRecord.hash !== localRecord.hash) {
       pendingFileNames.add(fileName);
     }
   }

@@ -26,4 +26,16 @@ describe("recordAssetRenames", () => {
 
     expect(db.rows("asset_renames")).toEqual([]);
   });
+
+  it("clears previous_hash on the renamed row's new path once the rename is recorded", async () => {
+    const db = createFakeDb();
+
+    db.seed("assets", [
+      { path: "b.png", hash: "hash-b", previous_hash: "hash-a", size: 1, mtime: new Date() },
+    ]);
+
+    await recordAssetRenames(db, [{ oldPath: "a.png", newPath: "b.png" }]);
+
+    expect(db.rows("assets")).toMatchObject([{ path: "b.png", previous_hash: null }]);
+  });
 });

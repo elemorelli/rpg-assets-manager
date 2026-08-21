@@ -49,6 +49,36 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
     ]);
   });
 
+  it("resolves a converted file as a rename via its previous hash, not as add plus delete", async () => {
+    const now = new Date();
+
+    await db
+      .insertInto("assets")
+      .values([
+        {
+          path: `${PREFIX}converted-theme.ogg`,
+          size: 1,
+          mtime: now,
+          hash: "hash-ogg",
+          previous_hash: "hash-wav",
+        },
+      ])
+      .execute();
+
+    await db
+      .insertInto("remote_assets")
+      .values([{ path: `${PREFIX}converted-theme.wav`, size: 1, hash: "hash-wav" }])
+      .execute();
+
+    const diff = await computeBatchDiff(db);
+
+    expect(diff.renamed.filter((pair) => pair.newPath.startsWith(PREFIX))).toEqual([
+      { oldPath: `${PREFIX}converted-theme.wav`, newPath: `${PREFIX}converted-theme.ogg` },
+    ]);
+    expect(diff.added.filter((path) => path.startsWith(PREFIX))).toEqual([]);
+    expect(diff.deleted.filter((path) => path.startsWith(PREFIX))).toEqual([]);
+  });
+
   it("flags an ambiguous rename group with a warning instead of guessing", async () => {
     const now = new Date();
 

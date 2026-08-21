@@ -11,4 +11,14 @@ export const recordAssetRenames = async (db: Kysely<DB>, renamed: RenamePair[]):
       .values({ old_path: pair.oldPath, new_path: pair.newPath })
       .execute();
   }
+
+  // A renamed row's new path may still carry a pre-conversion previous_hash;
+  // once the rename is recorded it has served its purpose for matching.
+  for (const pair of renamed) {
+    await db
+      .updateTable("assets")
+      .set({ previous_hash: null })
+      .where("path", "=", pair.newPath)
+      .execute();
+  }
 };

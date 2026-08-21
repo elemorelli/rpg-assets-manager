@@ -45,6 +45,14 @@ export const convertAssets = async (
 
     const sourcePath = path.join(rootDir, candidate.relativePath);
     const destinationPath = path.join(rootDir, candidate.destinationPath);
+    const sourceDbPath = toDbPath(dbPathPrefix, candidate.relativePath);
+
+    const sourceRow = await db
+      .selectFrom("assets")
+      .select("hash")
+      .where("path", "=", sourceDbPath)
+      .executeTakeFirst();
+    const previousHash = sourceRow?.hash ?? null;
 
     if (candidate.kind === "image") {
       await convertToWebp(sourcePath, destinationPath);
@@ -60,10 +68,7 @@ export const convertAssets = async (
     ]);
     const destinationHash = await hashBuffer(destinationContent);
 
-    await db
-      .deleteFrom("assets")
-      .where("path", "=", toDbPath(dbPathPrefix, candidate.relativePath))
-      .execute();
+    await db.deleteFrom("assets").where("path", "=", sourceDbPath).execute();
     await db
       .insertInto("assets")
       .values({
@@ -71,12 +76,14 @@ export const convertAssets = async (
         size: destinationStat.size,
         mtime: destinationStat.mtime,
         hash: destinationHash,
+        previous_hash: previousHash,
       })
       .onConflict((oc) =>
         oc.column("path").doUpdateSet({
           size: destinationStat.size,
           mtime: destinationStat.mtime,
           hash: destinationHash,
+          previous_hash: previousHash,
           scanned_at: new Date(),
         }),
       )

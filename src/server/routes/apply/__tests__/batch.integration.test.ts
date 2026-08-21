@@ -162,6 +162,56 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     expect(renameRow.new_path).toBe(`${PREFIX}new.png`);
   });
 
+  it("records a converted file as a rename and clears its previous_hash once applied", async () => {
+    await fs.mkdir(path.join(rootDir.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(rootDir.path, `${PREFIX}theme.ogg`), "converted-bytes");
+    await fs.mkdir(path.join(destinationRoot.path, PREFIX.replace(/\/$/, "")), { recursive: true });
+    await fs.writeFile(path.join(destinationRoot.path, `${PREFIX}theme.wav`), "original-bytes");
+
+    await db
+      .insertInto("assets")
+      .values([
+        {
+          path: `${PREFIX}theme.ogg`,
+          size: 15,
+          mtime: new Date(),
+          hash: "hash-ogg",
+          previous_hash: "hash-wav",
+        },
+      ])
+      .execute();
+    await db
+      .insertInto("remote_assets")
+      .values([{ path: `${PREFIX}theme.wav`, size: 13, hash: "hash-wav" }])
+      .execute();
+
+    const summary = await applyBatch(db, {
+      rootDir: rootDir.path,
+      destinationRoot: destinationRoot.path,
+      baseUrl: "https://assets.example.com",
+      dryRun: false,
+      purge: vi.fn().mockResolvedValue(undefined),
+    });
+
+    createdSyncRunIds.push(summary.syncRunId);
+
+    expect(summary.renamed).toBe(1);
+
+    const renameRow = await db
+      .selectFrom("asset_renames")
+      .selectAll()
+      .where("old_path", "=", `${PREFIX}theme.wav`)
+      .executeTakeFirstOrThrow();
+    expect(renameRow.new_path).toBe(`${PREFIX}theme.ogg`);
+
+    const assetRow = await db
+      .selectFrom("assets")
+      .select("previous_hash")
+      .where("path", "=", `${PREFIX}theme.ogg`)
+      .executeTakeFirstOrThrow();
+    expect(assetRow.previous_hash).toBeNull();
+  });
+
   it("invalidates the cached remote hash index after mirroring changes", async () => {
     await fs.mkdir(path.join(rootDir.path, PREFIX.replace(/\/$/, "")), { recursive: true });
     await fs.writeFile(path.join(rootDir.path, `${PREFIX}added.png`), "added-bytes");

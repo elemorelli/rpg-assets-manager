@@ -8,7 +8,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest.png"],
       directoryNames: [],
-      localIndex: new Map([["forest.png", "hash-a"]]),
+      localIndex: new Map([["forest.png", { hash: "hash-a" }]]),
       remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -20,7 +20,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest.png"],
       directoryNames: [],
-      localIndex: new Map([["forest.png", "hash-b"]]),
+      localIndex: new Map([["forest.png", { hash: "hash-b" }]]),
       remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -32,7 +32,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest.png"],
       directoryNames: [],
-      localIndex: new Map([["forest.png", "hash-a"]]),
+      localIndex: new Map([["forest.png", { hash: "hash-a" }]]),
       remoteIndex: new Map(),
     });
 
@@ -58,8 +58,8 @@ describe("computeDirectorySyncStatus", () => {
       fileNames: ["forest.png"],
       directoryNames: [],
       localIndex: new Map([
-        ["tiles/forest.png", "hash-b"],
-        ["forest.png", "hash-c"],
+        ["tiles/forest.png", { hash: "hash-b" }],
+        ["forest.png", { hash: "hash-c" }],
       ]),
       remoteIndex: new Map([
         ["tiles/forest.png", { hash: "hash-a", size: 100 }],
@@ -87,7 +87,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest.png"],
       directoryNames: [],
-      localIndex: new Map([["forest.png", "hash-a"]]),
+      localIndex: new Map([["forest.png", { hash: "hash-a" }]]),
       remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -111,7 +111,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: [],
       directoryNames: ["tiles"],
-      localIndex: new Map([["tiles/forest.png", "hash-b"]]),
+      localIndex: new Map([["tiles/forest.png", { hash: "hash-b" }]]),
       remoteIndex: new Map([["tiles/forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -123,7 +123,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: [],
       directoryNames: ["tiles"],
-      localIndex: new Map([["tiles/forests/deep/leaf.png", "hash-b"]]),
+      localIndex: new Map([["tiles/forests/deep/leaf.png", { hash: "hash-b" }]]),
       remoteIndex: new Map([["tiles/forests/deep/leaf.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -135,7 +135,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: [],
       directoryNames: ["tiles"],
-      localIndex: new Map([["tiles/forest.png", "hash-a"]]),
+      localIndex: new Map([["tiles/forest.png", { hash: "hash-a" }]]),
       remoteIndex: new Map([["tiles/forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -147,7 +147,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: [],
       directoryNames: ["tiles"],
-      localIndex: new Map([["tiles-extra/forest.png", "hash-b"]]),
+      localIndex: new Map([["tiles-extra/forest.png", { hash: "hash-b" }]]),
       remoteIndex: new Map([["tiles-extra/forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -159,7 +159,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest-renamed.png"],
       directoryNames: [],
-      localIndex: new Map([["forest-renamed.png", "hash-a"]]),
+      localIndex: new Map([["forest-renamed.png", { hash: "hash-a" }]]),
       remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -173,7 +173,7 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["forest-renamed.png"],
       directoryNames: [],
-      localIndex: new Map([["forest-renamed.png", "hash-a"]]),
+      localIndex: new Map([["forest-renamed.png", { hash: "hash-a" }]]),
       remoteIndex: new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
     });
 
@@ -185,12 +185,26 @@ describe("computeDirectorySyncStatus", () => {
       relativeDir: "",
       fileNames: ["new.png"],
       directoryNames: [],
-      localIndex: new Map([["new.png", "hash-b"]]),
+      localIndex: new Map([["new.png", { hash: "hash-b" }]]),
       remoteIndex: new Map([["gone.png", { hash: "hash-a", size: 100 }]]),
     });
 
     expect(result.newFileNames).toEqual(new Set(["new.png"]));
     expect(result.deletedFiles).toEqual([{ name: "gone.png", size: 100 }]);
+  });
+
+  it("treats a converted file (different hash, matching previousHash) as renamed, not new or pending", () => {
+    const result = computeDirectorySyncStatus({
+      relativeDir: "",
+      fileNames: ["theme.ogg"],
+      directoryNames: [],
+      localIndex: new Map([["theme.ogg", { hash: "hash-ogg", previousHash: "hash-wav" }]]),
+      remoteIndex: new Map([["theme.wav", { hash: "hash-wav", size: 100 }]]),
+    });
+
+    expect(result.renamedFileNames).toEqual(new Set(["theme.ogg"]));
+    expect(result.newFileNames).toEqual(new Set());
+    expect(result.deletedFiles).toEqual([]);
   });
 
   it("matches at most one renamed file per deleted hash, leaving extras new and deleted", () => {
@@ -199,8 +213,8 @@ describe("computeDirectorySyncStatus", () => {
       fileNames: ["copy-a.png", "copy-b.png"],
       directoryNames: [],
       localIndex: new Map([
-        ["copy-a.png", "hash-a"],
-        ["copy-b.png", "hash-a"],
+        ["copy-a.png", { hash: "hash-a" }],
+        ["copy-b.png", { hash: "hash-a" }],
       ]),
       remoteIndex: new Map([["original.png", { hash: "hash-a", size: 100 }]]),
     });

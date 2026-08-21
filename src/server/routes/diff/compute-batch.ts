@@ -12,6 +12,7 @@ import {
 interface PairedRow {
   local_path: string | null;
   local_hash: string | null;
+  local_previous_hash: string | null;
   remote_path: string | null;
   remote_hash: string | null;
 }
@@ -29,6 +30,7 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
     SELECT
       a.path AS local_path,
       a.hash AS local_hash,
+      a.previous_hash AS local_previous_hash,
       r.path AS remote_path,
       r.hash AS remote_hash
     FROM assets a
@@ -50,7 +52,11 @@ export const computeBatchDiff = async (db: Kysely<DB>): Promise<BatchDiffResult>
     }
 
     if (row.local_path !== null && row.local_hash !== null) {
-      orphanLocal.push({ path: row.local_path, hash: row.local_hash });
+      orphanLocal.push({
+        path: row.local_path,
+        hash: row.local_hash,
+        previousHash: row.local_previous_hash ?? undefined,
+      });
     }
 
     if (row.remote_path !== null && row.remote_hash !== null) {

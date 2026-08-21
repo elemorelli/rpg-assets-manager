@@ -2,12 +2,12 @@ import type { Kysely } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
 import { createTtlCache, type TtlCache } from "#server/utils/ttl-cache.ts";
-import type { RemoteIndexRecord } from "#utils/sync-status.ts";
+import type { LocalIndexRecord, RemoteIndexRecord } from "#utils/sync-status.ts";
 
 const CACHE_TTL_MS = 60_000;
 
 interface HashIndexCacheEntry {
-  local: TtlCache<Map<string, string>>;
+  local: TtlCache<Map<string, LocalIndexRecord>>;
   remote: TtlCache<Map<string, RemoteIndexRecord>>;
 }
 
@@ -30,10 +30,12 @@ const entryFor = (db: Kysely<DB>): HashIndexCacheEntry => {
   return created;
 };
 
-const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, string>> => {
-  const rows = await db.selectFrom("assets").select(["path", "hash"]).execute();
+const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, LocalIndexRecord>> => {
+  const rows = await db.selectFrom("assets").select(["path", "hash", "previous_hash"]).execute();
 
-  return new Map(rows.map((row) => [row.path, row.hash]));
+  return new Map(
+    rows.map((row) => [row.path, { hash: row.hash, previousHash: row.previous_hash ?? undefined }]),
+  );
 };
 
 const fetchRemoteHashIndex = async (db: Kysely<DB>): Promise<Map<string, RemoteIndexRecord>> => {
@@ -42,7 +44,7 @@ const fetchRemoteHashIndex = async (db: Kysely<DB>): Promise<Map<string, RemoteI
   return new Map(rows.map((row) => [row.path, { hash: row.hash, size: Number(row.size) }]));
 };
 
-export const getLocalHashIndex = (db: Kysely<DB>): Promise<Map<string, string>> =>
+export const getLocalHashIndex = (db: Kysely<DB>): Promise<Map<string, LocalIndexRecord>> =>
   entryFor(db).local.get(() => fetchLocalHashIndex(db));
 
 export const invalidateLocalHashIndex = (db: Kysely<DB>): void => {

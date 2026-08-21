@@ -1,6 +1,9 @@
 export interface OrphanCandidate {
   path: string;
   hash: string;
+  // Set on a local candidate whose content was converted to a new format: the
+  // hash it had before conversion, so it still groups with its old remote row.
+  previousHash?: string;
 }
 
 interface HashGroup {
@@ -36,14 +39,15 @@ export const buildHashGroups = (
   const groupsByHash = new Map<string, HashGroup>();
 
   for (const candidate of local) {
-    const group = groupsByHash.get(candidate.hash) ?? {
-      hash: candidate.hash,
+    const groupKey = candidate.previousHash ?? candidate.hash;
+    const group = groupsByHash.get(groupKey) ?? {
+      hash: groupKey,
       local: [],
       remote: [],
     };
 
     group.local.push(candidate);
-    groupsByHash.set(candidate.hash, group);
+    groupsByHash.set(groupKey, group);
   }
 
   for (const candidate of remote) {

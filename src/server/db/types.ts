@@ -38,6 +38,7 @@ export interface Assets {
   id: Generated<Int8>;
   mtime: Timestamp;
   path: string;
+  previous_hash: string | null;
   scanned_at: Generated<Timestamp>;
   size: Int8;
   tags: Generated<string[]>;

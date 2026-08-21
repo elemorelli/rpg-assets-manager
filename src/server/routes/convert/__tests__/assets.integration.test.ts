@@ -157,6 +157,32 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     expect(Number(destinationRow.size)).toBeGreaterThan(0);
   });
 
+  it("carries the source file's pre-conversion hash onto the destination row", async () => {
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+    await db
+      .insertInto("assets")
+      .values({
+        path: `${PREFIX}forest.png`,
+        size: 14,
+        mtime: new Date(),
+        hash: "known-source-hash",
+      })
+      .execute();
+
+    await convertAssets(db, path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
+
+    const destinationRow = await db
+      .selectFrom("assets")
+      .select("previous_hash")
+      .where("path", "=", `${PREFIX}forest.webp`)
+      .executeTakeFirstOrThrow();
+
+    expect(destinationRow.previous_hash).toBe("known-source-hash");
+  });
+
   it("writes destination asset rows under the given db path prefix, not the scoped folder", async () => {
     await fs.mkdir(path.join(tempDir.path, "convert-assets-test", "tiles"), { recursive: true });
     await fs.writeFile(

@@ -25,6 +25,21 @@ describe("buildHashGroups", () => {
   it("returns an empty array when both sides are empty", () => {
     expect(buildHashGroups([], [])).toEqual([]);
   });
+
+  it("groups a converted local candidate under its previous hash instead of its current hash", () => {
+    const local = [{ path: "audio/theme.ogg", hash: "hash-ogg", previousHash: "hash-wav" }];
+    const remote = [{ path: "audio/theme.wav", hash: "hash-wav" }];
+
+    const groups = buildHashGroups(local, remote);
+
+    expect(groups).toEqual([
+      {
+        hash: "hash-wav",
+        local: [{ path: "audio/theme.ogg", hash: "hash-ogg", previousHash: "hash-wav" }],
+        remote: [{ path: "audio/theme.wav", hash: "hash-wav" }],
+      },
+    ]);
+  });
 });
 
 describe("resolveRenames", () => {
@@ -45,6 +60,19 @@ describe("resolveRenames", () => {
     expect(result.added).toEqual([]);
     expect(result.deleted).toEqual([]);
     expect(result.ambiguousWarnings).toEqual([]);
+  });
+
+  it("resolves a converted file (different hash, matching previousHash) as a rename", () => {
+    const groups = buildHashGroups(
+      [{ path: "audio/theme.ogg", hash: "hash-ogg", previousHash: "hash-wav" }],
+      [{ path: "audio/theme.wav", hash: "hash-wav" }],
+    );
+
+    const result = resolveRenames(groups);
+
+    expect(result.renamed).toEqual([{ oldPath: "audio/theme.wav", newPath: "audio/theme.ogg" }]);
+    expect(result.added).toEqual([]);
+    expect(result.deleted).toEqual([]);
   });
 
   it("treats a local-only hash as a plain addition", () => {
