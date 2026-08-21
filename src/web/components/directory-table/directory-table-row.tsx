@@ -17,16 +17,19 @@ export interface DirectoryTableRowProps {
   entry: DirectoryEntry;
   currentPath: string;
   isSelected: boolean;
+  selectedEntries: DirectoryEntry[];
   isDropTarget: boolean;
   onOpenDirectory: (name: string) => void;
   onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
+  onDeleteMany: (entries: DirectoryEntry[]) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   onDropEntry: (entry: DirectoryEntry) => void;
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
   onOpenLightbox: (entry: DirectoryEntry) => void;
 }
 
@@ -34,16 +37,19 @@ export const DirectoryTableRow = ({
   entry,
   currentPath,
   isSelected,
+  selectedEntries,
   isDropTarget,
   onOpenDirectory,
   onRename,
   onDelete,
+  onDeleteMany,
   onDragStart,
   onDragEnd,
   onDropEntry,
   onSelectRow,
   availableTags,
   onTagsChange,
+  onAddTagToMany,
   onOpenLightbox,
 }: DirectoryTableRowProps): JSX.Element => {
   const {
@@ -78,6 +84,9 @@ export const DirectoryTableRow = ({
     onSelectRow,
     onOpenLightbox,
   });
+
+  const entriesForContextMenu =
+    isSelected && selectedEntries.length > 1 ? selectedEntries : [entry];
 
   return (
     <tr
@@ -153,13 +162,16 @@ export const DirectoryTableRow = ({
             </button>
             <EntryContextMenu
               entry={entry}
+              selectedEntries={entriesForContextMenu}
               position={contextMenu.position}
               onClose={contextMenu.close}
               onView={onOpenLightbox}
               onRenameRequested={startRenaming}
               onDelete={onDelete}
+              onDeleteMany={onDeleteMany}
               availableTags={availableTags}
               onTagsChange={onTagsChange}
+              onAddTagToMany={onAddTagToMany}
             />
           </>
         )}

@@ -140,13 +140,16 @@ export const TreeNode = ({
         </button>
         <EntryContextMenu
           entry={nodeEntry}
+          selectedEntries={[nodeEntry]}
           position={contextMenu.position}
           onClose={contextMenu.close}
           onView={() => {}}
           onRenameRequested={startRenaming}
           onDelete={() => onDelete(path)}
+          onDeleteMany={() => {}}
           availableTags={availableTags}
           onTagsChange={(_entry, tags) => onTagsChange(path, tags)}
+          onAddTagToMany={() => {}}
         />
       </div>
       {isExpanded && state === "error" && (

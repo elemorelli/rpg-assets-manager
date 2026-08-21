@@ -1009,6 +1009,135 @@ describe("FileBrowser", () => {
     expect(await screen.findByText(/locked/)).toBeInTheDocument();
   });
 
+  it("deletes every entry in a multi-selection from the context menu of a selected row", async () => {
+    const user = userEvent.setup();
+
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+              { name: "tiles", type: "directory" },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    const table = within(screen.getByRole("table"));
+
+    fireEvent.click(table.getByText("a.png"), { ctrlKey: true });
+    fireEvent.click(table.getByText("b.png"), { ctrlKey: true });
+    fireEvent.contextMenu(table.getByText("b.png").closest("tr") as HTMLElement);
+    await user.click(screen.getByRole("button", { name: "Delete 2 items" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(deleteEntryMock).toHaveBeenCalledWith("a.png");
+      expect(deleteEntryMock).toHaveBeenCalledWith("b.png");
+    });
+  });
+
+  it("only deletes the clicked row when the context menu opens outside the current selection", async () => {
+    const user = userEvent.setup();
+
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    const table = within(screen.getByRole("table"));
+
+    fireEvent.click(table.getByText("a.png"), { ctrlKey: true });
+    fireEvent.contextMenu(table.getByText("b.png").closest("tr") as HTMLElement);
+    await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    await waitFor(() => {
+      expect(deleteEntryMock).toHaveBeenCalledWith("b.png");
+    });
+    expect(deleteEntryMock).not.toHaveBeenCalledWith("a.png");
+  });
+
+  it("stops a batch delete on the first failure and reports it, without retrying the rest", async () => {
+    const user = userEvent.setup();
+
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1 },
+              { name: "b.png", type: "file", size: 1 },
+            ]
+          : [],
+      ),
+    );
+    deleteEntryMock.mockImplementation((path: string) =>
+      path === "a.png" ? Promise.reject(new Error("locked")) : Promise.resolve(undefined),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    const table = within(screen.getByRole("table"));
+
+    fireEvent.click(table.getByText("a.png"), { ctrlKey: true });
+    fireEvent.click(table.getByText("b.png"), { ctrlKey: true });
+    fireEvent.contextMenu(table.getByText("b.png").closest("tr") as HTMLElement);
+    await user.click(screen.getByRole("button", { name: "Delete 2 items" }));
+    await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+    expect(await screen.findByText(/locked/)).toBeInTheDocument();
+    expect(deleteEntryMock).not.toHaveBeenCalledWith("b.png");
+  });
+
+  it("adds a tag to every file in a multi-selection, merging with each file's existing tags", async () => {
+    const user = userEvent.setup();
+
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === ""
+          ? [
+              { name: "a.png", type: "file", size: 1, tags: ["npc"] },
+              { name: "b.png", type: "file", size: 1 },
+              { name: "tiles", type: "directory" },
+            ]
+          : [],
+      ),
+    );
+
+    renderFileBrowser();
+    await screen.findByText("a.png");
+
+    const table = within(screen.getByRole("table"));
+
+    fireEvent.click(table.getByText("a.png"), { ctrlKey: true });
+    fireEvent.click(table.getByText("b.png"), { ctrlKey: true });
+    fireEvent.click(table.getByRole("button", { name: "tiles" }).closest("tr") as HTMLElement, {
+      ctrlKey: true,
+    });
+    fireEvent.contextMenu(table.getByText("b.png").closest("tr") as HTMLElement);
+    await user.type(screen.getByLabelText("Add tag"), "loot{Enter}");
+
+    await waitFor(() => {
+      expect(setAssetTagsMock).toHaveBeenCalledWith("a.png", ["npc", "loot"]);
+      expect(setAssetTagsMock).toHaveBeenCalledWith("b.png", ["loot"]);
+    });
+    expect(setAssetTagsMock).not.toHaveBeenCalledWith("tiles", expect.anything());
+  });
+
   it("switches from table to grid rendering when the grid view button is clicked", async () => {
     const user = userEvent.setup();
     renderFileBrowser();

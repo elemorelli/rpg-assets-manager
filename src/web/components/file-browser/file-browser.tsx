@@ -30,6 +30,7 @@ import { useFileDropzone } from "./use-file-dropzone.ts";
 import { useFileUpload } from "./use-file-upload.ts";
 import { useFoundryPendingStatus } from "./use-foundry-pending-status.ts";
 import { useLightboxNavigation } from "./use-lightbox-navigation.ts";
+import { useMassEntryActions } from "./use-mass-entry-actions.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 import { useSyncPendingStatus } from "./use-sync-pending-status.ts";
 
@@ -153,6 +154,16 @@ export const FileBrowser = (): JSX.Element => {
     setSelection(initialSelectionState);
   }, [currentPath, setSelection]);
 
+  const selectedEntries = sortedEntries.filter((entry) => selection.selectedNames.has(entry.name));
+
+  const { handleDeleteMany, handleAddTagToMany } = useMassEntryActions({
+    currentPath,
+    setBusy,
+    setMessage,
+    refreshDirectory: refreshAfterMutation,
+    refreshTags,
+  });
+
   const previewableEntries = sortedEntries.filter((entry) => isPreviewableEntry(entry));
 
   const {
@@ -267,13 +278,16 @@ export const FileBrowser = (): JSX.Element => {
               onOpenDirectory={handleOpenDirectory}
               onRename={handleRename}
               onDelete={handleDelete}
+              onDeleteMany={handleDeleteMany}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               canDropEntry={canDropOnEntry}
               onDropEntry={handleDropOnEntry}
               availableTags={availableTags}
               onTagsChange={handleTagsChange}
+              onAddTagToMany={handleAddTagToMany}
               selectedNames={selection.selectedNames}
+              selectedEntries={selectedEntries}
               onSelectRow={handleSelectRow}
               onOpenLightbox={handleOpenLightbox}
               sortCriterion={sortCriterion}

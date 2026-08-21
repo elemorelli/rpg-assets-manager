@@ -36,13 +36,16 @@ export interface FileBrowserContentProps {
   onOpenDirectory: (name: string) => void;
   onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
+  onDeleteMany: (entries: DirectoryEntry[]) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
   onDropEntry: (entry: DirectoryEntry) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
   selectedNames: Set<string>;
+  selectedEntries: DirectoryEntry[];
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   onOpenLightbox: (entry: DirectoryEntry) => void;
   sortCriterion: SortCriterion;
@@ -72,13 +75,16 @@ export const FileBrowserContent = ({
   onOpenDirectory,
   onRename,
   onDelete,
+  onDeleteMany,
   onDragStart,
   onDragEnd,
   canDropEntry,
   onDropEntry,
   availableTags,
   onTagsChange,
+  onAddTagToMany,
   selectedNames,
+  selectedEntries,
   onSelectRow,
   onOpenLightbox,
   sortCriterion,
@@ -116,13 +122,16 @@ export const FileBrowserContent = ({
         onOpenDirectory={onOpenDirectory}
         onRename={onRename}
         onDelete={onDelete}
+        onDeleteMany={onDeleteMany}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         canDropEntry={canDropEntry}
         onDropEntry={onDropEntry}
         availableTags={availableTags}
         onTagsChange={onTagsChange}
+        onAddTagToMany={onAddTagToMany}
         selectedNames={selectedNames}
+        selectedEntries={selectedEntries}
         onSelectRow={onSelectRow}
         onOpenLightbox={onOpenLightbox}
         sortCriterion={sortCriterion}
@@ -136,13 +145,16 @@ export const FileBrowserContent = ({
         onOpenDirectory={onOpenDirectory}
         onRename={onRename}
         onDelete={onDelete}
+        onDeleteMany={onDeleteMany}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         canDropEntry={canDropEntry}
         onDropEntry={onDropEntry}
         availableTags={availableTags}
         onTagsChange={onTagsChange}
+        onAddTagToMany={onAddTagToMany}
         selectedNames={selectedNames}
+        selectedEntries={selectedEntries}
         onSelectRow={onSelectRow}
         onOpenLightbox={onOpenLightbox}
       />

@@ -76,7 +76,11 @@ export const ContextMenu = ({
       ref={menuRef}
       role="menu"
       className={styles.menu}
-      style={{ position: "fixed", left: displayPosition.x, top: displayPosition.y }}>
+      style={{ position: "fixed", left: displayPosition.x, top: displayPosition.y }}
+      // A portal still bubbles React events up through the component tree it was
+      // declared in, not the DOM tree it renders into. Without this, clicking a menu
+      // item also bubbles into the underlying row's onClick and reselects that row.
+      onClick={(event) => event.stopPropagation()}>
       {children}
     </div>,
     document.body,

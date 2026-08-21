@@ -17,13 +17,16 @@ export interface DirectoryTableProps {
   onOpenDirectory: (name: string) => void;
   onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
+  onDeleteMany: (entries: DirectoryEntry[]) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
   onDropEntry: (entry: DirectoryEntry) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
   selectedNames: Set<string>;
+  selectedEntries: DirectoryEntry[];
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   onOpenLightbox: (entry: DirectoryEntry) => void;
   sortCriterion: SortCriterion;
@@ -39,13 +42,16 @@ export const DirectoryTable = ({
   onOpenDirectory,
   onRename,
   onDelete,
+  onDeleteMany,
   onDragStart,
   onDragEnd,
   canDropEntry,
   onDropEntry,
   availableTags,
   onTagsChange,
+  onAddTagToMany,
   selectedNames,
+  selectedEntries,
   onSelectRow,
   onOpenLightbox,
   sortCriterion,
@@ -99,16 +105,19 @@ export const DirectoryTable = ({
                 entry={entry}
                 currentPath={currentPath}
                 isSelected={selectedNames.has(entry.name)}
+                selectedEntries={selectedEntries}
                 isDropTarget={canDropEntry(entry)}
                 onOpenDirectory={onOpenDirectory}
                 onRename={onRename}
                 onDelete={onDelete}
+                onDeleteMany={onDeleteMany}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 onDropEntry={onDropEntry}
                 onSelectRow={onSelectRow}
                 availableTags={availableTags}
                 onTagsChange={onTagsChange}
+                onAddTagToMany={onAddTagToMany}
                 onOpenLightbox={onOpenLightbox}
               />
             ))}

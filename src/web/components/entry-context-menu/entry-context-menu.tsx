@@ -11,28 +11,36 @@ import styles from "./entry-context-menu.module.css";
 
 export interface EntryContextMenuProps {
   entry: DirectoryEntry;
+  selectedEntries: DirectoryEntry[];
   position: { x: number; y: number } | null;
   onClose: () => void;
   onView: (entry: DirectoryEntry) => void;
   onRenameRequested: () => void;
   onDelete: (entry: DirectoryEntry) => void;
+  onDeleteMany: (entries: DirectoryEntry[]) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
 }
 
 export const EntryContextMenu = ({
   entry,
+  selectedEntries,
   position,
   onClose,
   onView,
   onRenameRequested,
   onDelete,
+  onDeleteMany,
   availableTags,
   onTagsChange,
+  onAddTagToMany,
 }: EntryContextMenuProps): JSX.Element => {
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
 
-  const isPreviewable = isPreviewableEntry(entry);
+  const isMultiSelection = selectedEntries.length > 1;
+  const isPreviewable = !isMultiSelection && isPreviewableEntry(entry);
+  const selectedFileEntries = selectedEntries.filter((candidate) => candidate.type === "file");
 
   const handleView = (): void => {
     onView(entry);
@@ -50,7 +58,12 @@ export const EntryContextMenu = ({
   };
 
   const handleConfirmDelete = (): void => {
-    onDelete(entry);
+    if (isMultiSelection) {
+      onDeleteMany(selectedEntries);
+    } else {
+      onDelete(entry);
+    }
+
     setConfirmingDelete(false);
   };
 
@@ -63,29 +76,44 @@ export const EntryContextMenu = ({
               View
             </button>
           )}
-          <button type="button" className={styles.item} onClick={handleRename}>
-            Rename
-          </button>
-          <button type="button" className={styles.item} onClick={handleDeleteRequested}>
-            Delete
-          </button>
-          {entry.type === "file" && (
-            <div className={styles.tagsSection}>
-              <TagEditor
-                entryKey={entry.name}
-                tags={entry.tags ?? []}
-                availableTags={availableTags}
-                onChange={(tags) => onTagsChange(entry, tags)}
-              />
-            </div>
+          {!isMultiSelection && (
+            <button type="button" className={styles.item} onClick={handleRename}>
+              Rename
+            </button>
           )}
+          <button type="button" className={styles.item} onClick={handleDeleteRequested}>
+            {isMultiSelection ? `Delete ${selectedEntries.length} items` : "Delete"}
+          </button>
+          {isMultiSelection
+            ? selectedFileEntries.length > 0 && (
+                <div className={styles.tagsSection}>
+                  <TagEditor
+                    entryKey={`batch-${entry.name}`}
+                    tags={[]}
+                    availableTags={availableTags}
+                    onChange={(tags) => onAddTagToMany(selectedFileEntries, tags[0] ?? "")}
+                  />
+                </div>
+              )
+            : entry.type === "file" && (
+                <div className={styles.tagsSection}>
+                  <TagEditor
+                    entryKey={entry.name}
+                    tags={entry.tags ?? []}
+                    availableTags={availableTags}
+                    onChange={(tags) => onTagsChange(entry, tags)}
+                  />
+                </div>
+              )}
         </div>
       </ContextMenu>
       {confirmingDelete && (
         <ConfirmDialog
-          title="Delete file"
+          title={isMultiSelection ? "Delete files" : "Delete file"}
           icon={faTrash}
-          message={`Delete "${entry.name}"?`}
+          message={
+            isMultiSelection ? `Delete ${selectedEntries.length} items?` : `Delete "${entry.name}"?`
+          }
           danger
           onConfirm={handleConfirmDelete}
           onCancel={() => setConfirmingDelete(false)}

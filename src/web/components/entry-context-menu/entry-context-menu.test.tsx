@@ -8,6 +8,7 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { EntryContextMenu } from "./entry-context-menu.tsx";
 
 const fileEntry: DirectoryEntry = { name: "map.png", type: "file", size: 10, tags: ["npc"] };
+const otherFileEntry: DirectoryEntry = { name: "portrait.png", type: "file", size: 20 };
 const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };
 
 const baseProps = {
@@ -16,8 +17,10 @@ const baseProps = {
   onView: vi.fn(),
   onRenameRequested: vi.fn(),
   onDelete: vi.fn(),
+  onDeleteMany: vi.fn(),
   availableTags: ["npc", "loot"],
   onTagsChange: vi.fn(),
+  onAddTagToMany: vi.fn(),
 };
 
 describe("EntryContextMenu", () => {
@@ -30,6 +33,7 @@ describe("EntryContextMenu", () => {
       <EntryContextMenu
         {...baseProps}
         entry={fileEntry}
+        selectedEntries={[fileEntry]}
         onRenameRequested={onRenameRequested}
         onClose={onClose}
       />,
@@ -46,7 +50,13 @@ describe("EntryContextMenu", () => {
     const onDelete = vi.fn();
 
     render(
-      <EntryContextMenu {...baseProps} entry={fileEntry} onClose={onClose} onDelete={onDelete} />,
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onClose={onClose}
+        onDelete={onDelete}
+      />,
     );
     await user.click(screen.getByRole("button", { name: "Delete" }));
 
@@ -59,7 +69,14 @@ describe("EntryContextMenu", () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
 
-    render(<EntryContextMenu {...baseProps} entry={fileEntry} onDelete={onDelete} />);
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onDelete={onDelete}
+      />,
+    );
     await user.click(screen.getByRole("button", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Confirm" }));
 
@@ -70,7 +87,14 @@ describe("EntryContextMenu", () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
 
-    render(<EntryContextMenu {...baseProps} entry={fileEntry} onDelete={onDelete} />);
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onDelete={onDelete}
+      />,
+    );
     await user.click(screen.getByRole("button", { name: "Delete" }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
@@ -82,7 +106,14 @@ describe("EntryContextMenu", () => {
     const user = userEvent.setup();
     const onTagsChange = vi.fn();
 
-    render(<EntryContextMenu {...baseProps} entry={fileEntry} onTagsChange={onTagsChange} />);
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onTagsChange={onTagsChange}
+      />,
+    );
 
     expect(screen.getByText("npc")).toBeInTheDocument();
 
@@ -92,7 +123,9 @@ describe("EntryContextMenu", () => {
   });
 
   it("does not render a tags section for a directory entry", () => {
-    render(<EntryContextMenu {...baseProps} entry={directoryEntry} />);
+    render(
+      <EntryContextMenu {...baseProps} entry={directoryEntry} selectedEntries={[directoryEntry]} />,
+    );
 
     expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
   });
@@ -102,7 +135,15 @@ describe("EntryContextMenu", () => {
     const onView = vi.fn();
     const onClose = vi.fn();
 
-    render(<EntryContextMenu {...baseProps} entry={fileEntry} onView={onView} onClose={onClose} />);
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onView={onView}
+        onClose={onClose}
+      />,
+    );
     await user.click(screen.getByRole("button", { name: "View" }));
 
     expect(onView).toHaveBeenCalledWith(fileEntry);
@@ -110,7 +151,9 @@ describe("EntryContextMenu", () => {
   });
 
   it("does not show View for a directory entry", () => {
-    render(<EntryContextMenu {...baseProps} entry={directoryEntry} />);
+    render(
+      <EntryContextMenu {...baseProps} entry={directoryEntry} selectedEntries={[directoryEntry]} />,
+    );
 
     expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
   });
@@ -118,8 +161,81 @@ describe("EntryContextMenu", () => {
   it("does not show View for an unsupported file type", () => {
     const unsupportedEntry: DirectoryEntry = { name: "notes.xcf", type: "file" };
 
-    render(<EntryContextMenu {...baseProps} entry={unsupportedEntry} />);
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={unsupportedEntry}
+        selectedEntries={[unsupportedEntry]}
+      />,
+    );
 
     expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+  });
+
+  describe("with a multi-entry selection", () => {
+    const selectedEntries = [fileEntry, otherFileEntry, directoryEntry];
+
+    it("hides View and Rename", () => {
+      render(
+        <EntryContextMenu {...baseProps} entry={fileEntry} selectedEntries={selectedEntries} />,
+      );
+
+      expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: "Rename" })).not.toBeInTheDocument();
+    });
+
+    it("shows a batch delete confirmation and calls onDeleteMany with the whole selection", async () => {
+      const user = userEvent.setup();
+      const onDeleteMany = vi.fn();
+      const onDelete = vi.fn();
+
+      render(
+        <EntryContextMenu
+          {...baseProps}
+          entry={fileEntry}
+          selectedEntries={selectedEntries}
+          onDelete={onDelete}
+          onDeleteMany={onDeleteMany}
+        />,
+      );
+      await user.click(screen.getByRole("button", { name: "Delete 3 items" }));
+
+      expect(screen.getByText("Delete 3 items?")).toBeInTheDocument();
+
+      await user.click(screen.getByRole("button", { name: "Confirm" }));
+
+      expect(onDeleteMany).toHaveBeenCalledWith(selectedEntries);
+      expect(onDelete).not.toHaveBeenCalled();
+    });
+
+    it("adds a tag to every selected file entry, skipping directories", async () => {
+      const user = userEvent.setup();
+      const onAddTagToMany = vi.fn();
+
+      render(
+        <EntryContextMenu
+          {...baseProps}
+          entry={fileEntry}
+          selectedEntries={selectedEntries}
+          onAddTagToMany={onAddTagToMany}
+        />,
+      );
+
+      await user.type(screen.getByLabelText("Add tag"), "loot{Enter}");
+
+      expect(onAddTagToMany).toHaveBeenCalledWith([fileEntry, otherFileEntry], "loot");
+    });
+
+    it("hides the tags section when only directories are selected", () => {
+      render(
+        <EntryContextMenu
+          {...baseProps}
+          entry={directoryEntry}
+          selectedEntries={[directoryEntry, { name: "props", type: "directory" }]}
+        />,
+      );
+
+      expect(screen.queryByLabelText("Add tag")).not.toBeInTheDocument();
+    });
   });
 });

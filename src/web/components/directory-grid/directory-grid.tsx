@@ -13,13 +13,16 @@ export interface DirectoryGridProps {
   onOpenDirectory: (name: string) => void;
   onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
+  onDeleteMany: (entries: DirectoryEntry[]) => void;
   onDragStart: (entry: DirectoryEntry) => void;
   onDragEnd: () => void;
   canDropEntry: (entry: DirectoryEntry) => boolean;
   onDropEntry: (entry: DirectoryEntry) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
+  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
   selectedNames: Set<string>;
+  selectedEntries: DirectoryEntry[];
   onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
   onOpenLightbox: (entry: DirectoryEntry) => void;
 }
@@ -32,13 +35,16 @@ export const DirectoryGrid = ({
   onOpenDirectory,
   onRename,
   onDelete,
+  onDeleteMany,
   onDragStart,
   onDragEnd,
   canDropEntry,
   onDropEntry,
   availableTags,
   onTagsChange,
+  onAddTagToMany,
   selectedNames,
+  selectedEntries,
   onSelectRow,
   onOpenLightbox,
 }: DirectoryGridProps): JSX.Element => (
@@ -53,16 +59,19 @@ export const DirectoryGrid = ({
               entry={entry}
               currentPath={currentPath}
               isSelected={selectedNames.has(entry.name)}
+              selectedEntries={selectedEntries}
               isDropTarget={canDropEntry(entry)}
               onOpenDirectory={onOpenDirectory}
               onRename={onRename}
               onDelete={onDelete}
+              onDeleteMany={onDeleteMany}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropEntry={onDropEntry}
               onSelectRow={onSelectRow}
               availableTags={availableTags}
               onTagsChange={onTagsChange}
+              onAddTagToMany={onAddTagToMany}
               onOpenLightbox={onOpenLightbox}
             />
           ))}
