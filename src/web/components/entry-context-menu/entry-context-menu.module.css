@@ -5,11 +5,14 @@
 }
 
 .item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
   background: none;
   border: none;
   color: var(--color-text);
   text-align: left;
-  padding: var(--spacing-xs) var(--spacing-sm);
+  padding: var(--spacing-xs) var(--spacing-sm) var(--spacing-xs) var(--spacing-xs);
   font: inherit;
   cursor: pointer;
 }

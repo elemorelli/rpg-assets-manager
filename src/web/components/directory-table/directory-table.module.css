@@ -84,12 +84,13 @@
   font-weight: bold;
 }
 
-.table tbody tr:nth-of-type(even):not(.groupHeader) {
+.table tbody tr:nth-of-type(even):not(.groupHeader):not(.selected) {
   background: rgba(255, 255, 255, 0.03);
 }
 
 .selected {
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-accent) 20%, var(--color-background));
+  box-shadow: inset 3px 0 0 var(--color-accent);
 }
 
 .menuButton {

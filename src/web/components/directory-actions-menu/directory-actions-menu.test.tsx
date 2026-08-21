@@ -11,6 +11,8 @@ const baseProps = {
   onCreateDirectory: vi.fn(),
   onUploadFile: vi.fn(),
   onConvert: vi.fn(),
+  onRehashRequested: vi.fn(),
+  onReconcile: vi.fn(),
 };
 
 describe("DirectoryActionsMenu", () => {
@@ -91,5 +93,59 @@ describe("DirectoryActionsMenu", () => {
 
     expect(onConvert).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not render Convert when onConvert is not provided", () => {
+    const { onConvert: _onConvert, ...propsWithoutConvert } = baseProps;
+
+    render(<DirectoryActionsMenu {...propsWithoutConvert} />);
+
+    expect(screen.queryByRole("button", { name: "Convert" })).not.toBeInTheDocument();
+  });
+
+  it("triggers onRehashRequested and closes the menu when Full rehash is clicked", async () => {
+    const user = userEvent.setup();
+    const onRehashRequested = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <DirectoryActionsMenu
+        {...baseProps}
+        onRehashRequested={onRehashRequested}
+        onClose={onClose}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Full rehash" }));
+
+    expect(onRehashRequested).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not render Full rehash when onRehashRequested is not provided", () => {
+    const { onRehashRequested: _onRehashRequested, ...propsWithoutRehash } = baseProps;
+
+    render(<DirectoryActionsMenu {...propsWithoutRehash} />);
+
+    expect(screen.queryByRole("button", { name: "Full rehash" })).not.toBeInTheDocument();
+  });
+
+  it("triggers onReconcile and closes the menu when Reconcile is clicked", async () => {
+    const user = userEvent.setup();
+    const onReconcile = vi.fn();
+    const onClose = vi.fn();
+
+    render(<DirectoryActionsMenu {...baseProps} onReconcile={onReconcile} onClose={onClose} />);
+    await user.click(screen.getByRole("button", { name: "Reconcile" }));
+
+    expect(onReconcile).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("does not render Reconcile when onReconcile is not provided", () => {
+    const { onReconcile: _onReconcile, ...propsWithoutReconcile } = baseProps;
+
+    render(<DirectoryActionsMenu {...propsWithoutReconcile} />);
+
+    expect(screen.queryByRole("button", { name: "Reconcile" })).not.toBeInTheDocument();
   });
 });

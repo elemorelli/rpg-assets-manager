@@ -3,8 +3,8 @@ import {
   faCloudArrowUp,
   faDiceD20,
   faEllipsisVertical,
+  faFileExport,
   faHashtag,
-  faScaleBalanced,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
@@ -64,22 +64,14 @@ export const Toolbar = ({
         <button
           type="button"
           disabled={busy}
-          aria-label="Full rehash"
-          title="Full rehash"
-          onClick={() => setConfirmingRehash(true)}>
-          <FontAwesomeIcon icon={faHashtag} />
+          aria-label="Convert"
+          title="Convert"
+          onClick={onConvert}>
+          <FontAwesomeIcon icon={faFileExport} />
         </button>
         <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
           <FontAwesomeIcon icon={faCloudArrowUp} />
           {hasPendingSyncChanges && <PendingBadge testId="sync-pending-badge" />}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="Reconcile"
-          title="Reconcile"
-          onClick={onReconcile}>
-          <FontAwesomeIcon icon={faScaleBalanced} />
         </button>
         <button
           type="button"
@@ -103,7 +95,8 @@ export const Toolbar = ({
           onClose={directoryActionsMenu.close}
           onCreateDirectory={onCreateDirectory}
           onUploadFile={onUploadFile}
-          onConvert={onConvert}
+          onRehashRequested={() => setConfirmingRehash(true)}
+          onReconcile={onReconcile}
         />
       </div>
       {confirmingRehash && (

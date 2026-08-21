@@ -223,9 +223,11 @@ describe("FileBrowser", () => {
 
     fireEvent.contextMenu(screen.getByTestId("directory-dropzone"));
 
-    expect(screen.getByRole("button", { name: "New directory" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Upload file" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Convert" })).toBeInTheDocument();
+    const menu = screen.getByRole("menu");
+
+    expect(within(menu).getByRole("button", { name: "New directory" })).toBeInTheDocument();
+    expect(within(menu).getByRole("button", { name: "Upload file" })).toBeInTheDocument();
+    expect(within(menu).getByRole("button", { name: "Convert" })).toBeInTheDocument();
   });
 
   it("does not open the directory actions menu when right-clicking a row", async () => {
@@ -276,6 +278,7 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
     await user.click(screen.getByRole("button", { name: "Rehash" }));
 

@@ -1,3 +1,11 @@
+import {
+  faFileExport,
+  faFolderPlus,
+  faHashtag,
+  faScaleBalanced,
+  faUpload,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type ChangeEvent, type JSX, useRef } from "react";
 
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
@@ -9,7 +17,9 @@ export interface DirectoryActionsMenuProps {
   onClose: () => void;
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
-  onConvert: () => void;
+  onConvert?: () => void;
+  onRehashRequested?: () => void;
+  onReconcile?: () => void;
 }
 
 export const DirectoryActionsMenu = ({
@@ -18,6 +28,8 @@ export const DirectoryActionsMenu = ({
   onCreateDirectory,
   onUploadFile,
   onConvert,
+  onRehashRequested,
+  onReconcile,
 }: DirectoryActionsMenuProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -47,7 +59,17 @@ export const DirectoryActionsMenu = ({
   };
 
   const handleConvertClick = (): void => {
-    onConvert();
+    onConvert?.();
+    onClose();
+  };
+
+  const handleRehashClick = (): void => {
+    onRehashRequested?.();
+    onClose();
+  };
+
+  const handleReconcileClick = (): void => {
+    onReconcile?.();
     onClose();
   };
 
@@ -55,14 +77,31 @@ export const DirectoryActionsMenu = ({
     <ContextMenu position={position} onClose={onClose}>
       <div className={styles.items}>
         <button type="button" className={styles.item} onClick={handleCreateDirectoryClick}>
+          <FontAwesomeIcon icon={faFolderPlus} fixedWidth />
           New directory
         </button>
         <button type="button" className={styles.item} onClick={handleUploadClick}>
+          <FontAwesomeIcon icon={faUpload} fixedWidth />
           Upload file
         </button>
-        <button type="button" className={styles.item} onClick={handleConvertClick}>
-          Convert
-        </button>
+        {onConvert && (
+          <button type="button" className={styles.item} onClick={handleConvertClick}>
+            <FontAwesomeIcon icon={faFileExport} fixedWidth />
+            Convert
+          </button>
+        )}
+        {onRehashRequested && (
+          <button type="button" className={styles.item} onClick={handleRehashClick}>
+            <FontAwesomeIcon icon={faHashtag} fixedWidth />
+            Full rehash
+          </button>
+        )}
+        {onReconcile && (
+          <button type="button" className={styles.item} onClick={handleReconcileClick}>
+            <FontAwesomeIcon icon={faScaleBalanced} fixedWidth />
+            Reconcile
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"

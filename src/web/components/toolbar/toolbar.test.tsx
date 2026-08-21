@@ -47,6 +47,7 @@ describe("Toolbar", () => {
         hasPendingSyncChanges={false}
       />,
     );
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
 
     expect(onRescan).not.toHaveBeenCalled();
@@ -75,6 +76,7 @@ describe("Toolbar", () => {
         hasPendingSyncChanges={false}
       />,
     );
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "Full rehash" }));
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
@@ -98,9 +100,8 @@ describe("Toolbar", () => {
     );
 
     expect(screen.getByRole("button", { name: "Rescan" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Full rehash" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Convert" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Sync" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Reconcile" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Foundry" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Directory actions" })).toBeDisabled();
   });
@@ -146,9 +147,33 @@ describe("Toolbar", () => {
         hasPendingSyncChanges={false}
       />,
     );
+    await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "Reconcile" }));
 
     expect(onReconcile).toHaveBeenCalled();
+  });
+
+  it("triggers onConvert when Convert is clicked", async () => {
+    const user = userEvent.setup();
+    const onConvert = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={vi.fn()}
+        onConvert={onConvert}
+        onSync={vi.fn()}
+        onReconcile={vi.fn()}
+        onFoundry={vi.fn()}
+        hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Convert" }));
+
+    expect(onConvert).toHaveBeenCalled();
   });
 
   it("triggers onFoundry when Foundry is clicked", async () => {
@@ -274,6 +299,7 @@ describe("Toolbar", () => {
 
     expect(screen.getByRole("button", { name: "New directory" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Upload file" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Convert" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Full rehash" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reconcile" })).toBeInTheDocument();
   });
 });

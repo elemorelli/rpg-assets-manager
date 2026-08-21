@@ -1,4 +1,5 @@
-import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import { faEye, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useState } from "react";
 
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
@@ -73,15 +74,18 @@ export const EntryContextMenu = ({
         <div className={styles.items}>
           {isPreviewable && (
             <button type="button" className={styles.item} onClick={handleView}>
+              <FontAwesomeIcon icon={faEye} fixedWidth />
               View
             </button>
           )}
           {!isMultiSelection && (
             <button type="button" className={styles.item} onClick={handleRename}>
+              <FontAwesomeIcon icon={faPen} fixedWidth />
               Rename
             </button>
           )}
           <button type="button" className={styles.item} onClick={handleDeleteRequested}>
+            <FontAwesomeIcon icon={faTrash} fixedWidth />
             {isMultiSelection ? `Delete ${selectedEntries.length} items` : "Delete"}
           </button>
           {isMultiSelection
