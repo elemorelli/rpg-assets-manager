@@ -4,6 +4,7 @@ import {
   faFileLines,
   faFont,
   faList,
+  faShapes,
   faTableCells,
   faTableList,
   faTag,
@@ -46,6 +47,7 @@ const SORT_CRITERIA: CriterionButton<SortCriterion>[] = [
 const GROUP_CRITERIA: CriterionButton<GroupCriterion>[] = [
   { criterion: "none", label: "No grouping", icon: faList },
   { criterion: "tag", label: "Group by tag", icon: faTag },
+  { criterion: "type", label: "Group by type", icon: faShapes },
 ];
 
 export const ViewControls = ({

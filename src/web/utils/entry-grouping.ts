@@ -1,6 +1,7 @@
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import { classifyPreviewKind } from "#utils/preview.ts";
 
-export type GroupCriterion = "none" | "tag";
+export type GroupCriterion = "none" | "tag" | "type";
 
 export interface EntryGroup {
   label: string | null;
@@ -9,6 +10,18 @@ export interface EntryGroup {
 
 const DIRECTORIES_LABEL = "Directories";
 const UNTAGGED_LABEL = "Untagged";
+
+const TYPE_GROUP_LABELS: Record<ReturnType<typeof classifyPreviewKind>, string> = {
+  image: "Images",
+  audio: "Audio",
+  unsupported: "Other",
+};
+
+const TYPE_GROUP_ORDER: ReturnType<typeof classifyPreviewKind>[] = [
+  "image",
+  "audio",
+  "unsupported",
+];
 
 const groupFilesByTag = (files: DirectoryEntry[]): EntryGroup[] => {
   const entriesByTag = new Map<string, DirectoryEntry[]>();
@@ -39,6 +52,31 @@ const groupFilesByTag = (files: DirectoryEntry[]): EntryGroup[] => {
     : tagGroups;
 };
 
+const groupFilesByType = (files: DirectoryEntry[]): EntryGroup[] => {
+  const entriesByKind = new Map<ReturnType<typeof classifyPreviewKind>, DirectoryEntry[]>();
+
+  for (const file of files) {
+    const kind = classifyPreviewKind(file.name);
+    const existingEntries = entriesByKind.get(kind) ?? [];
+
+    existingEntries.push(file);
+    entriesByKind.set(kind, existingEntries);
+  }
+
+  return TYPE_GROUP_ORDER.filter((kind) => entriesByKind.has(kind)).map((kind) => ({
+    label: TYPE_GROUP_LABELS[kind],
+    entries: entriesByKind.get(kind) ?? [],
+  }));
+};
+
+const GROUPERS_BY_CRITERION: Record<
+  Exclude<GroupCriterion, "none">,
+  (files: DirectoryEntry[]) => EntryGroup[]
+> = {
+  tag: groupFilesByTag,
+  type: groupFilesByType,
+};
+
 export const groupEntries = (
   sortedEntries: DirectoryEntry[],
   criterion: GroupCriterion,
@@ -53,5 +91,5 @@ export const groupEntries = (
   const directoryGroup: EntryGroup[] =
     directories.length > 0 ? [{ label: DIRECTORIES_LABEL, entries: directories }] : [];
 
-  return [...directoryGroup, ...groupFilesByTag(files)];
+  return [...directoryGroup, ...GROUPERS_BY_CRITERION[criterion](files)];
 };

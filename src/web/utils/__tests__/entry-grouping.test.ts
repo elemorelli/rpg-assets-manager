@@ -73,4 +73,38 @@ describe("groupEntries", () => {
   it("returns no groups at all for an empty directory grouped by tag", () => {
     expect(groupEntries([], "tag")).toEqual([]);
   });
+
+  it("groups files by type in a fixed Images, Audio, Other order", () => {
+    const image = file("a.png");
+    const audio = file("b.mp3");
+    const other = file("c.pdf");
+
+    const groups = groupEntries([other, audio, image], "type");
+
+    expect(groups.map((group) => group.label)).toEqual(["Images", "Audio", "Other"]);
+  });
+
+  it("puts all directories into a Directories group first when grouped by type", () => {
+    const entries = [dir("tiles"), file("a.png")];
+
+    const groups = groupEntries(entries, "type");
+
+    expect(groups[0]).toEqual({ label: "Directories", entries: [dir("tiles")] });
+  });
+
+  it("omits empty type groups", () => {
+    const groups = groupEntries([file("a.png")], "type");
+
+    expect(groups.map((group) => group.label)).toEqual(["Images"]);
+  });
+
+  it("omits the Directories group when grouped by type and there are no directories", () => {
+    const groups = groupEntries([file("a.png")], "type");
+
+    expect(groups.some((group) => group.label === "Directories")).toBe(false);
+  });
+
+  it("returns no groups at all for an empty directory grouped by type", () => {
+    expect(groupEntries([], "type")).toEqual([]);
+  });
 });
