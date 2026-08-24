@@ -114,7 +114,8 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
         title={`${displayState.type}: completed`}
         icon={iconForJobType(displayState.type)}
         onClose={handleDismiss}
-        footer={dismissButton}>
+        footer={dismissButton}
+        size="sm">
         <span>Operation completed successfully.</span>
       </Modal>
     );
@@ -125,7 +126,8 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
       title={`${displayState.type}: failed`}
       icon={iconForJobType(displayState.type)}
       onClose={handleDismiss}
-      footer={dismissButton}>
+      footer={dismissButton}
+      size="sm">
       <div className={styles.error}>
         <span>{displayState.error}</span>
         {displayState.detail !== undefined && <span>{`File: ${displayState.detail}`}</span>}

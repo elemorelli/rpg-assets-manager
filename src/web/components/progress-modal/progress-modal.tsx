@@ -30,7 +30,7 @@ export const ProgressModal = ({
   const indeterminate = total === 0;
 
   return (
-    <Modal title={title} icon={icon} onClose={onClose} dismissible={dismissible}>
+    <Modal title={title} icon={icon} onClose={onClose} dismissible={dismissible} size="sm">
       <div className={styles.progress}>
         {indeterminate ? (
           <span className={styles.spinner} data-testid="progress-modal-spinner" />
