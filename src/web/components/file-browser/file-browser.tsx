@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 
 import { AppShell } from "#components/app-shell/app-shell.tsx";
 import { Breadcrumbs } from "#components/breadcrumbs/breadcrumbs.tsx";
+import { Button } from "#components/button/button.tsx";
 import { JobProgress } from "#components/job-progress/job-progress.tsx";
 import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
@@ -250,9 +251,9 @@ export const FileBrowser = (): JSX.Element => {
               <div className={styles.messageBar}>
                 <MessageBanner message={message} />
                 {currentPath !== "" && (
-                  <button type="button" onClick={() => navigateToPath("")}>
+                  <Button variant="secondary" onClick={() => navigateToPath("")}>
                     Back to root
-                  </button>
+                  </Button>
                 )}
               </div>
             )}

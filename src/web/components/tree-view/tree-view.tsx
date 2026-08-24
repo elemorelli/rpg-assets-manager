@@ -1,5 +1,6 @@
 import type { DragEvent, JSX } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
 import { ROOT_PATH } from "#web/utils/breadcrumbs.ts";
 
@@ -59,9 +60,9 @@ export const TreeView = ({
       {rootState === "error" && (
         <li className={styles.error}>
           Failed to load.{" "}
-          <button type="button" onClick={() => handleRetry(ROOT_PATH)}>
+          <Button variant="secondary" onClick={() => handleRetry(ROOT_PATH)}>
             Retry
-          </button>
+          </Button>
         </li>
       )}
       {Array.isArray(rootState) &&

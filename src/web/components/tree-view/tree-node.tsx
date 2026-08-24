@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
 import type { JSX } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
@@ -155,9 +156,9 @@ export const TreeNode = ({
       {isExpanded && state === "error" && (
         <p className={styles.error}>
           Failed to load.{" "}
-          <button type="button" onClick={() => onRetry(path)}>
+          <Button variant="secondary" onClick={() => onRetry(path)}>
             Retry
-          </button>
+          </Button>
         </p>
       )}
       {isExpanded && Array.isArray(state) && (

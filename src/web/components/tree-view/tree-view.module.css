@@ -71,22 +71,35 @@
 .menuButton {
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
   color: var(--color-text-muted);
   cursor: pointer;
   padding: 0 var(--spacing-xs);
   margin-left: auto;
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .menuButton:hover,
 .menuButton:focus-visible {
+  background: var(--color-surface-overlay);
   color: var(--color-text);
 }
 
 .renameInput {
   font: inherit;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
   padding: 0 var(--spacing-xs);
   min-width: 0;
   flex: 1;
+  transition: border-color var(--transition-fast);
+}
+
+.renameInput:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
 }
