@@ -17,13 +17,13 @@ export interface EntryContextMenuProps {
   selectedEntries: DirectoryEntry[];
   position: { x: number; y: number } | null;
   onClose: () => void;
-  onView: (entry: DirectoryEntry) => void;
+  onView?: (entry: DirectoryEntry) => void;
   onRenameRequested: () => void;
   onDelete: (entry: DirectoryEntry) => void;
-  onDeleteMany: (entries: DirectoryEntry[]) => void;
+  onDeleteMany?: (entries: DirectoryEntry[]) => void;
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
-  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
+  onAddTagToMany?: (entries: DirectoryEntry[], tag: string) => void;
 }
 
 export const EntryContextMenu = ({
@@ -31,13 +31,13 @@ export const EntryContextMenu = ({
   selectedEntries,
   position,
   onClose,
-  onView,
+  onView = () => {},
   onRenameRequested,
   onDelete,
-  onDeleteMany,
+  onDeleteMany = () => {},
   availableTags,
   onTagsChange,
-  onAddTagToMany,
+  onAddTagToMany = () => {},
 }: EntryContextMenuProps): JSX.Element => {
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
 

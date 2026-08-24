@@ -6,32 +6,13 @@ import type { JSX } from "react";
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
-import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
-import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
+import type { DirectoryEntryItemProps } from "#web/utils/directory-entry-item-props.ts";
 import { useDirectoryEntryInteractions } from "#web/utils/use-directory-entry-interactions.ts";
 
 import styles from "./directory-table.module.css";
 
-export interface DirectoryTableRowProps {
-  entry: DirectoryEntry;
-  currentPath: string;
-  isSelected: boolean;
-  selectedEntries: DirectoryEntry[];
-  isDropTarget: boolean;
-  onOpenDirectory: (name: string) => void;
-  onRename: (entry: DirectoryEntry, newName: string) => void;
-  onDelete: (entry: DirectoryEntry) => void;
-  onDeleteMany: (entries: DirectoryEntry[]) => void;
-  onDragStart: (entry: DirectoryEntry) => void;
-  onDragEnd: () => void;
-  onDropEntry: (entry: DirectoryEntry) => void;
-  onSelectRow: (entry: DirectoryEntry, modifier: SelectionClickModifier) => void;
-  availableTags: string[];
-  onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
-  onAddTagToMany: (entries: DirectoryEntry[], tag: string) => void;
-  onOpenLightbox: (entry: DirectoryEntry) => void;
-}
+export type DirectoryTableRowProps = DirectoryEntryItemProps;
 
 export const DirectoryTableRow = ({
   entry,

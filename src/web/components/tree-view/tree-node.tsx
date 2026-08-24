@@ -129,13 +129,10 @@ export const TreeNode = ({ path, name, depth, hasPendingSync }: TreeNodeProps): 
           selectedEntries={[nodeEntry]}
           position={contextMenu.position}
           onClose={contextMenu.close}
-          onView={() => {}}
           onRenameRequested={startRenaming}
           onDelete={() => onDelete(path)}
-          onDeleteMany={() => {}}
           availableTags={availableTags}
           onTagsChange={(_entry, tags) => onTagsChange(path, tags)}
-          onAddTagToMany={() => {}}
         />
       </div>
       {isExpanded && state === "error" && (
