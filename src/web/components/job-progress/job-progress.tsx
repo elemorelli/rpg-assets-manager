@@ -1,6 +1,7 @@
 import { type JSX, useEffect, useReducer, useRef, useState } from "react";
 
 import { parseJobEvent } from "#utils/job.ts";
+import { Button } from "#web/components/button/button.tsx";
 import { Modal } from "#web/components/modal/modal.tsx";
 import { ProgressModal } from "#web/components/progress-modal/progress-modal.tsx";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
@@ -102,9 +103,9 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
   }
 
   const dismissButton = (
-    <button type="button" onClick={handleDismiss}>
+    <Button variant="secondary" onClick={handleDismiss}>
       Dismiss
-    </button>
+    </Button>
   );
 
   if (displayState.kind === "succeeded") {
