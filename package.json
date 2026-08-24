@@ -22,6 +22,7 @@
     "format": "biome format --write .",
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
+    "loading-tips": "node scripts/generate-loading-tips-journal.ts",
     "codegen": "kysely-codegen --dialect postgres --out-file src/server/db/types.ts"
   },
   "dependencies": {
