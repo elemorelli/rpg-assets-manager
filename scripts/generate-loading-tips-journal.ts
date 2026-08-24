@@ -7,7 +7,12 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_INPUT_PATH = path.join(SCRIPT_DIR, "loading-tips.txt");
 const BLOCK_SEPARATOR = "---";
 const DEFAULT_IMAGE = "modules/pf2e-tokens-characters/assets/portraits/pc-kobold-orator.webp";
-const DEFAULT_OUTPUT_PATH = path.join(SCRIPT_DIR, "..", "dist", "fvtt-JournalEntry-loading-tips.json");
+const DEFAULT_OUTPUT_PATH = path.join(
+  SCRIPT_DIR,
+  "..",
+  "dist",
+  "fvtt-JournalEntry-loading-tips.json",
+);
 
 const FOUNDRY_ID_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 const FOUNDRY_ID_LENGTH = 16;
@@ -20,7 +25,10 @@ type LoadingTip = {
 };
 
 const generateFoundryId = (): string =>
-  Array.from({ length: FOUNDRY_ID_LENGTH }, () => FOUNDRY_ID_CHARS[randomInt(FOUNDRY_ID_CHARS.length)]).join("");
+  Array.from(
+    { length: FOUNDRY_ID_LENGTH },
+    () => FOUNDRY_ID_CHARS[randomInt(FOUNDRY_ID_CHARS.length)],
+  ).join("");
 
 const resolveImageSrc = (image: string): string => {
   const isFullUrl = image.startsWith("http://") || image.startsWith("https://");
@@ -60,7 +68,11 @@ const parseTipsFile = (contents: string): LoadingTip[] =>
   contents
     .split(new RegExp(`^${BLOCK_SEPARATOR}$`, "m"))
     .map((block) => block.trim())
-    .filter((block) => block !== "" && !block.split("\n").every((line) => line.trim().startsWith("#") || line.trim() === ""))
+    .filter(
+      (block) =>
+        block !== "" &&
+        !block.split("\n").every((line) => line.trim().startsWith("#") || line.trim() === ""),
+    )
     .map(parseBlock);
 
 const buildJournalEntry = (tips: LoadingTip[]) => ({
@@ -103,8 +115,10 @@ const buildJournalEntry = (tips: LoadingTip[]) => ({
 const inputArgIndex = process.argv.indexOf("--input");
 const outputArgIndex = process.argv.indexOf("--output");
 
-const inputPath = inputArgIndex === -1 ? DEFAULT_INPUT_PATH : path.resolve(process.argv[inputArgIndex + 1]);
-const outputPath = outputArgIndex === -1 ? DEFAULT_OUTPUT_PATH : path.resolve(process.argv[outputArgIndex + 1]);
+const inputPath =
+  inputArgIndex === -1 ? DEFAULT_INPUT_PATH : path.resolve(process.argv[inputArgIndex + 1]);
+const outputPath =
+  outputArgIndex === -1 ? DEFAULT_OUTPUT_PATH : path.resolve(process.argv[outputArgIndex + 1]);
 
 const contents = await fs.readFile(inputPath, "utf8");
 const tips = parseTipsFile(contents);
