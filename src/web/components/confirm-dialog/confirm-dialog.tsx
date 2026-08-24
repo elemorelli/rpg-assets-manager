@@ -1,6 +1,7 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import type { JSX, ReactNode } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 
 import styles from "./confirm-dialog.module.css";
@@ -31,15 +32,12 @@ export const ConfirmDialog = ({
 }: ConfirmDialogProps): JSX.Element => {
   const footer = (
     <>
-      <button type="button" onClick={onCancel}>
+      <Button variant="secondary" onClick={onCancel}>
         {cancelLabel}
-      </button>
-      <button
-        type="button"
-        className={danger ? styles.dangerButton : undefined}
-        onClick={onConfirm}>
+      </Button>
+      <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
         {confirmLabel}
-      </button>
+      </Button>
     </>
   );
 
