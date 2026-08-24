@@ -10,7 +10,7 @@
   align-items: center;
   gap: var(--spacing-xs);
   background: var(--color-surface);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 0 var(--spacing-xs);
   font-size: 0.85em;
 }
@@ -21,6 +21,12 @@
   cursor: pointer;
   color: var(--color-text-muted);
   padding: 0;
+  transition: color var(--transition-fast);
+}
+
+.removeButton:hover,
+.removeButton:focus-visible {
+  color: var(--color-accent);
 }
 
 .input {
