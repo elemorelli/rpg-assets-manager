@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Breadcrumbs } from "./breadcrumbs.tsx";
 
 describe("Breadcrumbs", () => {
-  it("renders one crumb per path segment, without a redundant root crumb", () => {
+  it("renders a root crumb plus one crumb per path segment", () => {
     render(
       <Breadcrumbs
         currentPath="tiles/legacy-pack"
@@ -16,9 +16,26 @@ describe("Breadcrumbs", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "root" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "root" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "tiles" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "legacy-pack" })).toBeInTheDocument();
+  });
+
+  it("navigates to the root crumb's path", async () => {
+    const user = userEvent.setup();
+    const onNavigate = vi.fn();
+
+    render(
+      <Breadcrumbs
+        currentPath="tiles/legacy-pack"
+        onNavigate={onNavigate}
+        canDropOnPath={() => false}
+        onDropEntry={vi.fn()}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "root" }));
+
+    expect(onNavigate).toHaveBeenCalledWith("");
   });
 
   it("disables the last crumb, since it is the current location", () => {

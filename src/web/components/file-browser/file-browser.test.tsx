@@ -147,7 +147,7 @@ describe("FileBrowser", () => {
 
     const breadcrumbNav = screen.getByRole("navigation");
     expect(within(breadcrumbNav).getByRole("button", { name: "tiles" })).toBeDisabled();
-    expect(within(breadcrumbNav).queryByRole("button", { name: "root" })).not.toBeInTheDocument();
+    expect(within(breadcrumbNav).getByRole("button", { name: "root" })).toBeEnabled();
   });
 
   it("shows an error message when listing fails", async () => {

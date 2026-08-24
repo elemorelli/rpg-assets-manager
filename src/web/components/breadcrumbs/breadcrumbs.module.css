@@ -1,7 +1,6 @@
 .breadcrumbs {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
   font-size: var(--font-size-sm);
   overflow-x: auto;
 }
@@ -9,23 +8,31 @@
 .crumb {
   background: none;
   border: none;
+  border-radius: var(--radius-sm);
   color: var(--color-accent);
   cursor: pointer;
-  padding: 0;
+  padding: var(--spacing-xs) var(--spacing-sm);
   font: inherit;
   max-width: 200px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: background-color var(--transition-fast);
+}
+
+.crumb:hover:not(:disabled) {
+  background: var(--color-surface-overlay);
 }
 
 .crumb:disabled {
   color: var(--color-text);
+  font-weight: 600;
   cursor: default;
 }
 
 .separator {
   color: var(--color-text-muted);
+  margin: 0 var(--spacing-xs);
 }
 
 .dragOver {
