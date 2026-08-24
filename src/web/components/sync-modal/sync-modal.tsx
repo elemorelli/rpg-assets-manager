@@ -1,5 +1,6 @@
 import { type JSX, useMemo, useState } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
@@ -74,17 +75,17 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
   const footer =
     diff && !hasNothingToSync ? (
       <>
-        <button type="button" disabled={busy} onClick={onClose}>
+        <Button variant="secondary" disabled={busy} onClick={onClose}>
           Cancel
-        </button>
-        <button type="button" disabled={busy} onClick={handleApply}>
+        </Button>
+        <Button variant="primary" disabled={busy} onClick={handleApply}>
           Apply changes
-        </button>
+        </Button>
       </>
     ) : (
-      <button type="button" disabled={busy} onClick={onClose}>
+      <Button variant="secondary" disabled={busy} onClick={onClose}>
         Close
-      </button>
+      </Button>
     );
 
   return (

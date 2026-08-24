@@ -1,5 +1,6 @@
 import { type JSX, useMemo } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
@@ -49,9 +50,9 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
     result.errors.length === 0;
 
   const footer = (
-    <button type="button" onClick={onClose}>
+    <Button variant="secondary" onClick={onClose}>
       Close
-    </button>
+    </Button>
   );
 
   return (

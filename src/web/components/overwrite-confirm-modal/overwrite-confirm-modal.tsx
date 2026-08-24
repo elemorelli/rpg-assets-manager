@@ -1,5 +1,6 @@
 import { type JSX, useMemo } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 
@@ -21,17 +22,17 @@ export const OverwriteConfirmModal = ({
 
   const footer = (
     <>
-      <button type="button" onClick={onCancel}>
+      <Button variant="secondary" onClick={onCancel}>
         Cancel
-      </button>
-      <button type="button" onClick={onConfirm}>
+      </Button>
+      <Button variant="primary" onClick={onConfirm}>
         Overwrite
-      </button>
+      </Button>
     </>
   );
 
   return (
-    <Modal title="File already exists" onClose={onCancel} footer={footer}>
+    <Modal title="File already exists" onClose={onCancel} footer={footer} size="sm">
       <p>{`${fileNames.length} file(s) already exist at the destination:`}</p>
       <ScrollList rows={fileRows} />
     </Modal>

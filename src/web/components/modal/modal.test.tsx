@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import styles from "./modal.module.css";
 import { Modal } from "./modal.tsx";
 
 describe("Modal", () => {
@@ -122,5 +123,25 @@ describe("Modal", () => {
     await user.keyboard("{Escape}");
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("defaults to the md size", () => {
+    render(
+      <Modal title="Convert assets" onClose={vi.fn()}>
+        <p>Body content</p>
+      </Modal>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveClass(styles.sizeMd);
+  });
+
+  it("applies the sm size class when size is sm", () => {
+    render(
+      <Modal title="Convert assets" onClose={vi.fn()} size="sm">
+        <p>Body content</p>
+      </Modal>,
+    );
+
+    expect(screen.getByRole("dialog")).toHaveClass(styles.sizeSm);
   });
 });

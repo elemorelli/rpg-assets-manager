@@ -11,8 +11,15 @@
 .dialog {
   display: flex;
   flex-direction: column;
-  width: min(720px, 92vw);
   max-height: min(85vh, 760px);
+}
+
+.sizeMd {
+  width: min(720px, 92vw);
+}
+
+.sizeSm {
+  width: min(420px, 92vw);
 }
 
 .header {

@@ -42,7 +42,7 @@ export const ConfirmDialog = ({
   );
 
   return (
-    <Modal title={title} icon={icon} onClose={onCancel} footer={footer}>
+    <Modal title={title} icon={icon} onClose={onCancel} footer={footer} size="sm">
       <div className={styles.message}>{message}</div>
     </Modal>
   );

@@ -8,6 +8,7 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useEffect, useRef, useState } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { IconButton } from "#components/icon-button/icon-button.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
@@ -80,9 +81,9 @@ export const FoundryModal = ({ onClose, onMarkedApplied }: FoundryModalProps): J
   const confirmingApplyWorld = worlds?.find((world) => world.id === confirmingApplyWorldId);
 
   const footer = (
-    <button type="button" onClick={onClose}>
+    <Button variant="secondary" onClick={onClose}>
       Close
-    </button>
+    </Button>
   );
 
   return (
