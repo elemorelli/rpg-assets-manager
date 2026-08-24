@@ -9,3 +9,18 @@
 .label {
   font-size: var(--font-size-sm);
 }
+
+.passwordInput {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.passwordInput:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
+}

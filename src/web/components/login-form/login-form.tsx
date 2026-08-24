@@ -1,5 +1,6 @@
 import { type FormEvent, type JSX, useState } from "react";
 
+import { Button } from "#components/button/button.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import * as api from "#web/requests/index.ts";
 import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
@@ -34,14 +35,15 @@ export const LoginForm = ({ onLoggedIn }: LoginFormProps): JSX.Element => {
       </label>
       <input
         id="login-password"
+        className={styles.passwordInput}
         type="password"
         value={password}
         disabled={busy}
         onChange={(event) => setPassword(event.target.value)}
       />
-      <button type="submit" disabled={busy}>
+      <Button type="submit" variant="primary" disabled={busy}>
         Log in
-      </button>
+      </Button>
       {message && <MessageBanner message={message} />}
     </form>
   );
