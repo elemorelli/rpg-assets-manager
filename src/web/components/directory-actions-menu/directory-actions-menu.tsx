@@ -9,6 +9,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type ChangeEvent, type JSX, useRef } from "react";
 
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
+import { MenuItem } from "#components/context-menu/menu-item.tsx";
+import { MenuList } from "#components/context-menu/menu-list.tsx";
 
 import styles from "./directory-actions-menu.module.css";
 
@@ -75,32 +77,32 @@ export const DirectoryActionsMenu = ({
 
   return (
     <ContextMenu position={position} onClose={onClose}>
-      <div className={styles.items}>
-        <button type="button" className={styles.item} onClick={handleCreateDirectoryClick}>
+      <MenuList>
+        <MenuItem onClick={handleCreateDirectoryClick}>
           <FontAwesomeIcon icon={faFolderPlus} fixedWidth />
           New directory
-        </button>
-        <button type="button" className={styles.item} onClick={handleUploadClick}>
+        </MenuItem>
+        <MenuItem onClick={handleUploadClick}>
           <FontAwesomeIcon icon={faUpload} fixedWidth />
           Upload file
-        </button>
+        </MenuItem>
         {onConvert && (
-          <button type="button" className={styles.item} onClick={handleConvertClick}>
+          <MenuItem onClick={handleConvertClick}>
             <FontAwesomeIcon icon={faFileExport} fixedWidth />
             Convert
-          </button>
+          </MenuItem>
         )}
         {onRehashRequested && (
-          <button type="button" className={styles.item} onClick={handleRehashClick}>
+          <MenuItem onClick={handleRehashClick}>
             <FontAwesomeIcon icon={faHashtag} fixedWidth />
             Full rehash
-          </button>
+          </MenuItem>
         )}
         {onReconcile && (
-          <button type="button" className={styles.item} onClick={handleReconcileClick}>
+          <MenuItem onClick={handleReconcileClick}>
             <FontAwesomeIcon icon={faScaleBalanced} fixedWidth />
             Reconcile
-          </button>
+          </MenuItem>
         )}
         <input
           ref={fileInputRef}
@@ -108,7 +110,7 @@ export const DirectoryActionsMenu = ({
           className={styles.hiddenInput}
           onChange={handleFileSelected}
         />
-      </div>
+      </MenuList>
     </ContextMenu>
   );
 };

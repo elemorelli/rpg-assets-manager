@@ -11,9 +11,10 @@ import {
   type IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import clsx from "clsx";
 import type { JSX } from "react";
 
+import { SegmentedButton } from "#components/segmented-group/segmented-button.tsx";
+import { SegmentedGroup } from "#components/segmented-group/segmented-group.tsx";
 import type { GroupCriterion } from "#web/utils/entry-grouping.ts";
 import type { SortCriterion, SortDirection } from "#web/utils/sort-entries.ts";
 import type { ViewMode } from "#web/utils/use-view-preferences.ts";
@@ -57,38 +58,32 @@ export const ViewControls = ({
   onGroupCriterionChange,
 }: ViewControlsProps): JSX.Element => (
   <div className={styles.controls}>
-    <div className={styles.group} role="group" aria-label="View">
-      <button
-        type="button"
+    <SegmentedGroup aria-label="View">
+      <SegmentedButton
         aria-label="Table view"
         title="Table view"
-        aria-pressed={viewMode === "table"}
-        className={clsx(viewMode === "table" && styles.active)}
+        active={viewMode === "table"}
         onClick={() => onViewModeChange("table")}>
         <FontAwesomeIcon icon={faTableList} />
-      </button>
-      <button
-        type="button"
+      </SegmentedButton>
+      <SegmentedButton
         aria-label="Grid view"
         title="Grid view"
-        aria-pressed={viewMode === "grid"}
-        className={clsx(viewMode === "grid" && styles.active)}
+        active={viewMode === "grid"}
         onClick={() => onViewModeChange("grid")}>
         <FontAwesomeIcon icon={faTableCells} />
-      </button>
-    </div>
-    <div className={styles.group} role="group" aria-label="Sort">
+      </SegmentedButton>
+    </SegmentedGroup>
+    <SegmentedGroup aria-label="Sort">
       {SORT_CRITERIA.map(({ criterion, label, icon }) => {
         const isActive = sortCriterion === criterion;
 
         return (
-          <button
+          <SegmentedButton
             key={criterion}
-            type="button"
             aria-label={label}
             title={label}
-            aria-pressed={isActive}
-            className={clsx(isActive && styles.active)}
+            active={isActive}
             onClick={() => onSortCriterionClick(criterion)}>
             <FontAwesomeIcon icon={icon} />
             {isActive && (
@@ -99,23 +94,21 @@ export const ViewControls = ({
                 data-testid={`sort-direction-icon-${criterion}`}
               />
             )}
-          </button>
+          </SegmentedButton>
         );
       })}
-    </div>
-    <div className={styles.group} role="group" aria-label="Group by">
+    </SegmentedGroup>
+    <SegmentedGroup aria-label="Group by">
       {GROUP_CRITERIA.map(({ criterion, label, icon }) => (
-        <button
+        <SegmentedButton
           key={criterion}
-          type="button"
           aria-label={label}
           title={label}
-          aria-pressed={groupCriterion === criterion}
-          className={clsx(groupCriterion === criterion && styles.active)}
+          active={groupCriterion === criterion}
           onClick={() => onGroupCriterionChange(criterion)}>
           <FontAwesomeIcon icon={icon} />
-        </button>
+        </SegmentedButton>
       ))}
-    </div>
+    </SegmentedGroup>
   </div>
 );

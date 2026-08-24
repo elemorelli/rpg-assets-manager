@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
+import { createRef } from "react";
 import { describe, expect, it } from "vitest";
 
 import styles from "./panel.module.css";
@@ -38,5 +39,13 @@ describe("Panel", () => {
     );
 
     expect(screen.getByRole("dialog", { name: "Example" })).toBeInTheDocument();
+  });
+
+  it("forwards a ref to the underlying div", () => {
+    const ref = createRef<HTMLDivElement>();
+
+    render(<Panel ref={ref}>Content</Panel>);
+
+    expect(ref.current).toBe(screen.getByText("Content"));
   });
 });

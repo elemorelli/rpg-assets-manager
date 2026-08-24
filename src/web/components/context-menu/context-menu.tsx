@@ -1,6 +1,7 @@
 import { type JSX, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { Panel } from "#components/panel/panel.tsx";
 import { clampMenuPosition } from "#web/utils/clamp-menu-position.ts";
 
 import styles from "./context-menu.module.css";
@@ -72,7 +73,7 @@ export const ContextMenu = ({
   }
 
   return createPortal(
-    <div
+    <Panel
       ref={menuRef}
       role="menu"
       className={styles.menu}
@@ -82,7 +83,7 @@ export const ContextMenu = ({
       // item also bubbles into the underlying row's onClick and reselects that row.
       onClick={(event) => event.stopPropagation()}>
       {children}
-    </div>,
+    </Panel>,
     document.body,
   );
 };

@@ -1,9 +1,15 @@
 .searchInput {
   padding: var(--spacing-xs) var(--spacing-sm);
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-sm);
   min-width: 220px;
+  transition: border-color var(--transition-fast);
+}
+
+.searchInput:focus-visible {
+  outline: none;
+  border-color: var(--color-accent);
 }

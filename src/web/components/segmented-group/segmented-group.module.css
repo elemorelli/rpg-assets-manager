@@ -1,0 +1,37 @@
+.group {
+  display: flex;
+  align-items: center;
+}
+
+.button {
+  position: relative;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  margin-left: -1px;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-md);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.button:first-of-type {
+  margin-left: 0;
+  border-top-left-radius: var(--radius-sm);
+  border-bottom-left-radius: var(--radius-sm);
+}
+
+.button:last-of-type {
+  border-top-right-radius: var(--radius-sm);
+  border-bottom-right-radius: var(--radius-sm);
+}
+
+.button:hover,
+.button:focus-visible {
+  position: relative;
+  z-index: 1;
+}
+
+.active {
+  color: var(--color-accent);
+}

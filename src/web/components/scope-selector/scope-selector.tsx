@@ -1,6 +1,7 @@
-import clsx from "clsx";
 import type { JSX } from "react";
 
+import { SegmentedButton } from "#components/segmented-group/segmented-button.tsx";
+import { SegmentedGroup } from "#components/segmented-group/segmented-group.tsx";
 import type { OperationScope } from "#utils/operation-scope.ts";
 
 import styles from "./scope-selector.module.css";
@@ -29,18 +30,16 @@ export const ScopeSelector = ({
   ];
 
   return (
-    <div className={styles.group} role="group" aria-label="Scope">
+    <SegmentedGroup aria-label="Scope" className={styles.group}>
       {options.map((option) => (
-        <button
+        <SegmentedButton
           key={option.scope}
-          type="button"
           title={option.title}
-          aria-pressed={scope === option.scope}
-          className={clsx(styles.option, scope === option.scope && styles.active)}
+          active={scope === option.scope}
           onClick={() => onScopeChange(option.scope)}>
           {option.label}
-        </button>
+        </SegmentedButton>
       ))}
-    </div>
+    </SegmentedGroup>
   );
 };

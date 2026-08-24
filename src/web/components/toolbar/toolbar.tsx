@@ -12,6 +12,8 @@ import { type JSX, useState } from "react";
 
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
+import { SegmentedButton } from "#components/segmented-group/segmented-button.tsx";
+import { SegmentedGroup } from "#components/segmented-group/segmented-group.tsx";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
 import { PendingBadge } from "./pending-badge.tsx";
@@ -52,44 +54,32 @@ export const Toolbar = ({
 
   return (
     <div className={clsx(styles.toolbar, busy && styles.busy)}>
-      <div className={styles.contentActions}>
-        <button
-          type="button"
+      <SegmentedGroup aria-label="Content actions">
+        <SegmentedButton
           disabled={busy}
           aria-label="Rescan"
           title="Rescan"
           onClick={() => onRescan(false)}>
           <FontAwesomeIcon icon={faArrowsRotate} />
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="Convert"
-          title="Convert"
-          onClick={onConvert}>
+        </SegmentedButton>
+        <SegmentedButton disabled={busy} aria-label="Convert" title="Convert" onClick={onConvert}>
           <FontAwesomeIcon icon={faFileExport} />
-        </button>
-        <button type="button" disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
+        </SegmentedButton>
+        <SegmentedButton disabled={busy} aria-label="Sync" title="Sync" onClick={onSync}>
           <FontAwesomeIcon icon={faCloudArrowUp} />
           {hasPendingSyncChanges && <PendingBadge testId="sync-pending-badge" />}
-        </button>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label="Foundry"
-          title="Foundry"
-          onClick={onFoundry}>
+        </SegmentedButton>
+        <SegmentedButton disabled={busy} aria-label="Foundry" title="Foundry" onClick={onFoundry}>
           <FontAwesomeIcon icon={faDiceD20} />
           {hasPendingFoundryMacro && <PendingBadge testId="foundry-pending-badge" />}
-        </button>
-        <button
-          type="button"
+        </SegmentedButton>
+        <SegmentedButton
           disabled={busy}
           aria-label="Directory actions"
           title="Directory actions"
           onClick={directoryActionsMenu.open}>
           <FontAwesomeIcon icon={faEllipsisVertical} />
-        </button>
+        </SegmentedButton>
         <DirectoryActionsMenu
           position={directoryActionsMenu.position}
           onClose={directoryActionsMenu.close}
@@ -98,7 +88,7 @@ export const Toolbar = ({
           onRehashRequested={() => setConfirmingRehash(true)}
           onReconcile={onReconcile}
         />
-      </div>
+      </SegmentedGroup>
       {confirmingRehash && (
         <ConfirmDialog
           title="Full rehash"
