@@ -72,6 +72,7 @@
 
 .row {
   cursor: pointer;
+  transition: background-color var(--transition-fast);
 }
 
 .dragOver {
@@ -86,6 +87,10 @@
 
 .table tbody tr:nth-of-type(even):not(.groupHeader):not(.selected) {
   background: rgba(255, 255, 255, 0.03);
+}
+
+.table tbody tr.row:hover:not(.selected) {
+  background: var(--color-surface-overlay);
 }
 
 .selected {

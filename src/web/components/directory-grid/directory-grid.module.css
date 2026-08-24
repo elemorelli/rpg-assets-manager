@@ -17,6 +17,11 @@
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   cursor: default;
+  transition: background-color var(--transition-fast);
+}
+
+.tile:hover:not(.selected) {
+  background: var(--color-surface-overlay);
 }
 
 .tile.dragOver {

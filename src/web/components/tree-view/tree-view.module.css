@@ -15,7 +15,13 @@
   align-items: center;
   gap: var(--spacing-xs);
   padding: 2px var(--spacing-sm);
+  border-radius: var(--radius-sm);
   cursor: default;
+  transition: background-color var(--transition-fast);
+}
+
+.row:hover {
+  background: var(--color-surface-overlay);
 }
 
 .row.dragOver {
