@@ -13,6 +13,7 @@ import { UnsafePathError } from "#server/utils/safe-path.ts";
 
 const PREFIX = "upload-test/";
 const FAKE_PNG_BYTES_LENGTH = Buffer.byteLength("fake-png-bytes");
+const THIRD_CALL = 3;
 
 const uploadableStreamFrom = (content: string, truncated = false) => {
   const stream = Readable.from([Buffer.from(content)]) as Readable & { truncated: boolean };
@@ -168,7 +169,7 @@ describe("uploadFile", () => {
 
     expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, expectedSet);
     expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, expectedSet);
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(THIRD_CALL, expectedSet);
   });
 
   it("adjusts the aggregate by the size delta only, without double-counting the file, when a row already exists", async () => {

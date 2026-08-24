@@ -14,6 +14,11 @@ vi.mock("#server/db/index.ts", () => ({
 
 const { applyAggregateDelta } = await import("../apply-aggregate-delta.ts");
 
+const FIRST_CALL = 1;
+const SECOND_CALL = 2;
+const THIRD_CALL = 3;
+const FOURTH_CALL = 4;
+
 describe("applyAggregateDelta", () => {
   let mock: MockDb;
 
@@ -40,9 +45,9 @@ describe("applyAggregateDelta", () => {
 
     const expectedSet = { total_size: 100, file_count: 1, folder_count: 0 };
 
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, expectedSet);
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, expectedSet);
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(FIRST_CALL, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(SECOND_CALL, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(THIRD_CALL, expectedSet);
   });
 
   it("accumulates across multiple calls", async () => {
@@ -61,12 +66,12 @@ describe("applyAggregateDelta", () => {
     await applyAggregateDelta("tiles", { size: 100, fileCount: 1, folderCount: 0 });
     await applyAggregateDelta("tiles", { size: 50, fileCount: 1, folderCount: 0 });
 
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, {
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(THIRD_CALL, {
       total_size: 150,
       file_count: 2,
       folder_count: 0,
     });
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(4, {
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(FOURTH_CALL, {
       total_size: 150,
       file_count: 2,
       folder_count: 0,
@@ -89,12 +94,12 @@ describe("applyAggregateDelta", () => {
     await applyAggregateDelta("tiles", { size: 100, fileCount: 2, folderCount: 0 });
     await applyAggregateDelta("tiles", { size: -40, fileCount: -1, folderCount: 0 });
 
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, {
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(THIRD_CALL, {
       total_size: 60,
       file_count: 1,
       folder_count: 0,
     });
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(4, {
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(FOURTH_CALL, {
       total_size: 60,
       file_count: 1,
       folder_count: 0,

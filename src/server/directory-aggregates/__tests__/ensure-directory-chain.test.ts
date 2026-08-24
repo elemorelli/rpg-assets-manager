@@ -16,6 +16,10 @@ const { ensureDirectoryChain } = await import("../ensure-directory-chain.ts");
 
 const EMPTY_AGGREGATE = { total_size: 0, file_count: 0, folder_count: 0 };
 
+const THIRD_CALL = 3;
+const FOREST_DIRECTORY_ID = 3;
+const EXPECTED_INSERT_CALL_COUNT = 3;
+
 describe("ensureDirectoryChain", () => {
   let mock: MockDb;
 
@@ -58,7 +62,7 @@ describe("ensureDirectoryChain", () => {
       parent_id: 1,
       ...EMPTY_AGGREGATE,
     });
-    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(3, {
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(THIRD_CALL, {
       path: "tiles/forest",
       parent_id: 2,
       ...EMPTY_AGGREGATE,
@@ -74,7 +78,7 @@ describe("ensureDirectoryChain", () => {
 
     const directoryId = await ensureDirectoryChain("tiles/forest");
 
-    expect(directoryId).toBe(3);
+    expect(directoryId).toBe(FOREST_DIRECTORY_ID);
   });
 
   it("does not duplicate rows when called twice for the same path", async () => {
@@ -95,7 +99,7 @@ describe("ensureDirectoryChain", () => {
     await ensureDirectoryChain("tiles/forest");
     await ensureDirectoryChain("tiles/forest");
 
-    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(3);
+    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(EXPECTED_INSERT_CALL_COUNT);
   });
 
   it("reuses already-existing ancestors instead of recreating them", async () => {
@@ -114,8 +118,8 @@ describe("ensureDirectoryChain", () => {
     await ensureDirectoryChain("tiles");
     await ensureDirectoryChain("tiles/forest");
 
-    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(3);
-    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(3, {
+    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(EXPECTED_INSERT_CALL_COUNT);
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(THIRD_CALL, {
       path: "tiles/forest",
       parent_id: 2,
       ...EMPTY_AGGREGATE,

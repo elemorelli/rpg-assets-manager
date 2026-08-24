@@ -18,6 +18,8 @@ vi.mock("#server/db/index.ts", () => ({
 
 const { createDirectory } = await import("../create.ts");
 
+const THIRD_CALL = 3;
+
 const createMock = (): MockDb => {
   const mockDb = createMockDb();
 
@@ -112,7 +114,7 @@ describe("createDirectory", () => {
       file_count: 0,
       folder_count: 1,
     });
-    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, {
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(THIRD_CALL, {
       total_size: 0,
       file_count: 0,
       folder_count: 2,
