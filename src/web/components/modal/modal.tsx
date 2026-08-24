@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, type MouseEvent, type ReactNode, useEffect } from "react";
 import { createPortal } from "react-dom";
 
+import { Panel } from "#components/panel/panel.tsx";
+
 import styles from "./modal.module.css";
 
 export interface ModalProps {
@@ -49,7 +51,7 @@ export const Modal = ({
 
   return createPortal(
     <div className={styles.backdrop} data-testid="modal-backdrop" onClick={handleBackdropClick}>
-      <div className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
+      <Panel elevated className={styles.dialog} role="dialog" aria-modal="true" aria-label={title}>
         <div className={styles.header}>
           <span className={styles.titleGroup}>
             {icon && (
@@ -71,7 +73,7 @@ export const Modal = ({
         </div>
         <div className={styles.body}>{children}</div>
         {footer && <div className={styles.footer}>{footer}</div>}
-      </div>
+      </Panel>
     </div>,
     document.body,
   );

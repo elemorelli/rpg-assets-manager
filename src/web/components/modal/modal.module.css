@@ -13,9 +13,6 @@
   flex-direction: column;
   width: min(720px, 92vw);
   max-height: min(85vh, 760px);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
 }
 
 .header {
