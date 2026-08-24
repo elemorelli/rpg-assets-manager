@@ -5,13 +5,22 @@
 
 .button {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
   border: 1px solid var(--color-border);
   border-radius: 0;
   margin-left: -1px;
   padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-family: var(--font-sans);
   font-size: var(--font-size-md);
+  cursor: pointer;
   transition:
     background-color var(--transition-fast),
+    border-color var(--transition-fast),
     color var(--transition-fast);
 }
 
@@ -26,12 +35,21 @@
   border-bottom-right-radius: var(--radius-sm);
 }
 
-.button:hover,
-.button:focus-visible {
-  position: relative;
+.button:hover:not(:disabled),
+.button:focus-visible:not(:disabled) {
   z-index: 1;
+  background: var(--color-surface-overlay);
+  border-color: var(--color-accent);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .active {
+  z-index: 1;
+  background: var(--color-surface-overlay);
+  border-color: var(--color-accent);
   color: var(--color-accent);
 }
