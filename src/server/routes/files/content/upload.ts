@@ -66,15 +66,15 @@ export const uploadFile = async (
       createHashingTransform(hasher),
       createWriteStream(absolutePath, { flags: overwrite ? "w" : "wx" }),
     );
-  } catch (caught) {
+  } catch (error) {
     // Defense in depth for the race where the file is created between the
     // pathExists() check above and this write: the stream has already been
     // torn down by pipeline() at this point, so it can't be drained here too.
-    if (isFileAlreadyExistsError(caught)) {
+    if (isFileAlreadyExistsError(error)) {
       throw new HttpError("File already exists", HTTP_STATUS.conflict);
     }
 
-    throw caught;
+    throw error;
   }
 
   if (content.truncated) {

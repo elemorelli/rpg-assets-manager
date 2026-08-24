@@ -49,15 +49,15 @@ export const useBatchMove = ({
       try {
         await api.moveEntry(item.fromPath, item.toPath);
         successCount += 1;
-      } catch (caught) {
-        if (isConflictError(caught)) {
+      } catch (error) {
+        if (isConflictError(error)) {
           conflicts.push(item);
           continue;
         }
 
         resultMessage = {
           severity: "error",
-          summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+          summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(error)}`,
         };
         break;
       }
@@ -71,10 +71,10 @@ export const useBatchMove = ({
           try {
             await api.moveEntry(item.fromPath, item.toPath, true);
             successCount += 1;
-          } catch (caught) {
+          } catch (error) {
             resultMessage = {
               severity: "error",
-              summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+              summary: `Moved ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(error)}`,
             };
             break;
           }

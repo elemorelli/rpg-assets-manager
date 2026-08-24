@@ -36,10 +36,10 @@ export const useMassEntryActions = ({
       try {
         await action(entry);
         successCount += 1;
-      } catch (caught) {
+      } catch (error) {
         resultMessage = {
           severity: "error",
-          summary: `${verb} ${successCount} of ${entries.length} before failing on "${entry.name}": ${describeError(caught)}`,
+          summary: `${verb} ${successCount} of ${entries.length} before failing on "${entry.name}": ${describeError(error)}`,
         };
         break;
       }

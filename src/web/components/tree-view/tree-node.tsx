@@ -11,8 +11,8 @@ import { useContextMenu } from "#web/utils/use-context-menu.ts";
 import { useDragExpand } from "#web/utils/use-drag-expand.ts";
 import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
-import { useTreeViewContext } from "./tree-view-context.ts";
 import styles from "./tree-view.module.css";
+import { useTreeViewContext } from "./tree-view-context.ts";
 
 const INDENT_PX = 16;
 const DRAG_EXPAND_DELAY_MS = 600;

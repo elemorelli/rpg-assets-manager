@@ -6,14 +6,14 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import clsx from "clsx";
-import { type JSX, type KeyboardEvent, type MouseEvent, useState } from "react";
+import { type JSX, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { buildRawFileUrl, buildThumbnailUrl, resolvePreviewSource } from "#utils/preview.ts";
-import { modifierFromClick } from "#web/utils/row-selection.ts";
 
 import styles from "./asset-preview.module.css";
 import { AudioPreviewButton } from "./audio-preview-button.tsx";
+import { createOpenOnActivateHandlers } from "./open-on-activate-handlers.ts";
 
 export interface AssetPreviewProps {
   entry: DirectoryEntry;
@@ -70,21 +70,10 @@ export const AssetPreview = ({
       ? buildThumbnailUrl(relativePath)
       : buildRawFileUrl(relativePath);
     const isOpenable = onOpen !== undefined;
-
-    const handleOpenClick = (event: MouseEvent<HTMLImageElement>): void => {
-      if (modifierFromClick(event) !== "replace") {
-        return;
-      }
-
-      onOpen?.(entry);
-    };
-
-    const handleOpenKeyDown = (event: KeyboardEvent<HTMLImageElement>): void => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        onOpen?.(entry);
-      }
-    };
+    const { handleOpenClick, handleOpenKeyDown } = createOpenOnActivateHandlers<HTMLImageElement>({
+      entry,
+      onOpen,
+    });
 
     const handleImageError = (): void => {
       setImageLoadFailed(true);
@@ -127,21 +116,10 @@ export const AssetPreview = ({
     }
 
     const isOpenable = onOpen !== undefined;
-
-    const handleOpenClick = (event: MouseEvent<HTMLSpanElement>): void => {
-      if (modifierFromClick(event) !== "replace") {
-        return;
-      }
-
-      onOpen?.(entry);
-    };
-
-    const handleOpenKeyDown = (event: KeyboardEvent<HTMLSpanElement>): void => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        onOpen?.(entry);
-      }
-    };
+    const { handleOpenClick, handleOpenKeyDown } = createOpenOnActivateHandlers<HTMLSpanElement>({
+      entry,
+      onOpen,
+    });
 
     return (
       <span data-size={size} className={styles.audioPreviewArea}>

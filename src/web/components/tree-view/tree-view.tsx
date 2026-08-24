@@ -5,8 +5,8 @@ import { joinRelativePath } from "#utils/paths.ts";
 import { ROOT_PATH } from "#web/utils/breadcrumbs.ts";
 
 import { TreeNode } from "./tree-node.tsx";
-import { TreeViewContext } from "./tree-view-context.ts";
 import styles from "./tree-view.module.css";
+import { TreeViewContext } from "./tree-view-context.ts";
 import { useTreeData } from "./use-tree-data.ts";
 
 export interface TreeViewProps {

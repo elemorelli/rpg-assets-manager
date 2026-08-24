@@ -18,8 +18,8 @@ export const runBatchOperation = async <T>(
     try {
       await operate(item);
       successCount += 1;
-    } catch (caught) {
-      errorMessage = `${verb} ${successCount} of ${items.length} before failing on "${describeItem(item)}": ${describeError(caught)}`;
+    } catch (error) {
+      errorMessage = `${verb} ${successCount} of ${items.length} before failing on "${describeItem(item)}": ${describeError(error)}`;
       break;
     }
   }

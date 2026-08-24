@@ -72,15 +72,15 @@ export const useFileUpload = ({
       try {
         await api.uploadFile(item.targetDir, item.file);
         successCount += 1;
-      } catch (caught) {
-        if (isConflictError(caught)) {
+      } catch (error) {
+        if (isConflictError(error)) {
           conflicts.push(item);
           continue;
         }
 
         resultMessage = {
           severity: "error",
-          summary: `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+          summary: `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(error)}`,
         };
         break;
       }
@@ -98,10 +98,10 @@ export const useFileUpload = ({
           try {
             await api.uploadFile(item.targetDir, item.file, true);
             successCount += 1;
-          } catch (caught) {
+          } catch (error) {
             resultMessage = {
               severity: "error",
-              summary: `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(caught)}`,
+              summary: `Uploaded ${successCount} of ${items.length} before failing on "${item.displayName}": ${describeError(error)}`,
             };
             break;
           }

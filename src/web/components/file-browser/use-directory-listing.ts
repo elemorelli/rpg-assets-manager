@@ -34,8 +34,8 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
       const listed = await api.listDirectory(path);
 
       setEntries(listed);
-    } catch (caught) {
-      setMessage(describeErrorAsMessage(caught));
+    } catch (error) {
+      setMessage(describeErrorAsMessage(error));
     } finally {
       setBusy(false);
     }
@@ -62,8 +62,8 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
 
     action()
       .then(() => refreshAfterMutation(currentPath))
-      .catch((caught: unknown) => {
-        setMessage(describeErrorAsMessage(caught));
+      .catch((error: unknown) => {
+        setMessage(describeErrorAsMessage(error));
         setBusy(false);
       });
   };

@@ -74,6 +74,7 @@ export const Lightbox = ({
 
   useEffect(() => {
     if (previewSource.kind === "audio") {
+      // Browsers reject play() when autoplay is blocked by policy; that's expected here.
       audioRef.current?.play()?.catch(() => {});
     }
   }, [entry, previewSource.kind]);
