@@ -1,95 +1,84 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
-import {
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const {
   getLocalHashIndex,
   getRemoteHashIndex,
   invalidateLocalHashIndex,
   invalidateRemoteHashIndex,
-} from "../hash-index-cache.ts";
+} = await import("../hash-index-cache.ts");
 
 describe("hash index cache", () => {
-  it("caches the local index per db instance, not globally", async () => {
-    const dbA = createFakeDb();
-    const dbB = createFakeDb();
+  let mock: MockDb;
 
-    await dbA
-      .insertInto("assets")
-      .values({ path: "a.png", size: 1, mtime: new Date(), hash: "hash-a" })
-      .execute();
-    await dbB
-      .insertInto("assets")
-      .values({ path: "b.png", size: 1, mtime: new Date(), hash: "hash-b" })
-      .execute();
+  beforeEach(() => {
+    const mockDb = createMockDb();
 
-    const indexA = await getLocalHashIndex(dbA);
-    const indexB = await getLocalHashIndex(dbB);
-
-    expect([...indexA.keys()]).toEqual(["a.png"]);
-    expect([...indexB.keys()]).toEqual(["b.png"]);
+    currentMockDb = mockDb;
+    mock = mockDb as unknown as MockDb;
   });
 
   it("returns the cached local index on a second call without re-reading the db", async () => {
-    const db = createFakeDb();
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([{ path: "a.png", hash: "hash-a", previous_hash: null }]);
 
-    await db
-      .insertInto("assets")
-      .values({ path: "a.png", size: 1, mtime: new Date(), hash: "hash-a" })
-      .execute();
+    const first = await getLocalHashIndex();
+    const second = await getLocalHashIndex();
 
-    await getLocalHashIndex(db);
-    await db
-      .insertInto("assets")
-      .values({ path: "b.png", size: 1, mtime: new Date(), hash: "hash-b" })
-      .execute();
-    const index = await getLocalHashIndex(db);
-
-    expect([...index.keys()]).toEqual(["a.png"]);
+    expect([...first.keys()]).toEqual(["a.png"]);
+    expect([...second.keys()]).toEqual(["a.png"]);
+    expect(mock.selectFrom("assets").execute).toHaveBeenCalledTimes(1);
   });
 
   it("reflects a write immediately after invalidateLocalHashIndex", async () => {
-    const db = createFakeDb();
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([{ path: "a.png", hash: "hash-a", previous_hash: null }])
+      .mockResolvedValueOnce([
+        { path: "a.png", hash: "hash-a", previous_hash: null },
+        { path: "b.png", hash: "hash-b", previous_hash: null },
+      ]);
 
-    await db
-      .insertInto("assets")
-      .values({ path: "a.png", size: 1, mtime: new Date(), hash: "hash-a" })
-      .execute();
-
-    await getLocalHashIndex(db);
-    await db
-      .insertInto("assets")
-      .values({ path: "b.png", size: 1, mtime: new Date(), hash: "hash-b" })
-      .execute();
-    invalidateLocalHashIndex(db);
-    const index = await getLocalHashIndex(db);
+    await getLocalHashIndex();
+    invalidateLocalHashIndex();
+    const index = await getLocalHashIndex();
 
     expect([...index.keys()].sort()).toEqual(["a.png", "b.png"]);
+    expect(mock.selectFrom("assets").execute).toHaveBeenCalledTimes(2);
   });
 
   it("caches and invalidates the remote index independently of the local index", async () => {
-    const db = createFakeDb();
+    mock
+      .selectFrom("remote_assets")
+      .execute.mockResolvedValueOnce([{ path: "a.png", hash: "hash-a", size: 1 }])
+      .mockResolvedValueOnce([
+        { path: "a.png", hash: "hash-a", size: 1 },
+        { path: "b.png", hash: "hash-b", size: 1 },
+      ]);
 
-    await db
-      .insertInto("remote_assets")
-      .values({ path: "a.png", size: 1, hash: "hash-a" })
-      .execute();
-
-    await getRemoteHashIndex(db);
-    await db
-      .insertInto("remote_assets")
-      .values({ path: "b.png", size: 1, hash: "hash-b" })
-      .execute();
-    invalidateRemoteHashIndex(db);
-    const index = await getRemoteHashIndex(db);
+    await getRemoteHashIndex();
+    invalidateRemoteHashIndex();
+    const index = await getRemoteHashIndex();
 
     expect([...index.keys()].sort()).toEqual(["a.png", "b.png"]);
+    expect(mock.selectFrom("remote_assets").execute).toHaveBeenCalledTimes(2);
+    expect(mock.selectFrom("assets").execute).not.toHaveBeenCalled();
   });
 
   it("invalidating a db with no cached entry yet is a safe no-op", () => {
-    const db = createFakeDb();
-
-    expect(() => invalidateLocalHashIndex(db)).not.toThrow();
-    expect(() => invalidateRemoteHashIndex(db)).not.toThrow();
+    expect(() => invalidateLocalHashIndex()).not.toThrow();
+    expect(() => invalidateRemoteHashIndex()).not.toThrow();
   });
 });

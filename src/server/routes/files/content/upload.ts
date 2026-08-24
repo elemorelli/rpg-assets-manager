@@ -4,10 +4,9 @@ import path from "node:path";
 import type { Readable } from "node:stream";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
 import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
@@ -41,7 +40,6 @@ const drainStream = async (stream: UploadableStream): Promise<void> => {
 };
 
 export const uploadFile = async (
-  db: Kysely<DB>,
   rootDir: string,
   targetDirPath: string,
   fileName: string,
@@ -113,14 +111,14 @@ export const uploadFile = async (
 
   const parentDir = getParentPath(relativeFile);
 
-  await ensureDirectoryChain(db, parentDir);
-  await applyAggregateDelta(db, parentDir, {
+  await ensureDirectoryChain(parentDir);
+  await applyAggregateDelta(parentDir, {
     size: stat.size - (previousSize ?? 0),
     fileCount: previousSize === undefined ? 1 : 0,
     folderCount: 0,
   });
 
-  invalidateLocalHashIndex(db);
+  invalidateLocalHashIndex();
 };
 
 interface UploadField {
@@ -157,14 +155,7 @@ export const uploadFileHandler = (assetTreeRoot: string) =>
     const targetDir = extractTargetDir(uploadedFile.fields);
     const overwrite = extractOverwrite(uploadedFile.fields);
 
-    await uploadFile(
-      db,
-      assetTreeRoot,
-      targetDir,
-      uploadedFile.filename,
-      uploadedFile.file,
-      overwrite,
-    );
+    await uploadFile(assetTreeRoot, targetDir, uploadedFile.filename, uploadedFile.file, overwrite);
 
     return { uploaded: uploadedFile.filename };
   });

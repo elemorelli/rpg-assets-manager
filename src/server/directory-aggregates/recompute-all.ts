@@ -1,6 +1,4 @@
-import type { Kysely } from "kysely";
-
-import type { DB } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { walkDirectory } from "#server/utils/walk-directory.ts";
 import { getAncestorPaths, getParentPath } from "#utils/directory-path.ts";
 
@@ -12,10 +10,7 @@ interface DirectoryAggregate {
 
 const createEmptyAggregate = (): DirectoryAggregate => ({ size: 0, fileCount: 0, folderCount: 0 });
 
-const buildAggregates = async (
-  db: Kysely<DB>,
-  rootDir: string,
-): Promise<Map<string, DirectoryAggregate>> => {
+const buildAggregates = async (rootDir: string): Promise<Map<string, DirectoryAggregate>> => {
   const entries = await walkDirectory(rootDir);
   const assetSizes = new Map(
     (await db.selectFrom("assets").select(["path", "size"]).execute()).map((row) => [
@@ -63,11 +58,8 @@ const buildAggregates = async (
   return aggregates;
 };
 
-export const recomputeAllDirectoryAggregates = async (
-  db: Kysely<DB>,
-  rootDir: string,
-): Promise<void> => {
-  const aggregates = await buildAggregates(db, rootDir);
+export const recomputeAllDirectoryAggregates = async (rootDir: string): Promise<void> => {
+  const aggregates = await buildAggregates(rootDir);
   const sortedPaths = [...aggregates.keys()].sort(
     (a, b) => a.split("/").length - b.split("/").length,
   );

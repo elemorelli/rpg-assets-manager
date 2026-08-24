@@ -28,7 +28,7 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
       "fake-png-bytes",
     );
 
-    await renameEntry(db, tempDir.path, `${PREFIX}forest.png`, "forest-renamed.png");
+    await renameEntry(tempDir.path, `${PREFIX}forest.png`, "forest-renamed.png");
 
     await expect(
       fs.stat(path.join(tempDir.path, "rename-entry-test", "forest.png")),
@@ -45,7 +45,7 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
       "fake-png-bytes",
     );
 
-    await renameEntry(db, tempDir.path, `${PREFIX}tiles/forest.png`, "forest-renamed.png");
+    await renameEntry(tempDir.path, `${PREFIX}tiles/forest.png`, "forest-renamed.png");
 
     expect(
       (
@@ -59,9 +59,7 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
     await fs.writeFile(path.join(tempDir.path, "rename-entry-test", "a.png"), "a");
     await fs.writeFile(path.join(tempDir.path, "rename-entry-test", "b.png"), "b");
 
-    await expect(renameEntry(db, tempDir.path, `${PREFIX}a.png`, "b.png")).rejects.toThrow(
-      HttpError,
-    );
+    await expect(renameEntry(tempDir.path, `${PREFIX}a.png`, "b.png")).rejects.toThrow(HttpError);
   });
 
   it("rejects a new name that tries to escape the current directory", async () => {
@@ -72,12 +70,12 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
     );
 
     await expect(
-      renameEntry(db, tempDir.path, `${PREFIX}tiles/forest.png`, "../../../escaped.png"),
+      renameEntry(tempDir.path, `${PREFIX}tiles/forest.png`, "../../../escaped.png"),
     ).rejects.toThrow(UnsafePathError);
   });
 
   it("rejects an unsafe current path", async () => {
-    await expect(renameEntry(db, tempDir.path, "../escaped.png", "renamed.png")).rejects.toThrow(
+    await expect(renameEntry(tempDir.path, "../escaped.png", "renamed.png")).rejects.toThrow(
       UnsafePathError,
     );
   });
@@ -93,7 +91,7 @@ describe("renameEntry (requires DATABASE_URL pointing at a running Postgres)", (
       .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
       .execute();
 
-    await renameEntry(db, tempDir.path, `${PREFIX}forest.png`, "forest-renamed.png");
+    await renameEntry(tempDir.path, `${PREFIX}forest.png`, "forest-renamed.png");
 
     const movedRow = await db
       .selectFrom("assets")

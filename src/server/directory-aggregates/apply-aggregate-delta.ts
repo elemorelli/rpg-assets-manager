@@ -1,6 +1,4 @@
-import type { Kysely } from "kysely";
-
-import type { DB } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { getAncestorPaths } from "#utils/directory-path.ts";
 
 export interface AggregateDelta {
@@ -10,7 +8,6 @@ export interface AggregateDelta {
 }
 
 export const applyAggregateDelta = async (
-  db: Kysely<DB>,
   startPath: string,
   delta: AggregateDelta,
 ): Promise<void> => {

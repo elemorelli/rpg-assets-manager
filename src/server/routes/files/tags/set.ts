@@ -1,16 +1,14 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { normalizeTags } from "#server/utils/tags.ts";
 
 export const setAssetTags = async (
-  db: Kysely<DB>,
   rootDir: string,
   requestedPath: string,
   rawTags: string[],
@@ -51,7 +49,7 @@ export const setAssetTags = async (
     .onConflict((oc) => oc.column("path").doUpdateSet({ tags }))
     .execute();
 
-  invalidateLocalHashIndex(db);
+  invalidateLocalHashIndex();
 
   return tags;
 };
@@ -64,7 +62,7 @@ interface SetTagsBody {
 export const setAssetTagsHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const body = request.body as SetTagsBody | undefined;
-    const tags = await setAssetTags(db, assetTreeRoot, body?.path ?? "", body?.tags ?? []);
+    const tags = await setAssetTags(assetTreeRoot, body?.path ?? "", body?.tags ?? []);
 
     return { tags };
   });

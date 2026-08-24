@@ -1,6 +1,5 @@
 import { runner } from "node-pg-migrate";
 
-import { db } from "#server/db/index.ts";
 import { rescanAssets } from "#server/routes/scan/index.ts";
 
 import { buildApp } from "./app.ts";
@@ -35,7 +34,7 @@ const start = async (): Promise<void> => {
     migrationsTable: "pgmigrations",
   });
 
-  await rescanAssets(db, ASSET_TREE_ROOT);
+  await rescanAssets(ASSET_TREE_ROOT);
 
   const app = buildApp({
     webDistDir: WEB_DIST_DIR,

@@ -1,6 +1,6 @@
-import { type Kysely, sql } from "kysely";
+import { sql } from "kysely";
 
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesScopedPathQuery } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
@@ -30,7 +30,6 @@ export interface BatchDiffResult {
 }
 
 export const computeBatchDiff = async (
-  db: Kysely<DB>,
   scope: OperationScope = "all",
   relativeDir = "",
 ): Promise<BatchDiffResult> => {
@@ -90,5 +89,5 @@ export const diffHandler = withHttpErrorHandling(async (request) => {
   const relativeDir = resolveSafeRelativePath(query.path ?? "");
   const scope: OperationScope = query.scope ?? "all";
 
-  return await computeBatchDiff(db, scope, relativeDir);
+  return await computeBatchDiff(scope, relativeDir);
 });

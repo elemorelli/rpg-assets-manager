@@ -29,7 +29,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
   it("renames a file within the same directory", async () => {
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "forest.png"), "fake-png-bytes");
 
-    await moveEntry(db, tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
+    await moveEntry(tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
 
     await expect(
       fs.stat(path.join(tempDir.path, "move-entry-test", "forest.png")),
@@ -42,7 +42,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
   it("moves a file into a new directory, creating it as needed", async () => {
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "forest.png"), "fake-png-bytes");
 
-    await moveEntry(db, tempDir.path, `${PREFIX}forest.png`, `${PREFIX}tiles/forest.png`);
+    await moveEntry(tempDir.path, `${PREFIX}forest.png`, `${PREFIX}tiles/forest.png`);
 
     expect(
       (await fs.stat(path.join(tempDir.path, "move-entry-test", "tiles", "forest.png"))).isFile(),
@@ -53,7 +53,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "a");
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "b.png"), "b");
 
-    await expect(moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}b.png`)).rejects.toThrow(
+    await expect(moveEntry(tempDir.path, `${PREFIX}a.png`, `${PREFIX}b.png`)).rejects.toThrow(
       HttpError,
     );
   });
@@ -61,7 +61,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
   it("rejects a path that escapes the tree root", async () => {
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "a");
 
-    await expect(moveEntry(db, tempDir.path, `${PREFIX}a.png`, "../escaped.png")).rejects.toThrow(
+    await expect(moveEntry(tempDir.path, `${PREFIX}a.png`, "../escaped.png")).rejects.toThrow(
       UnsafePathError,
     );
   });
@@ -74,7 +74,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       .returning("id")
       .executeTakeFirstOrThrow();
 
-    await moveEntry(db, tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
+    await moveEntry(tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
 
     const movedRow = await db
       .selectFrom("assets")
@@ -108,7 +108,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       ])
       .execute();
 
-    await moveEntry(db, tempDir.path, `${PREFIX}tiles`, `${PREFIX}sprites`);
+    await moveEntry(tempDir.path, `${PREFIX}tiles`, `${PREFIX}sprites`);
 
     const remainingPaths = await db
       .selectFrom("assets")
@@ -154,7 +154,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
     // Moving between two sibling branches (both directly under "move-entry-test")
     // keeps the shared ancestor's net change at zero, so the old/new parent
     // checks below stay isolated to the branch that actually changed.
-    await moveEntry(db, tempDir.path, `${PREFIX}oldloc/forest.png`, `${PREFIX}newloc/forest.png`);
+    await moveEntry(tempDir.path, `${PREFIX}oldloc/forest.png`, `${PREFIX}newloc/forest.png`);
 
     const oldParent = await db
       .selectFrom("directories")
@@ -226,7 +226,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
 
     // "from" and "to" are disjoint siblings under "move-entry-test", so this
     // move transfers the subtree's aggregate between two unrelated branches.
-    await moveEntry(db, tempDir.path, `${PREFIX}from/tiles`, `${PREFIX}to/sprites`);
+    await moveEntry(tempDir.path, `${PREFIX}from/tiles`, `${PREFIX}to/sprites`);
 
     const remainingUnderFrom = await db
       .selectFrom("directories")
@@ -271,7 +271,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "source-bytes");
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "b.png"), "dest-bytes");
 
-    await moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}b.png`, true);
+    await moveEntry(tempDir.path, `${PREFIX}a.png`, `${PREFIX}b.png`, true);
 
     await expect(fs.stat(path.join(tempDir.path, "move-entry-test", "a.png"))).rejects.toThrow();
     expect(await fs.readFile(path.join(tempDir.path, "move-entry-test", "b.png"), "utf8")).toBe(
@@ -304,7 +304,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       })
       .execute();
 
-    await moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}dir/b.png`, true);
+    await moveEntry(tempDir.path, `${PREFIX}a.png`, `${PREFIX}dir/b.png`, true);
 
     const movedRow = await db
       .selectFrom("assets")
@@ -353,7 +353,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       "nested-source",
     );
 
-    await moveEntry(db, tempDir.path, `${PREFIX}from`, `${PREFIX}to`, true);
+    await moveEntry(tempDir.path, `${PREFIX}from`, `${PREFIX}to`, true);
 
     await expect(fs.stat(path.join(tempDir.path, "move-entry-test", "from"))).rejects.toThrow();
 
@@ -392,7 +392,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
     await fs.writeFile(path.join(tempDir.path, "move-entry-test", "a.png"), "a");
     await fs.mkdir(path.join(tempDir.path, "move-entry-test", "b"), { recursive: true });
 
-    await expect(moveEntry(db, tempDir.path, `${PREFIX}a.png`, `${PREFIX}b`, true)).rejects.toThrow(
+    await expect(moveEntry(tempDir.path, `${PREFIX}a.png`, `${PREFIX}b`, true)).rejects.toThrow(
       HttpError,
     );
   });
@@ -404,9 +404,9 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
       .execute();
 
-    await getLocalHashIndex(db);
-    await moveEntry(db, tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
-    const index = await getLocalHashIndex(db);
+    await getLocalHashIndex();
+    await moveEntry(tempDir.path, `${PREFIX}forest.png`, `${PREFIX}forest-renamed.png`);
+    const index = await getLocalHashIndex();
 
     expect(index.has(`${PREFIX}forest.png`)).toBe(false);
     expect(index.has(`${PREFIX}forest-renamed.png`)).toBe(true);

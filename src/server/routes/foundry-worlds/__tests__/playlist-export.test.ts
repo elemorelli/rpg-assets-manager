@@ -1,14 +1,30 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
-
-import {
-  buildFoundryPlaylistExport,
-  findAudioAssetsByTag,
-  sanitizeFilenameSegment,
-} from "../playlist-export.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
 const BASE_URL = "https://assets.example.com";
+
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { buildFoundryPlaylistExport, findAudioAssetsByTag, sanitizeFilenameSegment } = await import(
+  "../playlist-export.ts"
+);
+
+const createMock = (): MockDb => {
+  const mockDb = createMockDb();
+
+  currentMockDb = mockDb;
+
+  return mockDb as unknown as MockDb;
+};
 
 describe("buildFoundryPlaylistExport", () => {
   it("builds a Playlist document with one PlaylistSound per asset, in path order", () => {
@@ -76,24 +92,26 @@ describe("sanitizeFilenameSegment", () => {
 
 describe("findAudioAssetsByTag", () => {
   it("returns only audio assets carrying the tag, sorted by path", async () => {
-    const db = createFakeDb();
+    const mock = createMock();
 
-    db.seed("assets", [
-      { id: "1", path: "sfx/thunder.mp3", size: 1, hash: "h1", tags: ["storm"] },
-      { id: "2", path: "sfx/rain.ogg", size: 1, hash: "h2", tags: ["storm"] },
-      { id: "3", path: "images/storm-map.webp", size: 1, hash: "h3", tags: ["storm"] },
-      { id: "4", path: "sfx/wind.wav", size: 1, hash: "h4", tags: ["ambience"] },
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      { path: "sfx/thunder.mp3", tags: ["storm"] },
+      { path: "sfx/rain.ogg", tags: ["storm"] },
+      { path: "images/storm-map.webp", tags: ["storm"] },
+      { path: "sfx/wind.wav", tags: ["ambience"] },
     ]);
 
-    expect(await findAudioAssetsByTag(db, "storm")).toEqual([
+    expect(await findAudioAssetsByTag("storm")).toEqual([
       { path: "sfx/rain.ogg" },
       { path: "sfx/thunder.mp3" },
     ]);
   });
 
   it("returns an empty array when nothing carries the tag", async () => {
-    const db = createFakeDb();
+    const mock = createMock();
 
-    expect(await findAudioAssetsByTag(db, "missing")).toEqual([]);
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([]);
+
+    expect(await findAudioAssetsByTag("missing")).toEqual([]);
   });
 });

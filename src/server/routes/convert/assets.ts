@@ -1,9 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
@@ -33,7 +32,6 @@ const toDbPath = (dbPathPrefix: string, relativePath: string): string =>
   path.posix.join(dbPathPrefix, relativePath);
 
 export const convertAssets = async (
-  db: Kysely<DB>,
   rootDir: string,
   dbPathPrefix: string,
   onProgress?: (progress: ConversionProgress) => void,
@@ -95,7 +93,7 @@ export const convertAssets = async (
   onProgress?.({ done: total, total });
 
   if (plan.candidates.length > 0) {
-    invalidateLocalHashIndex(db);
+    invalidateLocalHashIndex();
   }
 
   const overwritten = plan.candidates.filter((candidate) => candidate.willOverwrite).length;
@@ -112,6 +110,6 @@ export const convertAssetsHandler = (assetTreeRoot: string) =>
     const dbPathPrefix = scope === "all" ? "" : relativeDir;
 
     return await runTrackedJob("convert", "converting", "conversion failed", (onProgress) =>
-      convertAssets(db, rootDir, dbPathPrefix, onProgress, scope !== "folder"),
+      convertAssets(rootDir, dbPathPrefix, onProgress, scope !== "folder"),
     );
   });

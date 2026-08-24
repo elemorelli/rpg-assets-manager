@@ -1,12 +1,10 @@
-import type { Kysely } from "kysely";
-
 import { invalidateRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import {
   assetsPublicBaseUrl,
   cloudflareConfig,
   purgeCloudflareCache,
 } from "#server/cloudflare/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
 import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
@@ -63,20 +61,19 @@ const summaryFor = (
 });
 
 export const applyBatch = async (
-  db: Kysely<DB>,
   deps: ApplyBatchDependencies,
   onProgress?: (progress: ApplyProgress) => void,
 ): Promise<ApplyBatchSummary> => {
-  const diff = await computeBatchDiff(db, deps.scope ?? "all", deps.relativeDir ?? "");
+  const diff = await computeBatchDiff(deps.scope ?? "all", deps.relativeDir ?? "");
   const purgeUrls = buildPurgeUrls(diff, deps.baseUrl);
   const total = countRcloneSteps(diff);
 
-  const syncRunId = await startSyncRun(db);
+  const syncRunId = await startSyncRun();
 
   onProgress?.({ done: 0, total });
 
   if (deps.dryRun) {
-    await finishSyncRun(db, syncRunId, "dry_run", diff, purgeUrls);
+    await finishSyncRun(syncRunId, "dry_run", diff, purgeUrls);
 
     return summaryFor(diff, "dry_run", syncRunId);
   }
@@ -87,14 +84,14 @@ export const applyBatch = async (
       await mirrorRemoteAssets(trx, diff);
       await recordAssetRenames(trx, diff.renamed);
     });
-    invalidateRemoteHashIndex(db);
+    invalidateRemoteHashIndex();
     await deps.purge(purgeUrls);
 
-    await finishSyncRun(db, syncRunId, "applied", diff, purgeUrls);
+    await finishSyncRun(syncRunId, "applied", diff, purgeUrls);
 
     return summaryFor(diff, "applied", syncRunId);
   } catch (error) {
-    await failSyncRun(db, syncRunId);
+    await failSyncRun(syncRunId);
 
     throw error;
   }
@@ -116,7 +113,6 @@ export const applyBatchHandler = (assetTreeRoot: string) =>
 
     return runTrackedJob("sync", "applying", "sync failed", (onProgress) =>
       applyBatch(
-        db,
         {
           rootDir: assetTreeRoot,
           destinationRoot: rcloneDestination,

@@ -37,7 +37,7 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
       ])
       .execute();
 
-    const diff = await computeBatchDiff(db);
+    const diff = await computeBatchDiff();
     const inScope = (paths: string[]): string[] =>
       paths.filter((entry) => entry.startsWith(PREFIX));
 
@@ -70,7 +70,7 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
       .values([{ path: `${PREFIX}converted-theme.wav`, size: 1, hash: "hash-wav" }])
       .execute();
 
-    const diff = await computeBatchDiff(db);
+    const diff = await computeBatchDiff();
 
     expect(diff.renamed.filter((pair) => pair.newPath.startsWith(PREFIX))).toEqual([
       { oldPath: `${PREFIX}converted-theme.wav`, newPath: `${PREFIX}converted-theme.ogg` },
@@ -90,7 +90,7 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
       ])
       .execute();
 
-    const diff = await computeBatchDiff(db, "subtree", `${PREFIX}tiles`);
+    const diff = await computeBatchDiff("subtree", `${PREFIX}tiles`);
 
     expect(diff.added).toEqual([`${PREFIX}tiles/added.png`]);
   });
@@ -111,7 +111,7 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
       ])
       .execute();
 
-    const diff = await computeBatchDiff(db, "folder", `${PREFIX}tiles`);
+    const diff = await computeBatchDiff("folder", `${PREFIX}tiles`);
 
     expect(diff.added).toEqual([`${PREFIX}tiles/added.png`]);
   });
@@ -135,7 +135,7 @@ describe("computeBatchDiff (requires DATABASE_URL pointing at a running Postgres
       ])
       .execute();
 
-    const diff = await computeBatchDiff(db);
+    const diff = await computeBatchDiff();
     const warning = diff.ambiguousWarnings.find((entry) => entry.hash === "hash-ambi");
 
     expect(warning).toEqual({

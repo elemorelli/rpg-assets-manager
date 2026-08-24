@@ -1,7 +1,5 @@
-import type { Kysely } from "kysely";
-
 import { assetsPublicBaseUrl } from "#server/cloudflare/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
 import { joinUrl } from "#server/utils/url.ts";
 import { classifyPreviewKind, extensionOf } from "#utils/preview.ts";
@@ -80,10 +78,7 @@ export const buildFoundryPlaylistExport = (
 export const sanitizeFilenameSegment = (value: string): string =>
   value.replace(/[^a-zA-Z0-9-_]/g, "-");
 
-export const findAudioAssetsByTag = async (
-  db: Kysely<DB>,
-  tag: string,
-): Promise<{ path: string }[]> => {
+export const findAudioAssetsByTag = async (tag: string): Promise<{ path: string }[]> => {
   const assets = await db.selectFrom("assets").select(["path", "tags"]).execute();
 
   const matching = assets.filter(
@@ -98,7 +93,7 @@ export const findAudioAssetsByTag = async (
 export const exportFoundryPlaylistHandler = withHttpErrorHandling(async (request, reply) => {
   const params = request.params as { tag?: string };
   const tag = params.tag ?? "";
-  const assets = await findAudioAssetsByTag(db, tag);
+  const assets = await findAudioAssetsByTag(tag);
 
   if (assets.length === 0) {
     throw new HttpError("No audio assets found for this tag", HTTP_STATUS.notFound);

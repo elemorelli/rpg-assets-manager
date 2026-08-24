@@ -1,9 +1,8 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
 import { readSubtreeContribution } from "#server/directory-aggregates/read-subtree-contribution.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
@@ -11,11 +10,7 @@ import type { FilesPathBody } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { getParentPath } from "#utils/directory-path.ts";
 
-export const deleteEntry = async (
-  db: Kysely<DB>,
-  rootDir: string,
-  requestedPath: string,
-): Promise<void> => {
+export const deleteEntry = async (rootDir: string, requestedPath: string): Promise<void> => {
   const relativePath = resolveSafeRelativePath(requestedPath);
 
   if (relativePath === "") {
@@ -24,7 +19,7 @@ export const deleteEntry = async (
 
   const absolutePath = path.join(rootDir, relativePath);
   const stat = await fs.stat(absolutePath);
-  const contribution = await readSubtreeContribution(db, relativePath, stat.isDirectory());
+  const contribution = await readSubtreeContribution(relativePath, stat.isDirectory());
 
   await fs.rm(absolutePath, { recursive: true, force: false });
 
@@ -46,20 +41,20 @@ export const deleteEntry = async (
     )
     .execute();
 
-  await applyAggregateDelta(db, getParentPath(relativePath), {
+  await applyAggregateDelta(getParentPath(relativePath), {
     size: -contribution.size,
     fileCount: -contribution.fileCount,
     folderCount: -contribution.folderCount,
   });
 
-  invalidateLocalHashIndex(db);
+  invalidateLocalHashIndex();
 };
 
 export const deleteEntryHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const body = request.body as FilesPathBody | undefined;
 
-    await deleteEntry(db, assetTreeRoot, body?.path ?? "");
+    await deleteEntry(assetTreeRoot, body?.path ?? "");
 
     return { deleted: true };
   });

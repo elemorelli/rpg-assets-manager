@@ -1,34 +1,53 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { describe, expect, it, vi } from "vitest";
 
+import type { DB } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
-
-import { markFoundryWorldApplied } from "../mark-applied.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
 const NON_EXISTENT_WORLD_ID = 999999999;
-const OLD_WATERMARK = new Date("2020-01-01T00:00:00Z");
+
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { markFoundryWorldApplied } = await import("../mark-applied.ts");
+
+const createMock = (): MockDb => {
+  const mockDb = createMockDb();
+
+  currentMockDb = mockDb;
+
+  return mockDb as unknown as MockDb;
+};
 
 describe("markFoundryWorldApplied", () => {
   it("advances the world's watermark to now", async () => {
-    const db = createFakeDb();
+    const mock = createMock();
 
-    db.seed("foundry_worlds", [
-      { id: "1", name: "kingmaker", active: true, acknowledged_at: OLD_WATERMARK },
-    ]);
+    mock.selectFrom("foundry_worlds").executeTakeFirst.mockResolvedValueOnce({ id: "1" });
 
     const before = new Date();
-    await markFoundryWorldApplied(db, 1);
+    await markFoundryWorldApplied(1);
     const after = new Date();
 
-    const [world] = db.rows("foundry_worlds");
-    const acknowledgedAt = world?.acknowledged_at as Date;
-    expect(acknowledgedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
-    expect(acknowledgedAt.getTime()).toBeLessThanOrEqual(after.getTime());
+    expect(mock.updateTable).toHaveBeenCalledWith("foundry_worlds");
+
+    const [values] = mock.updateTable("foundry_worlds").set.mock.calls[0] as [
+      { acknowledged_at: Date },
+    ];
+
+    expect(values.acknowledged_at.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(values.acknowledged_at.getTime()).toBeLessThanOrEqual(after.getTime());
   });
 
   it("throws when the world does not exist", async () => {
-    const db = createFakeDb();
+    createMock();
 
-    await expect(markFoundryWorldApplied(db, NON_EXISTENT_WORLD_ID)).rejects.toThrow(HttpError);
+    await expect(markFoundryWorldApplied(NON_EXISTENT_WORLD_ID)).rejects.toThrow(HttpError);
   });
 });

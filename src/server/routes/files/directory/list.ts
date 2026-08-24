@@ -1,19 +1,15 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Kysely } from "kysely";
 
 import { getLocalHashIndex, getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesPathQuery } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
 import { computeDirectorySyncStatus } from "#utils/sync-status.ts";
 
-const fetchTagsForPaths = async (
-  db: Kysely<DB>,
-  paths: string[],
-): Promise<Map<string, string[]>> => {
+const fetchTagsForPaths = async (paths: string[]): Promise<Map<string, string[]>> => {
   if (paths.length === 0) {
     return new Map();
   }
@@ -27,10 +23,7 @@ const fetchTagsForPaths = async (
   return new Map(rows.map((row) => [row.path, row.tags]));
 };
 
-const fetchDirectorySizesForPaths = async (
-  db: Kysely<DB>,
-  paths: string[],
-): Promise<Map<string, number>> => {
+const fetchDirectorySizesForPaths = async (paths: string[]): Promise<Map<string, number>> => {
   if (paths.length === 0) {
     return new Map();
   }
@@ -45,7 +38,6 @@ const fetchDirectorySizesForPaths = async (
 };
 
 export const listDirectory = async (
-  db: Kysely<DB>,
   rootDir: string,
   requestedPath: string,
 ): Promise<DirectoryEntry[]> => {
@@ -81,14 +73,10 @@ export const listDirectory = async (
   }
 
   const [tagsByPath, localIndex, remoteIndex, sizeByDirectoryPath] = await Promise.all([
-    fetchTagsForPaths(
-      db,
-      fileEntries.map((file) => file.relativePath),
-    ),
-    getLocalHashIndex(db),
-    getRemoteHashIndex(db),
+    fetchTagsForPaths(fileEntries.map((file) => file.relativePath)),
+    getLocalHashIndex(),
+    getRemoteHashIndex(),
     fetchDirectorySizesForPaths(
-      db,
       directoryEntries.map((directory) =>
         relativeDir ? `${relativeDir}/${directory.name}` : directory.name,
       ),
@@ -154,5 +142,5 @@ export const listDirectoryHandler = (assetTreeRoot: string) =>
   withHttpErrorHandling(async (request) => {
     const query = request.query as FilesPathQuery;
 
-    return await listDirectory(db, assetTreeRoot, query.path ?? "");
+    return await listDirectory(assetTreeRoot, query.path ?? "");
   });

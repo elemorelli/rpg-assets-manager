@@ -1,9 +1,10 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
 import type { BatchDiffResult } from "../../diff/index.ts";
-import { buildFinishSyncRunUpdate, failSyncRun, finishSyncRun, startSyncRun } from "../sync-run.ts";
 
 const emptyDiff: BatchDiffResult = {
   added: [],
@@ -11,6 +12,26 @@ const emptyDiff: BatchDiffResult = {
   deleted: [],
   renamed: [],
   ambiguousWarnings: [],
+};
+
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { buildFinishSyncRunUpdate, failSyncRun, finishSyncRun, startSyncRun } = await import(
+  "../sync-run.ts"
+);
+
+const createMock = (): MockDb => {
+  const mockDb = createMockDb();
+
+  currentMockDb = mockDb;
+
+  return mockDb as unknown as MockDb;
 };
 
 describe("buildFinishSyncRunUpdate", () => {
@@ -65,39 +86,40 @@ describe("buildFinishSyncRunUpdate", () => {
 
 describe("startSyncRun", () => {
   it("inserts a new sync_runs row and returns its numeric id", async () => {
-    const db = createFakeDb();
+    const mock = createMock();
 
-    const syncRunId = await startSyncRun(db);
+    mock.insertInto("sync_runs").executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" });
+
+    const syncRunId = await startSyncRun();
 
     expect(syncRunId).toBe(1);
-    expect(db.rows("sync_runs")).toMatchObject([{ id: "1", finished_at: null }]);
+    expect(mock.insertInto("sync_runs").values).toHaveBeenCalledWith({ finished_at: null });
   });
 });
 
 describe("finishSyncRun", () => {
   it("updates the sync_runs row for the given id", async () => {
-    const db = createFakeDb();
-    const syncRunId = await startSyncRun(db);
+    const mock = createMock();
 
-    await finishSyncRun(db, syncRunId, "applied", emptyDiff, []);
+    await finishSyncRun(1, "applied", emptyDiff, []);
 
-    const [row] = db.rows("sync_runs");
-
-    expect(row).toMatchObject({ id: String(syncRunId), outcome: "applied" });
-    expect(row?.finished_at).toBeInstanceOf(Date);
+    expect(mock.updateTable("sync_runs").set).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "applied" }),
+    );
+    expect(mock.updateTable("sync_runs").where).toHaveBeenCalledWith("id", "=", "1");
   });
 });
 
 describe("failSyncRun", () => {
   it("marks the run as failed and stamps finished_at", async () => {
-    const db = createFakeDb();
-    const syncRunId = await startSyncRun(db);
+    const mock = createMock();
 
-    await failSyncRun(db, syncRunId);
+    await failSyncRun(1);
 
-    const [row] = db.rows("sync_runs");
-
-    expect(row).toMatchObject({ outcome: "failed" });
-    expect(row?.finished_at).toBeInstanceOf(Date);
+    expect(mock.updateTable("sync_runs").set).toHaveBeenCalledWith(
+      expect.objectContaining({ outcome: "failed" }),
+    );
+    const [setArgs] = mock.updateTable("sync_runs").set.mock.calls[0];
+    expect(setArgs.finished_at).toBeInstanceOf(Date);
   });
 });

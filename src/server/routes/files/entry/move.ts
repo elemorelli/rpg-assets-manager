@@ -1,9 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { type Kysely, sql } from "kysely";
+import { sql } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
 import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
 import { readSubtreeContribution } from "#server/directory-aggregates/read-subtree-contribution.ts";
@@ -17,7 +17,6 @@ import { getParentPath } from "#utils/directory-path.ts";
 // both for a plain (non-conflicting) move and, recursively, for each
 // non-conflicting child encountered while merging directories.
 const moveSubtree = async (
-  db: Kysely<DB>,
   rootDir: string,
   relativeFrom: string,
   relativeTo: string,
@@ -27,7 +26,7 @@ const moveSubtree = async (
 
   const stat = await fs.stat(absoluteFrom);
   const isDirectory = stat.isDirectory();
-  const contribution = await readSubtreeContribution(db, relativeFrom, isDirectory);
+  const contribution = await readSubtreeContribution(relativeFrom, isDirectory);
 
   await fs.mkdir(path.dirname(absoluteTo), { recursive: true });
   await fs.rename(absoluteFrom, absoluteTo);
@@ -49,13 +48,13 @@ const moveSubtree = async (
     WHERE path = ${relativeFrom} OR path LIKE ${descendantLikePattern}
   `.execute(db);
 
-  await applyAggregateDelta(db, getParentPath(relativeFrom), {
+  await applyAggregateDelta(getParentPath(relativeFrom), {
     size: -contribution.size,
     fileCount: -contribution.fileCount,
     folderCount: -contribution.folderCount,
   });
 
-  const newParentId = await ensureDirectoryChain(db, getParentPath(relativeTo));
+  const newParentId = await ensureDirectoryChain(getParentPath(relativeTo));
 
   if (isDirectory) {
     await sql`
@@ -70,7 +69,7 @@ const moveSubtree = async (
     `.execute(db);
   }
 
-  await applyAggregateDelta(db, getParentPath(relativeTo), contribution);
+  await applyAggregateDelta(getParentPath(relativeTo), contribution);
 };
 
 // Replaces the file at "relativeTo" with the file at "relativeFrom". The
@@ -79,7 +78,6 @@ const moveSubtree = async (
 // difference: one file is leaving and one is arriving, so the file count
 // there does not change.
 const overwriteFile = async (
-  db: Kysely<DB>,
   rootDir: string,
   relativeFrom: string,
   relativeTo: string,
@@ -87,7 +85,7 @@ const overwriteFile = async (
   const absoluteFrom = path.join(rootDir, relativeFrom);
   const absoluteTo = path.join(rootDir, relativeTo);
 
-  const contribution = await readSubtreeContribution(db, relativeFrom, false);
+  const contribution = await readSubtreeContribution(relativeFrom, false);
   const existingDestinationRow = await db
     .selectFrom("assets")
     .select("size")
@@ -104,13 +102,13 @@ const overwriteFile = async (
     .where("path", "=", relativeFrom)
     .execute();
 
-  await applyAggregateDelta(db, getParentPath(relativeFrom), {
+  await applyAggregateDelta(getParentPath(relativeFrom), {
     size: -contribution.size,
     fileCount: -contribution.fileCount,
     folderCount: 0,
   });
 
-  await applyAggregateDelta(db, getParentPath(relativeTo), {
+  await applyAggregateDelta(getParentPath(relativeTo), {
     size: contribution.size - existingDestinationSize,
     fileCount: 0,
     folderCount: 0,
@@ -123,7 +121,6 @@ const overwriteFile = async (
 // Once every child has been moved out, "relativeFrom" is an empty directory
 // on disk and a zeroed-out row in the database, both of which are dropped.
 const mergeDirectories = async (
-  db: Kysely<DB>,
   rootDir: string,
   relativeFrom: string,
   relativeTo: string,
@@ -137,9 +134,9 @@ const mergeDirectories = async (
     const childDestinationExists = await pathExists(path.join(rootDir, childTo));
 
     if (childDestinationExists) {
-      await mergeInto(db, rootDir, childFrom, childTo);
+      await mergeInto(rootDir, childFrom, childTo);
     } else {
-      await moveSubtree(db, rootDir, childFrom, childTo);
+      await moveSubtree(rootDir, childFrom, childTo);
     }
   }
 
@@ -151,7 +148,6 @@ const mergeDirectories = async (
 // overwrite (a file replaces a file) or merge (a directory merges into a
 // directory), while a type mismatch is always a conflict, overwrite or not.
 const mergeInto = async (
-  db: Kysely<DB>,
   rootDir: string,
   relativeFrom: string,
   relativeTo: string,
@@ -171,14 +167,13 @@ const mergeInto = async (
   }
 
   if (fromStat.isDirectory()) {
-    await mergeDirectories(db, rootDir, relativeFrom, relativeTo);
+    await mergeDirectories(rootDir, relativeFrom, relativeTo);
   } else {
-    await overwriteFile(db, rootDir, relativeFrom, relativeTo);
+    await overwriteFile(rootDir, relativeFrom, relativeTo);
   }
 };
 
 export const moveEntry = async (
-  db: Kysely<DB>,
   rootDir: string,
   fromPath: string,
   toPath: string,
@@ -203,12 +198,12 @@ export const moveEntry = async (
   }
 
   if (destinationExists) {
-    await mergeInto(db, rootDir, relativeFrom, relativeTo);
+    await mergeInto(rootDir, relativeFrom, relativeTo);
   } else {
-    await moveSubtree(db, rootDir, relativeFrom, relativeTo);
+    await moveSubtree(rootDir, relativeFrom, relativeTo);
   }
 
-  invalidateLocalHashIndex(db);
+  invalidateLocalHashIndex();
 };
 
 interface MoveBody {
@@ -222,7 +217,6 @@ export const moveEntryHandler = (assetTreeRoot: string) =>
     const body = request.body as MoveBody | undefined;
 
     await moveEntry(
-      db,
       assetTreeRoot,
       body?.fromPath ?? "",
       body?.toPath ?? "",

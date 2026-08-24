@@ -45,7 +45,6 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     const progressUpdates: { done: number; total: number }[] = [];
 
     const summary = await convertAssets(
-      db,
       path.join(tempDir.path, "convert-assets-test"),
       "convert-assets-test",
       (progress) => progressUpdates.push(progress),
@@ -82,7 +81,6 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     );
 
     const summary = await convertAssets(
-      db,
       path.join(tempDir.path, "convert-assets-test"),
       "convert-assets-test",
     );
@@ -111,7 +109,6 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     );
 
     const summary = await convertAssets(
-      db,
       path.join(tempDir.path, "convert-assets-test"),
       "convert-assets-test",
     );
@@ -137,7 +134,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
       })
       .execute();
 
-    await convertAssets(db, path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
+    await convertAssets(path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
 
     const sourceRow = await db
       .selectFrom("assets")
@@ -172,7 +169,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
       })
       .execute();
 
-    await convertAssets(db, path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
+    await convertAssets(path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
 
     const destinationRow = await db
       .selectFrom("assets")
@@ -191,7 +188,6 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     );
 
     await convertAssets(
-      db,
       path.join(tempDir.path, "convert-assets-test", "tiles"),
       "convert-assets-test/tiles",
     );
@@ -215,9 +211,9 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
       .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
       .execute();
 
-    await getLocalHashIndex(db);
-    await convertAssets(db, path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
-    const index = await getLocalHashIndex(db);
+    await getLocalHashIndex();
+    await convertAssets(path.join(tempDir.path, "convert-assets-test"), "convert-assets-test");
+    const index = await getLocalHashIndex();
 
     expect(index.has(`${PREFIX}forest.png`)).toBe(false);
     expect(index.has(`${PREFIX}forest.webp`)).toBe(true);

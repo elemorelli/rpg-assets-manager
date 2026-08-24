@@ -1,118 +1,155 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
-
-import { rescanAssets } from "../rescan.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
+import { hashBuffer } from "#server/utils/hash.ts";
 
 const PREFIX = "rescan-test/";
 
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { rescanAssets } = await import("../rescan.ts");
+
 describe("rescanAssets", () => {
   let tempDir = "";
-  let db: ReturnType<typeof createFakeDb>;
+  let mock: MockDb;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "rescan-test-"));
     await fs.mkdir(path.join(tempDir, "rescan-test"), { recursive: true });
-    db = createFakeDb();
+
+    const mockDb = createMockDb();
+
+    currentMockDb = mockDb;
+    mock = mockDb as unknown as MockDb;
+
+    let nextDirectoryId = 1;
+
+    mock.insertInto("directories").executeTakeFirstOrThrow.mockImplementation(() => ({
+      id: String(nextDirectoryId++),
+    }));
+    mock.deleteFrom("directories").execute.mockResolvedValue(undefined);
+    // recomputeAllDirectoryAggregates's own build step always issues one more
+    // selectFrom("assets").execute() after rescanAssets' own previousRows query;
+    // tests that don't care about aggregate output stage an empty batch for it.
+    mock.selectFrom("assets").execute.mockResolvedValue([]);
   });
 
   afterEach(async () => {
     await fs.rm(tempDir, { recursive: true, force: true });
   });
 
-  it("hashes new files, leaves unchanged files alone, and removes deleted ones", async () => {
+  it("hashes files that have no previous snapshot", async () => {
     await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
     await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
 
-    const firstRun = await rescanAssets(db, tempDir);
+    const summary = await rescanAssets(tempDir);
 
-    expect(firstRun).toEqual({ hashed: 2, unchanged: 0, removed: 0, renamed: 0 });
-
-    await fs.rm(path.join(tempDir, "rescan-test", "removed.png"));
-    await fs.writeFile(path.join(tempDir, "rescan-test", "added.png"), "added");
-
-    const secondRun = await rescanAssets(db, tempDir);
-
-    expect(secondRun).toEqual({ hashed: 1, unchanged: 1, removed: 1, renamed: 0 });
-
-    const remainingPaths = await db
-      .selectFrom("assets")
-      .select("path")
-      .orderBy("path", "asc")
-      .execute();
-
-    expect(remainingPaths.map((row) => row.path)).toEqual([
-      `${PREFIX}added.png`,
-      `${PREFIX}stays.png`,
-    ]);
+    expect(summary).toEqual({ hashed: 2, unchanged: 0, removed: 0, renamed: 0 });
   });
 
-  it("re-hashes every file when forceRehash is set", async () => {
+  it("leaves a file alone when its size and mtime still match the previous snapshot", async () => {
     await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
 
-    await rescanAssets(db, tempDir);
+    const stat = await fs.stat(path.join(tempDir, "rescan-test", "stays.png"));
 
-    const forced = await rescanAssets(db, tempDir, { forceRehash: true });
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      {
+        path: `${PREFIX}stays.png`,
+        size: stat.size,
+        mtime: new Date(Math.trunc(stat.mtimeMs)),
+        hash: "irrelevant-hash",
+      },
+    ]);
 
-    expect(forced).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0 });
+    const summary = await rescanAssets(tempDir);
+
+    expect(summary).toEqual({ hashed: 0, unchanged: 1, removed: 0, renamed: 0 });
   });
 
-  it("keeps the same id and reports a rename when a file is renamed", async () => {
-    await fs.writeFile(path.join(tempDir, "rescan-test", "before.png"), "same-content");
+  it("re-hashes every file when forceRehash is set, even if size and mtime match", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
 
-    await rescanAssets(db, tempDir);
+    const stat = await fs.stat(path.join(tempDir, "rescan-test", "stays.png"));
 
-    const beforeRow = await db
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      {
+        path: `${PREFIX}stays.png`,
+        size: stat.size,
+        mtime: new Date(Math.trunc(stat.mtimeMs)),
+        hash: "irrelevant-hash",
+      },
+    ]);
+
+    const summary = await rescanAssets(tempDir, { forceRehash: true });
+
+    expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0 });
+  });
+
+  it("removes a previous snapshot whose path no longer exists on disk", async () => {
+    mock
       .selectFrom("assets")
-      .select("id")
-      .where("path", "=", `${PREFIX}before.png`)
-      .executeTakeFirstOrThrow();
+      .execute.mockResolvedValueOnce([
+        { path: `${PREFIX}gone.png`, size: 1, mtime: new Date(), hash: "gone-hash" },
+      ]);
 
-    await fs.rename(
-      path.join(tempDir, "rescan-test", "before.png"),
-      path.join(tempDir, "rescan-test", "after.png"),
-    );
+    const summary = await rescanAssets(tempDir);
 
-    const summary = await rescanAssets(db, tempDir);
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 1, renamed: 0 });
+    expect(mock.deleteFrom).toHaveBeenCalledWith("assets");
+  });
+
+  it("keeps the same identity and reports a rename when a hash matches a removed path", async () => {
+    const content = "same-content";
+    const hash = await hashBuffer(Buffer.from(content));
+
+    await fs.writeFile(path.join(tempDir, "rescan-test", "after.png"), content);
+
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([
+        { path: `${PREFIX}before.png`, size: Buffer.byteLength(content), mtime: new Date(0), hash },
+      ]);
+
+    const summary = await rescanAssets(tempDir);
 
     expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 1 });
-
-    const afterRow = await db
-      .selectFrom("assets")
-      .select("id")
-      .where("path", "=", `${PREFIX}after.png`)
-      .executeTakeFirstOrThrow();
-
-    expect(afterRow.id).toEqual(beforeRow.id);
-
-    const oldRow = await db
-      .selectFrom("assets")
-      .select("id")
-      .where("path", "=", `${PREFIX}before.png`)
-      .executeTakeFirst();
-
-    expect(oldRow).toBeUndefined();
+    expect(mock.updateTable("assets").set).toHaveBeenCalledWith(
+      expect.objectContaining({ path: `${PREFIX}after.png` }),
+    );
   });
 
   it("recomputes directory aggregates to reflect the post-rescan state", async () => {
+    const fileSize = Buffer.byteLength("stays");
+
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ path: `${PREFIX}stays.png`, size: fileSize }]);
+
     await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
-    await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
-    await rescanAssets(db, tempDir);
 
-    await fs.rm(path.join(tempDir, "rescan-test", "removed.png"));
-    await rescanAssets(db, tempDir);
+    await rescanAssets(tempDir);
 
-    const root = await db
-      .selectFrom("directories")
-      .select(["total_size", "file_count"])
-      .where("path", "=", "rescan-test")
-      .executeTakeFirstOrThrow();
+    const insertedRows: { path: string; total_size: number; file_count: number }[] = mock
+      .insertInto("directories")
+      .values.mock.calls.map(
+        (call: unknown[]) => call[0] as { path: string; total_size: number; file_count: number },
+      );
+    const rescanTestRow = insertedRows.find((row) => row.path === "rescan-test");
 
-    expect(root).toMatchObject({ total_size: Buffer.byteLength("stays"), file_count: 1 });
+    expect(rescanTestRow).toMatchObject({ total_size: fileSize, file_count: 1 });
   });
 
   it("reports progress via the onProgress callback", async () => {
@@ -121,7 +158,7 @@ describe("rescanAssets", () => {
 
     const progressUpdates: { done: number; total: number; detail?: string }[] = [];
 
-    await rescanAssets(db, tempDir, {}, (progress) => progressUpdates.push(progress));
+    await rescanAssets(tempDir, {}, (progress) => progressUpdates.push(progress));
 
     expect(progressUpdates[0]).toMatchObject({ done: 0, total: 2 });
     expect(progressUpdates[0]?.detail).toMatch(/\.png$/);
@@ -129,15 +166,20 @@ describe("rescanAssets", () => {
   });
 
   it("invalidates the cached local hash index after a rescan removes a deleted file", async () => {
-    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
-    await fs.writeFile(path.join(tempDir, "rescan-test", "removed.png"), "removed");
-    await rescanAssets(db, tempDir);
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { path: `${PREFIX}removed.png`, size: 1, mtime: new Date(), hash: "removed-hash" },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ path: `${PREFIX}stays.png`, hash: "h", previous_hash: null }]);
 
-    await getLocalHashIndex(db);
-    await fs.rm(path.join(tempDir, "rescan-test", "removed.png"));
-    await rescanAssets(db, tempDir);
-    const index = await getLocalHashIndex(db);
+    await getLocalHashIndex();
+    const summary = await rescanAssets(tempDir);
+    const index = await getLocalHashIndex();
 
+    expect(summary.removed).toBe(1);
     expect(index.has(`${PREFIX}removed.png`)).toBe(false);
     expect(index.has(`${PREFIX}stays.png`)).toBe(true);
   });

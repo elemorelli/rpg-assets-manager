@@ -1,6 +1,6 @@
 import type { Kysely } from "kysely";
 
-import type { DB } from "#server/db/index.ts";
+import { type DB, db } from "#server/db/index.ts";
 import { createTtlCache, type TtlCache } from "#server/utils/ttl-cache.ts";
 import type { LocalIndexRecord, RemoteIndexRecord } from "#utils/sync-status.ts";
 
@@ -13,7 +13,7 @@ interface HashIndexCacheEntry {
 
 const entriesByDb = new WeakMap<Kysely<DB>, HashIndexCacheEntry>();
 
-const entryFor = (db: Kysely<DB>): HashIndexCacheEntry => {
+const entryFor = (): HashIndexCacheEntry => {
   const existing = entriesByDb.get(db);
 
   if (existing) {
@@ -30,7 +30,7 @@ const entryFor = (db: Kysely<DB>): HashIndexCacheEntry => {
   return created;
 };
 
-const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, LocalIndexRecord>> => {
+const fetchLocalHashIndex = async (): Promise<Map<string, LocalIndexRecord>> => {
   const rows = await db.selectFrom("assets").select(["path", "hash", "previous_hash"]).execute();
 
   return new Map(
@@ -38,22 +38,22 @@ const fetchLocalHashIndex = async (db: Kysely<DB>): Promise<Map<string, LocalInd
   );
 };
 
-const fetchRemoteHashIndex = async (db: Kysely<DB>): Promise<Map<string, RemoteIndexRecord>> => {
+const fetchRemoteHashIndex = async (): Promise<Map<string, RemoteIndexRecord>> => {
   const rows = await db.selectFrom("remote_assets").select(["path", "hash", "size"]).execute();
 
   return new Map(rows.map((row) => [row.path, { hash: row.hash, size: Number(row.size) }]));
 };
 
-export const getLocalHashIndex = (db: Kysely<DB>): Promise<Map<string, LocalIndexRecord>> =>
-  entryFor(db).local.get(() => fetchLocalHashIndex(db));
+export const getLocalHashIndex = (): Promise<Map<string, LocalIndexRecord>> =>
+  entryFor().local.get(() => fetchLocalHashIndex());
 
-export const invalidateLocalHashIndex = (db: Kysely<DB>): void => {
+export const invalidateLocalHashIndex = (): void => {
   entriesByDb.get(db)?.local.invalidate();
 };
 
-export const getRemoteHashIndex = (db: Kysely<DB>): Promise<Map<string, RemoteIndexRecord>> =>
-  entryFor(db).remote.get(() => fetchRemoteHashIndex(db));
+export const getRemoteHashIndex = (): Promise<Map<string, RemoteIndexRecord>> =>
+  entryFor().remote.get(() => fetchRemoteHashIndex());
 
-export const invalidateRemoteHashIndex = (db: Kysely<DB>): void => {
+export const invalidateRemoteHashIndex = (): void => {
   entriesByDb.get(db)?.remote.invalidate();
 };

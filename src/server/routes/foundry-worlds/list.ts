@@ -1,7 +1,5 @@
-import type { Kysely } from "kysely";
-
 import { assetsPublicBaseUrl } from "#server/cloudflare/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { generateMacro } from "#server/routes/apply/macro/generate.ts";
 import type { RenamePair } from "#server/routes/diff/index.ts";
 
@@ -14,7 +12,7 @@ export interface FoundryWorldSummary {
   pendingRenameCount: number;
 }
 
-const fetchPendingRenames = async (db: Kysely<DB>, acknowledgedAt: Date): Promise<RenamePair[]> => {
+const fetchPendingRenames = async (acknowledgedAt: Date): Promise<RenamePair[]> => {
   const rows = await db
     .selectFrom("asset_renames")
     .select(["old_path", "new_path"])
@@ -25,10 +23,7 @@ const fetchPendingRenames = async (db: Kysely<DB>, acknowledgedAt: Date): Promis
   return collapseRenameChain(rows.map((row) => ({ oldPath: row.old_path, newPath: row.new_path })));
 };
 
-export const listFoundryWorlds = async (
-  db: Kysely<DB>,
-  baseUrl: string,
-): Promise<FoundryWorldSummary[]> => {
+export const listFoundryWorlds = async (baseUrl: string): Promise<FoundryWorldSummary[]> => {
   const worlds = await db
     .selectFrom("foundry_worlds")
     .selectAll()
@@ -39,7 +34,7 @@ export const listFoundryWorlds = async (
   const summaries: FoundryWorldSummary[] = [];
 
   for (const world of worlds) {
-    const pendingRenames = await fetchPendingRenames(db, world.acknowledged_at);
+    const pendingRenames = await fetchPendingRenames(world.acknowledged_at);
 
     summaries.push({
       id: Number(world.id),
@@ -52,4 +47,4 @@ export const listFoundryWorlds = async (
   return summaries;
 };
 
-export const listFoundryWorldsHandler = async () => listFoundryWorlds(db, assetsPublicBaseUrl);
+export const listFoundryWorldsHandler = async () => listFoundryWorlds(assetsPublicBaseUrl);

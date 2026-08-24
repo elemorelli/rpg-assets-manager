@@ -1,6 +1,4 @@
-import type { Kysely } from "kysely";
-
-import type { DB } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 
 export interface SubtreeContribution {
   size: number;
@@ -9,7 +7,6 @@ export interface SubtreeContribution {
 }
 
 export const readSubtreeContribution = async (
-  db: Kysely<DB>,
   relativePath: string,
   isDirectory: boolean,
 ): Promise<SubtreeContribution> => {

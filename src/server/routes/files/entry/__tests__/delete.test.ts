@@ -1,24 +1,37 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { HttpError } from "#server/errors/index.ts";
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
-
-import { deleteEntry } from "../delete.ts";
 
 const PREFIX = "delete-entry-test/";
 
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { deleteEntry } = await import("../delete.ts");
+
 describe("deleteEntry", () => {
   let tempDir = "";
-  let db: ReturnType<typeof createFakeDb>;
+  let mockDb: Kysely<DB>;
+  let mock: MockDb;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "delete-entry-"));
-    db = createFakeDb();
+    mockDb = createMockDb();
+    currentMockDb = mockDb;
+    mock = mockDb as unknown as MockDb;
   });
 
   afterEach(async () => {
@@ -29,7 +42,7 @@ describe("deleteEntry", () => {
     await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
 
-    await deleteEntry(db, tempDir, `${PREFIX}forest.png`);
+    await deleteEntry(tempDir, `${PREFIX}forest.png`);
 
     await expect(fs.stat(path.join(tempDir, "delete-entry-test", "forest.png"))).rejects.toThrow();
   });
@@ -41,172 +54,109 @@ describe("deleteEntry", () => {
       "fake-png-bytes",
     );
 
-    await deleteEntry(db, tempDir, `${PREFIX}tiles`);
+    await deleteEntry(tempDir, `${PREFIX}tiles`);
 
     await expect(fs.stat(path.join(tempDir, "delete-entry-test", "tiles"))).rejects.toThrow();
   });
 
   it("rejects deleting the tree root", async () => {
-    await expect(deleteEntry(db, tempDir, "")).rejects.toThrow(HttpError);
+    await expect(deleteEntry(tempDir, "")).rejects.toThrow(HttpError);
   });
 
   it("rejects a path that escapes the tree root", async () => {
-    await expect(deleteEntry(db, tempDir, "../escaped")).rejects.toThrow(UnsafePathError);
+    await expect(deleteEntry(tempDir, "../escaped")).rejects.toThrow(UnsafePathError);
   });
 
-  it("removes the assets row for a deleted file", async () => {
+  it("issues deletes against both the assets and directories tables", async () => {
     await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
-      .execute();
 
-    await deleteEntry(db, tempDir, `${PREFIX}forest.png`);
+    await deleteEntry(tempDir, `${PREFIX}forest.png`);
 
-    const row = await db
-      .selectFrom("assets")
-      .select("id")
-      .where("path", "=", `${PREFIX}forest.png`)
-      .executeTakeFirst();
-
-    expect(row).toBeUndefined();
-  });
-
-  it("removes the assets rows for every file nested under a deleted directory", async () => {
-    await fs.mkdir(path.join(tempDir, "delete-entry-test", "tiles", "forest"), {
-      recursive: true,
-    });
-    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "a.png"), "a");
-    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "forest", "b.png"), "b");
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}tiles/a.png`, size: 1, mtime: new Date(), hash: "hash-a" })
-      .execute();
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}tiles/forest/b.png`, size: 1, mtime: new Date(), hash: "hash-b" })
-      .execute();
-
-    await deleteEntry(db, tempDir, `${PREFIX}tiles`);
-
-    const remainingRows = await db
-      .selectFrom("assets")
-      .select("path")
-      .where("path", "like", `${PREFIX}%`)
-      .execute();
-
-    expect(remainingRows).toEqual([]);
+    expect(mock.deleteFrom).toHaveBeenCalledWith("assets");
+    expect(mock.deleteFrom).toHaveBeenCalledWith("directories");
+    expect(mock.deleteFrom("assets").execute).toHaveBeenCalledTimes(1);
+    expect(mock.deleteFrom("directories").execute).toHaveBeenCalledTimes(1);
   });
 
   it("subtracts a deleted file's size from the parent directory's aggregate", async () => {
-    await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
-    await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({ path: "", parent_id: null, total_size: 14, file_count: 1, folder_count: 1 })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({
-        path: "delete-entry-test",
-        parent_id: null,
+    mock.selectFrom("assets").executeTakeFirst.mockResolvedValueOnce({ size: 14 });
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce({
+        id: "2",
         total_size: 14,
         file_count: 1,
         folder_count: 0,
       })
-      .execute();
+      .mockResolvedValueOnce({ id: "1", total_size: 14, file_count: 1, folder_count: 1 });
 
-    await deleteEntry(db, tempDir, `${PREFIX}forest.png`);
+    await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
 
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
+    await deleteEntry(tempDir, `${PREFIX}forest.png`);
 
-    expect(byPath.get("delete-entry-test")).toMatchObject({ total_size: 0, file_count: 0 });
-    expect(byPath.get("")).toMatchObject({ total_size: 0, file_count: 0 });
-  });
-
-  it("removes the deleted directory's own row, its descendants, and subtracts its contribution from the parent", async () => {
-    await fs.mkdir(path.join(tempDir, "delete-entry-test", "tiles", "forest"), {
-      recursive: true,
-    });
-    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "a.png"), "a");
-    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "forest", "b.png"), "b");
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}tiles/a.png`, size: 1, mtime: new Date(), hash: "hash-a" })
-      .execute();
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}tiles/forest/b.png`, size: 1, mtime: new Date(), hash: "hash-b" })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({ path: "", parent_id: null, total_size: 2, file_count: 2, folder_count: 3 })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({
-        path: "delete-entry-test",
-        parent_id: null,
-        total_size: 2,
-        file_count: 2,
-        folder_count: 2,
-      })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({
-        path: "delete-entry-test/tiles",
-        parent_id: null,
-        total_size: 2,
-        file_count: 2,
-        folder_count: 1,
-      })
-      .execute();
-    await db
-      .insertInto("directories")
-      .values({
-        path: "delete-entry-test/tiles/forest",
-        parent_id: null,
-        total_size: 1,
-        file_count: 1,
-        folder_count: 0,
-      })
-      .execute();
-
-    await deleteEntry(db, tempDir, `${PREFIX}tiles`);
-
-    const remainingPaths = db.rows("directories").map((row) => row.path);
-
-    expect(remainingPaths).not.toContain("delete-entry-test/tiles");
-    expect(remainingPaths).not.toContain("delete-entry-test/tiles/forest");
-
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
-
-    expect(byPath.get("delete-entry-test")).toMatchObject({
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, {
       total_size: 0,
       file_count: 0,
       folder_count: 0,
     });
-    expect(byPath.get("")).toMatchObject({ total_size: 0, file_count: 0, folder_count: 1 });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 1,
+    });
   });
 
-  it("invalidates the cached local hash index so a deleted path is no longer present", async () => {
+  it("subtracts the deleted directory's own contribution from its parent chain", async () => {
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce({
+        id: "3",
+        total_size: 2,
+        file_count: 2,
+        folder_count: 1,
+      })
+      .mockResolvedValueOnce({ id: "2", total_size: 2, file_count: 2, folder_count: 2 })
+      .mockResolvedValueOnce({ id: "1", total_size: 2, file_count: 2, folder_count: 3 });
+
+    await fs.mkdir(path.join(tempDir, "delete-entry-test", "tiles", "forest"), { recursive: true });
+    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "a.png"), "a");
+    await fs.writeFile(path.join(tempDir, "delete-entry-test", "tiles", "forest", "b.png"), "b");
+
+    await deleteEntry(tempDir, `${PREFIX}tiles`);
+
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 0,
+    });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 1,
+    });
+  });
+
+  it("invalidates the cached local hash index so a later read re-queries instead of returning a stale hit", async () => {
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([
+        { path: `${PREFIX}forest.png`, hash: "known-hash", previous_hash: null },
+      ])
+      .mockResolvedValueOnce([]);
+
     await fs.mkdir(path.join(tempDir, "delete-entry-test"), { recursive: true });
     await fs.writeFile(path.join(tempDir, "delete-entry-test", "forest.png"), "fake-png-bytes");
-    await db
-      .insertInto("assets")
-      .values({ path: `${PREFIX}forest.png`, size: 14, mtime: new Date(), hash: "known-hash" })
-      .execute();
 
-    await getLocalHashIndex(db);
-    await deleteEntry(db, tempDir, `${PREFIX}forest.png`);
-    const index = await getLocalHashIndex(db);
+    const before = await getLocalHashIndex();
+    expect(before.has(`${PREFIX}forest.png`)).toBe(true);
 
-    expect(index.has(`${PREFIX}forest.png`)).toBe(false);
+    await deleteEntry(tempDir, `${PREFIX}forest.png`);
+
+    const after = await getLocalHashIndex();
+
+    expect(after.has(`${PREFIX}forest.png`)).toBe(false);
+    expect(mock.selectFrom("assets").execute).toHaveBeenCalledTimes(2);
   });
 });

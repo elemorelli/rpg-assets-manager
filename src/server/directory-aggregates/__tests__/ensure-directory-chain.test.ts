@@ -1,72 +1,124 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
-import { ensureDirectoryChain } from "../ensure-directory-chain.ts";
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { ensureDirectoryChain } = await import("../ensure-directory-chain.ts");
+
+const EMPTY_AGGREGATE = { total_size: 0, file_count: 0, folder_count: 0 };
 
 describe("ensureDirectoryChain", () => {
+  let mock: MockDb;
+
+  beforeEach(() => {
+    const mockDb = createMockDb();
+
+    currentMockDb = mockDb;
+    mock = mockDb as unknown as MockDb;
+  });
+
   it("creates the root row when it does not exist yet", async () => {
-    const db = createFakeDb();
+    mock.insertInto("directories").executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" });
 
-    await ensureDirectoryChain(db, "");
+    const directoryId = await ensureDirectoryChain("");
 
-    const rows = db.rows("directories");
-
-    expect(rows).toEqual([expect.objectContaining({ path: "", parent_id: null })]);
+    expect(mock.insertInto("directories").values).toHaveBeenCalledWith({
+      path: "",
+      parent_id: null,
+      ...EMPTY_AGGREGATE,
+    });
+    expect(directoryId).toBe(1);
   });
 
   it("creates every missing ancestor with the correct parent linkage", async () => {
-    const db = createFakeDb();
+    mock
+      .insertInto("directories")
+      .executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" })
+      .mockResolvedValueOnce({ id: "3" });
 
-    await ensureDirectoryChain(db, "tiles/forest");
+    await ensureDirectoryChain("tiles/forest");
 
-    const rows = db.rows("directories");
-    const byPath = new Map(rows.map((row) => [row.path, row]));
-
-    const root = byPath.get("");
-    const tiles = byPath.get("tiles");
-    const forest = byPath.get("tiles/forest");
-
-    expect(root).toBeDefined();
-    expect(Number(tiles?.parent_id)).toBe(Number(root?.id));
-    expect(Number(forest?.parent_id)).toBe(Number(tiles?.id));
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(1, {
+      path: "",
+      parent_id: null,
+      ...EMPTY_AGGREGATE,
+    });
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(2, {
+      path: "tiles",
+      parent_id: 1,
+      ...EMPTY_AGGREGATE,
+    });
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(3, {
+      path: "tiles/forest",
+      parent_id: 2,
+      ...EMPTY_AGGREGATE,
+    });
   });
 
   it("returns the id of the resolved directory", async () => {
-    const db = createFakeDb();
+    mock
+      .insertInto("directories")
+      .executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" })
+      .mockResolvedValueOnce({ id: "3" });
 
-    const directoryId = await ensureDirectoryChain(db, "tiles/forest");
+    const directoryId = await ensureDirectoryChain("tiles/forest");
 
-    const row = db.rows("directories").find((row) => row.path === "tiles/forest");
-
-    expect(directoryId).toBe(Number(row?.id));
+    expect(directoryId).toBe(3);
   });
 
   it("does not duplicate rows when called twice for the same path", async () => {
-    const db = createFakeDb();
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" })
+      .mockResolvedValueOnce({ id: "3" });
+    mock
+      .insertInto("directories")
+      .executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" })
+      .mockResolvedValueOnce({ id: "3" });
 
-    await ensureDirectoryChain(db, "tiles/forest");
-    await ensureDirectoryChain(db, "tiles/forest");
+    await ensureDirectoryChain("tiles/forest");
+    await ensureDirectoryChain("tiles/forest");
 
-    const rows = db.rows("directories");
-
-    const ROOT_AND_TWO_ANCESTORS_COUNT = 3;
-
-    expect(rows).toHaveLength(ROOT_AND_TWO_ANCESTORS_COUNT);
+    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(3);
   });
 
   it("reuses already-existing ancestors instead of recreating them", async () => {
-    const db = createFakeDb();
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" });
+    mock
+      .insertInto("directories")
+      .executeTakeFirstOrThrow.mockResolvedValueOnce({ id: "1" })
+      .mockResolvedValueOnce({ id: "2" })
+      .mockResolvedValueOnce({ id: "3" });
 
-    await ensureDirectoryChain(db, "tiles");
-    await ensureDirectoryChain(db, "tiles/forest");
+    await ensureDirectoryChain("tiles");
+    await ensureDirectoryChain("tiles/forest");
 
-    const rows = db.rows("directories");
-    const byPath = new Map(rows.map((row) => [row.path, row]));
-
-    const ROOT_AND_TWO_ANCESTORS_COUNT = 3;
-
-    expect(rows).toHaveLength(ROOT_AND_TWO_ANCESTORS_COUNT);
-    expect(Number(byPath.get("tiles/forest")?.parent_id)).toBe(Number(byPath.get("tiles")?.id));
+    expect(mock.insertInto("directories").values).toHaveBeenCalledTimes(3);
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(3, {
+      path: "tiles/forest",
+      parent_id: 2,
+      ...EMPTY_AGGREGATE,
+    });
   });
 });

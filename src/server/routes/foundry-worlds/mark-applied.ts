@@ -1,9 +1,7 @@
-import type { Kysely } from "kysely";
-
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
 
-export const markFoundryWorldApplied = async (db: Kysely<DB>, worldId: number): Promise<void> => {
+export const markFoundryWorldApplied = async (worldId: number): Promise<void> => {
   const world = await db
     .selectFrom("foundry_worlds")
     .select("id")
@@ -29,7 +27,7 @@ export const markFoundryWorldAppliedHandler = withHttpErrorHandling(async (reque
     throw new HttpError("Invalid foundry world id", HTTP_STATUS.badRequest);
   }
 
-  await markFoundryWorldApplied(db, worldId);
+  await markFoundryWorldApplied(worldId);
 
   return { applied: true };
 });

@@ -1,12 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import type { Kysely } from "kysely";
 
 import {
   invalidateLocalHashIndex,
   invalidateRemoteHashIndex,
 } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 
@@ -17,10 +16,7 @@ export interface BootstrapSummary {
   skipped: number;
 }
 
-export const bootstrapAssets = async (
-  db: Kysely<DB>,
-  rootDir: string,
-): Promise<BootstrapSummary> => {
+export const bootstrapAssets = async (rootDir: string): Promise<BootstrapSummary> => {
   const existingRows = await db.selectFrom("assets").select("path").execute();
   const existingPaths = new Set(existingRows.map((row) => row.path));
 
@@ -56,13 +52,13 @@ export const bootstrapAssets = async (
     inserted += 1;
   }
 
-  await recomputeAllDirectoryAggregates(db, rootDir);
+  await recomputeAllDirectoryAggregates(rootDir);
 
-  invalidateLocalHashIndex(db);
-  invalidateRemoteHashIndex(db);
+  invalidateLocalHashIndex();
+  invalidateRemoteHashIndex();
 
   return { inserted, skipped };
 };
 
 export const bootstrapHandler = (assetTreeRoot: string) => async () =>
-  bootstrapAssets(db, assetTreeRoot);
+  bootstrapAssets(assetTreeRoot);

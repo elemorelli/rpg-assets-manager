@@ -1,6 +1,4 @@
-import type { Kysely } from "kysely";
-
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { classifyPreviewKind } from "#utils/preview.ts";
 
 export interface AudioTagCount {
@@ -35,11 +33,10 @@ export const computeAudioTagCounts = (assets: TaggedAsset[]): AudioTagCount[] =>
   return counts.sort((a, b) => a.tag.localeCompare(b.tag));
 };
 
-export const listAudioTags = async (db: Kysely<DB>): Promise<AudioTagCount[]> => {
+export const listAudioTags = async (): Promise<AudioTagCount[]> => {
   const assets = await db.selectFrom("assets").select(["path", "tags"]).execute();
 
   return computeAudioTagCounts(assets);
 };
 
-export const listFoundryPlaylistTagsHandler = async (): Promise<AudioTagCount[]> =>
-  listAudioTags(db);
+export const listFoundryPlaylistTagsHandler = async (): Promise<AudioTagCount[]> => listAudioTags();

@@ -1,11 +1,6 @@
-import type { Kysely } from "kysely";
+import { db } from "#server/db/index.ts";
 
-import type { DB } from "#server/db/index.ts";
-
-const findDirectoryId = async (
-  db: Kysely<DB>,
-  directoryPath: string,
-): Promise<number | undefined> => {
+const findDirectoryId = async (directoryPath: string): Promise<number | undefined> => {
   const row = await db
     .selectFrom("directories")
     .select("id")
@@ -15,11 +10,7 @@ const findDirectoryId = async (
   return row ? Number(row.id) : undefined;
 };
 
-const insertDirectory = async (
-  db: Kysely<DB>,
-  directoryPath: string,
-  parentId: number | null,
-): Promise<number> => {
+const insertDirectory = async (directoryPath: string, parentId: number | null): Promise<number> => {
   const inserted = await db
     .insertInto("directories")
     .values({
@@ -36,24 +27,20 @@ const insertDirectory = async (
 };
 
 const ensureDirectoryRow = async (
-  db: Kysely<DB>,
   directoryPath: string,
   parentId: number | null,
 ): Promise<number> => {
-  const existingId = await findDirectoryId(db, directoryPath);
+  const existingId = await findDirectoryId(directoryPath);
 
   if (existingId !== undefined) {
     return existingId;
   }
 
-  return insertDirectory(db, directoryPath, parentId);
+  return insertDirectory(directoryPath, parentId);
 };
 
-export const ensureDirectoryChain = async (
-  db: Kysely<DB>,
-  directoryPath: string,
-): Promise<number> => {
-  let directoryId = await ensureDirectoryRow(db, "", null);
+export const ensureDirectoryChain = async (directoryPath: string): Promise<number> => {
+  let directoryId = await ensureDirectoryRow("", null);
 
   if (directoryPath === "") {
     return directoryId;
@@ -64,7 +51,7 @@ export const ensureDirectoryChain = async (
 
   for (const segment of segments) {
     currentPath = currentPath === "" ? segment : `${currentPath}/${segment}`;
-    directoryId = await ensureDirectoryRow(db, currentPath, directoryId);
+    directoryId = await ensureDirectoryRow(currentPath, directoryId);
   }
 
   return directoryId;

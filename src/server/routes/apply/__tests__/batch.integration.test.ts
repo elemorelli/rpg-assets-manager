@@ -34,7 +34,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       .execute();
 
     const purge = vi.fn();
-    const summary = await applyBatch(db, {
+    const summary = await applyBatch({
       rootDir: "/unused",
       destinationRoot: "/unused",
       baseUrl: "https://assets.example.com",
@@ -85,7 +85,6 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     const onProgress = vi.fn();
 
     const summary = await applyBatch(
-      db,
       {
         rootDir: rootDir.path,
         destinationRoot: destinationRoot.path,
@@ -142,7 +141,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       .values([{ path: `${PREFIX}old.png`, size: 13, hash: "hash-rename" }])
       .execute();
 
-    const summary = await applyBatch(db, {
+    const summary = await applyBatch({
       rootDir: rootDir.path,
       destinationRoot: destinationRoot.path,
       baseUrl: "https://assets.example.com",
@@ -185,7 +184,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       .values([{ path: `${PREFIX}theme.wav`, size: 13, hash: "hash-wav" }])
       .execute();
 
-    const summary = await applyBatch(db, {
+    const summary = await applyBatch({
       rootDir: rootDir.path,
       destinationRoot: destinationRoot.path,
       baseUrl: "https://assets.example.com",
@@ -221,8 +220,8 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
       .values([{ path: `${PREFIX}added.png`, size: 11, mtime: new Date(), hash: "hash-added" }])
       .execute();
 
-    await getRemoteHashIndex(db);
-    const summary = await applyBatch(db, {
+    await getRemoteHashIndex();
+    const summary = await applyBatch({
       rootDir: rootDir.path,
       destinationRoot: destinationRoot.path,
       baseUrl: "https://assets.example.com",
@@ -231,7 +230,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
     });
     createdSyncRunIds.push(summary.syncRunId);
 
-    const remoteIndex = await getRemoteHashIndex(db);
+    const remoteIndex = await getRemoteHashIndex();
     expect(remoteIndex.get(`${PREFIX}added.png`)?.hash).toBe("hash-added");
   });
 });

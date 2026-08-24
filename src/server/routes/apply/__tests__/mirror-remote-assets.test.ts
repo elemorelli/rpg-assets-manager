@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
 import type { BatchDiffResult } from "../../diff/index.ts";
 import { mirrorRemoteAssets, planRemoteAssetChanges } from "../mirror-remote-assets.ts";
@@ -118,15 +118,12 @@ describe("planRemoteAssetChanges", () => {
 // planned operation to the correct Kysely call (insert/delete/update).
 describe("mirrorRemoteAssets", () => {
   it("applies an upsert, a delete and a rename against remote_assets", async () => {
-    const db = createFakeDb();
+    const mockDb = createMockDb();
+    const mock = mockDb as unknown as MockDb;
 
-    db.seed("assets", [
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
       { path: "added.png", size: 1, hash: "hash-added" },
       { path: "renamed-to.png", size: 2, hash: "hash-renamed" },
-    ]);
-    db.seed("remote_assets", [
-      { id: "1", path: "deleted.png", size: 3, hash: "hash-deleted" },
-      { id: "2", path: "renamed-from.png", size: 9, hash: "hash-stale" },
     ]);
 
     const diff: BatchDiffResult = {
@@ -137,24 +134,27 @@ describe("mirrorRemoteAssets", () => {
       ambiguousWarnings: [],
     };
 
-    await mirrorRemoteAssets(db, diff);
+    await mirrorRemoteAssets(mockDb, diff);
 
-    const rowsByPath = new Map(db.rows("remote_assets").map((row) => [row.path, row]));
-
-    expect(rowsByPath.get("added.png")).toMatchObject({ size: 1, hash: "hash-added" });
-    expect(rowsByPath.get("renamed-to.png")).toMatchObject({
-      id: "2",
-      size: 2,
-      hash: "hash-renamed",
+    expect(mock.insertInto("remote_assets").values).toHaveBeenCalledWith({
+      path: "added.png",
+      size: 1,
+      hash: "hash-added",
     });
-    expect(rowsByPath.has("deleted.png")).toBe(false);
-    expect(rowsByPath.has("renamed-from.png")).toBe(false);
+    expect(mock.deleteFrom("remote_assets").where).toHaveBeenCalledWith("path", "=", "deleted.png");
+    expect(mock.updateTable("remote_assets").set).toHaveBeenCalledWith(
+      expect.objectContaining({ path: "renamed-to.png", size: 2, hash: "hash-renamed" }),
+    );
+    expect(mock.updateTable("remote_assets").where).toHaveBeenCalledWith(
+      "path",
+      "=",
+      "renamed-from.png",
+    );
   });
 
   it("skips the assets lookup when the diff has nothing to add, modify or rename", async () => {
-    const db = createFakeDb();
-
-    db.seed("remote_assets", [{ id: "1", path: "deleted.png", size: 3, hash: "hash-deleted" }]);
+    const mockDb = createMockDb();
+    const mock = mockDb as unknown as MockDb;
 
     const diff: BatchDiffResult = {
       added: [],
@@ -164,14 +164,9 @@ describe("mirrorRemoteAssets", () => {
       ambiguousWarnings: [],
     };
 
-    // Real Postgres rejects `WHERE path IN ()` with a syntax error, which fake-db's
-    // "in" operator doesn't reproduce (it just matches nothing), so this asserts the
-    // lookup query is skipped entirely rather than relying on it failing here too.
-    const selectFromSpy = vi.spyOn(db, "selectFrom");
+    await mirrorRemoteAssets(mockDb, diff);
 
-    await mirrorRemoteAssets(db, diff);
-
-    expect(selectFromSpy).not.toHaveBeenCalledWith("assets");
-    expect(db.rows("remote_assets").some((row) => row.path === "deleted.png")).toBe(false);
+    expect(mock.selectFrom).not.toHaveBeenCalledWith("assets");
+    expect(mock.deleteFrom("remote_assets").where).toHaveBeenCalledWith("path", "=", "deleted.png");
   });
 });

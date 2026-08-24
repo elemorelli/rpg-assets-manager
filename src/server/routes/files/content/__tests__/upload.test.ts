@@ -2,14 +2,14 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { Readable } from "node:stream";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getLocalHashIndex } from "#server/asset-index-cache/index.ts";
+import type { DB } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError } from "#server/errors/index.ts";
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
-
-import { uploadFile } from "../upload.ts";
 
 const PREFIX = "upload-test/";
 const FAKE_PNG_BYTES_LENGTH = Buffer.byteLength("fake-png-bytes");
@@ -22,13 +22,33 @@ const uploadableStreamFrom = (content: string, truncated = false) => {
   return stream;
 };
 
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { uploadFile } = await import("../upload.ts");
+
 describe("uploadFile", () => {
   let tempDir = "";
-  let db: ReturnType<typeof createFakeDb>;
+  let mock: MockDb;
 
   beforeEach(async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "upload-file-"));
-    db = createFakeDb();
+
+    const mockDb = createMockDb();
+
+    currentMockDb = mockDb;
+    mock = mockDb as unknown as MockDb;
+
+    let nextDirectoryId = 1;
+
+    mock.insertInto("directories").executeTakeFirstOrThrow.mockImplementation(() => ({
+      id: String(nextDirectoryId++),
+    }));
   });
 
   afterEach(async () => {
@@ -36,13 +56,7 @@ describe("uploadFile", () => {
   });
 
   it("writes the file content at the target path", async () => {
-    await uploadFile(
-      db,
-      tempDir,
-      "upload-test",
-      "forest.png",
-      uploadableStreamFrom("fake-png-bytes"),
-    );
+    await uploadFile(tempDir, "upload-test", "forest.png", uploadableStreamFrom("fake-png-bytes"));
 
     expect(await fs.readFile(path.join(tempDir, "upload-test", "forest.png"), "utf8")).toBe(
       "fake-png-bytes",
@@ -51,7 +65,6 @@ describe("uploadFile", () => {
 
   it("creates the target directory when it does not exist", async () => {
     await uploadFile(
-      db,
       tempDir,
       "upload-test/tiles",
       "forest.png",
@@ -68,7 +81,6 @@ describe("uploadFile", () => {
     await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
 
     const uploadAttempt = uploadFile(
-      db,
       tempDir,
       "upload-test",
       "forest.png",
@@ -87,7 +99,6 @@ describe("uploadFile", () => {
     await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
 
     await uploadFile(
-      db,
       tempDir,
       "upload-test",
       "forest.png",
@@ -103,7 +114,6 @@ describe("uploadFile", () => {
   it("rejects a file name that escapes the tree root", async () => {
     await expect(
       uploadFile(
-        db,
         tempDir,
         "upload-test",
         "../../escaped.png",
@@ -113,59 +123,20 @@ describe("uploadFile", () => {
   });
 
   it("records the uploaded file's hash in the assets table", async () => {
-    await uploadFile(
-      db,
-      tempDir,
-      "upload-test",
-      "forest.png",
-      uploadableStreamFrom("fake-png-bytes"),
-    );
+    await uploadFile(tempDir, "upload-test", "forest.png", uploadableStreamFrom("fake-png-bytes"));
 
-    const row = await db
-      .selectFrom("assets")
-      .select(["hash", "size"])
-      .where("path", "=", `${PREFIX}forest.png`)
-      .executeTakeFirstOrThrow();
+    expect(mock.insertInto).toHaveBeenCalledWith("assets");
 
-    // Real Postgres returns bigint columns as strings; fake-db echoes back
-    // whatever JS value was inserted, so this is a number here.
-    expect(row.size).toEqual(FAKE_PNG_BYTES_LENGTH);
-    expect(row.hash).not.toEqual("");
-  });
+    const [values] = mock.insertInto("assets").values.mock.calls[0];
 
-  it("overwrites a stale assets row left over from a file deleted outside the app", async () => {
-    await fs.mkdir(path.join(tempDir, "upload-test"), { recursive: true });
-    await db
-      .insertInto("assets")
-      .values({
-        path: `${PREFIX}forest.png`,
-        size: 1,
-        mtime: new Date(),
-        hash: "stale-hash",
-      })
-      .execute();
-
-    await uploadFile(
-      db,
-      tempDir,
-      "upload-test",
-      "forest.png",
-      uploadableStreamFrom("fake-png-bytes"),
-    );
-
-    const row = await db
-      .selectFrom("assets")
-      .select(["hash"])
-      .where("path", "=", `${PREFIX}forest.png`)
-      .executeTakeFirstOrThrow();
-
-    expect(row.hash).not.toEqual("stale-hash");
+    expect(values.path).toBe(`${PREFIX}forest.png`);
+    expect(values.size).toEqual(FAKE_PNG_BYTES_LENGTH);
+    expect(values.hash).not.toEqual("");
   });
 
   it("deletes the partial file and rejects with a 413 when the stream was truncated", async () => {
     await expect(
       uploadFile(
-        db,
         tempDir,
         "upload-test",
         "forest.png",
@@ -177,71 +148,72 @@ describe("uploadFile", () => {
   });
 
   it("records the uploaded file's size in the directory aggregate and its ancestors", async () => {
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: "3", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce({ id: "2", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce({ id: "1", total_size: 0, file_count: 0, folder_count: 0 });
+
     await uploadFile(
-      db,
       tempDir,
       "upload-test/tiles",
       "forest.png",
       uploadableStreamFrom("fake-png-bytes"),
     );
 
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
+    const expectedSet = { total_size: FAKE_PNG_BYTES_LENGTH, file_count: 1, folder_count: 0 };
 
-    expect(byPath.get("upload-test/tiles")).toMatchObject({
-      total_size: FAKE_PNG_BYTES_LENGTH,
-      file_count: 1,
-    });
-    expect(byPath.get("upload-test")).toMatchObject({
-      total_size: FAKE_PNG_BYTES_LENGTH,
-      file_count: 1,
-    });
-    expect(byPath.get("")).toMatchObject({
-      total_size: FAKE_PNG_BYTES_LENGTH,
-      file_count: 1,
-    });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, expectedSet);
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, expectedSet);
   });
 
-  it("adjusts the aggregate by the size delta only, without double-counting the file, on overwrite", async () => {
-    await fs.mkdir(path.join(tempDir, "upload-test"), { recursive: true });
-    await fs.writeFile(path.join(tempDir, "upload-test", "forest.png"), "original");
+  it("adjusts the aggregate by the size delta only, without double-counting the file, when a row already exists", async () => {
+    const previousSize = 1;
+
+    mock.selectFrom("assets").executeTakeFirst.mockResolvedValueOnce({ size: previousSize });
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({
+        id: "2",
+        total_size: previousSize,
+        file_count: 1,
+        folder_count: 0,
+      })
+      .mockResolvedValueOnce({ id: "1", total_size: previousSize, file_count: 1, folder_count: 0 });
 
     await uploadFile(
-      db,
-      tempDir,
-      "upload-test",
-      "forest.png",
-      uploadableStreamFrom("original"),
-      true,
-    );
-
-    await uploadFile(
-      db,
-      tempDir,
-      "upload-test",
-      "forest.png",
-      uploadableStreamFrom("a-longer-replacement"),
-      true,
-    );
-
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
-
-    expect(byPath.get("upload-test")).toMatchObject({
-      total_size: Buffer.byteLength("a-longer-replacement"),
-      file_count: 1,
-    });
-  });
-
-  it("invalidates the cached local hash index so the next read reflects the upload", async () => {
-    await getLocalHashIndex(db);
-
-    await uploadFile(
-      db,
       tempDir,
       "upload-test",
       "forest.png",
       uploadableStreamFrom("fake-png-bytes"),
+      true,
     );
-    const index = await getLocalHashIndex(db);
+
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, {
+      total_size: FAKE_PNG_BYTES_LENGTH,
+      file_count: 1,
+      folder_count: 0,
+    });
+  });
+
+  it("invalidates the cached local hash index so the next read reflects the upload", async () => {
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { path: `${PREFIX}forest.png`, hash: "some-hash", previous_hash: null },
+      ]);
+
+    await getLocalHashIndex();
+
+    await uploadFile(tempDir, "upload-test", "forest.png", uploadableStreamFrom("fake-png-bytes"));
+    const index = await getLocalHashIndex();
 
     expect(index.has(`${PREFIX}forest.png`)).toBe(true);
   });

@@ -1,12 +1,37 @@
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 import { UnsafePathError } from "#server/utils/safe-path.ts";
 
-import { createDirectory } from "../create.ts";
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { createDirectory } = await import("../create.ts");
+
+const createMock = (): MockDb => {
+  const mockDb = createMockDb();
+
+  currentMockDb = mockDb;
+
+  const mock = mockDb as unknown as MockDb;
+  let nextDirectoryId = 1;
+
+  mock.insertInto("directories").executeTakeFirstOrThrow.mockImplementation(() => ({
+    id: String(nextDirectoryId++),
+  }));
+
+  return mock;
+};
 
 describe("createDirectory", () => {
   let tempDir = "";
@@ -20,9 +45,9 @@ describe("createDirectory", () => {
 
   it("creates a new directory under the root", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "create-directory-"));
-    const db = createFakeDb();
+    createMock();
 
-    await createDirectory(db, tempDir, "tiles");
+    await createDirectory(tempDir, "tiles");
 
     const stat = await fs.stat(path.join(tempDir, "tiles"));
 
@@ -31,41 +56,66 @@ describe("createDirectory", () => {
 
   it("rejects a path that escapes the tree root", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "create-directory-"));
-    const db = createFakeDb();
+    createMock();
 
-    await expect(createDirectory(db, tempDir, "../escaped")).rejects.toThrow(UnsafePathError);
+    await expect(createDirectory(tempDir, "../escaped")).rejects.toThrow(UnsafePathError);
   });
 
   it("throws when the directory already exists", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "create-directory-"));
     await fs.mkdir(path.join(tempDir, "tiles"));
-    const db = createFakeDb();
+    createMock();
 
-    await expect(createDirectory(db, tempDir, "tiles")).rejects.toThrow();
+    await expect(createDirectory(tempDir, "tiles")).rejects.toThrow();
   });
 
   it("creates a directory row for the new directory itself", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "create-directory-"));
-    const db = createFakeDb();
+    const mock = createMock();
 
-    await createDirectory(db, tempDir, "tiles");
+    await createDirectory(tempDir, "tiles");
 
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
-
-    expect(byPath.get("tiles")).toMatchObject({ total_size: 0, file_count: 0, folder_count: 0 });
+    expect(mock.insertInto("directories").values).toHaveBeenNthCalledWith(2, {
+      path: "tiles",
+      parent_id: 1,
+      total_size: 0,
+      file_count: 0,
+      folder_count: 0,
+    });
   });
 
   it("increments folder_count on the parent and its ancestors, not on itself", async () => {
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "create-directory-"));
-    const db = createFakeDb();
+    const mock = createMock();
 
-    await createDirectory(db, tempDir, "tiles");
-    await createDirectory(db, tempDir, "tiles/forest");
+    mock
+      .selectFrom("directories")
+      .executeTakeFirst.mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: "1", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce({ id: "1", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce({ id: "2", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValueOnce({ id: "2", total_size: 0, file_count: 0, folder_count: 0 })
+      .mockResolvedValueOnce({ id: "1", total_size: 0, file_count: 0, folder_count: 1 });
 
-    const byPath = new Map(db.rows("directories").map((row) => [row.path, row]));
+    await createDirectory(tempDir, "tiles");
+    await createDirectory(tempDir, "tiles/forest");
 
-    expect(byPath.get("")).toMatchObject({ folder_count: 2 });
-    expect(byPath.get("tiles")).toMatchObject({ folder_count: 1 });
-    expect(byPath.get("tiles/forest")).toMatchObject({ folder_count: 0 });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(1, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 1,
+    });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(2, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 1,
+    });
+    expect(mock.updateTable("directories").set).toHaveBeenNthCalledWith(3, {
+      total_size: 0,
+      file_count: 0,
+      folder_count: 2,
+    });
   });
 });

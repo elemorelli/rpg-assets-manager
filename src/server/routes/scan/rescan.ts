@@ -1,10 +1,9 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { FastifyRequest } from "fastify";
-import type { Kysely } from "kysely";
 
 import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { type DB, db } from "#server/db/index.ts";
+import { db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
@@ -27,7 +26,6 @@ export interface RescanProgress {
 }
 
 export const rescanAssets = async (
-  db: Kysely<DB>,
   rootDir: string,
   options: RescanPlanOptions = {},
   onProgress?: (progress: RescanProgress) => void,
@@ -107,9 +105,9 @@ export const rescanAssets = async (
     await db.deleteFrom("assets").where("path", "=", removedPath).execute();
   }
 
-  await recomputeAllDirectoryAggregates(db, rootDir);
+  await recomputeAllDirectoryAggregates(rootDir);
 
-  invalidateLocalHashIndex(db);
+  invalidateLocalHashIndex();
 
   return {
     hashed: plan.toHash.length,
@@ -129,6 +127,6 @@ export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyR
   const stage = forceRehash ? "full rehash" : "hashing";
 
   return runTrackedJob("rescan", stage, "rescan failed", (onProgress) =>
-    rescanAssets(db, assetTreeRoot, { forceRehash }, onProgress),
+    rescanAssets(assetTreeRoot, { forceRehash }, onProgress),
   );
 };

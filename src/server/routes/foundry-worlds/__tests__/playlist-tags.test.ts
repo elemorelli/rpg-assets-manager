@@ -1,8 +1,26 @@
-import { describe, expect, it } from "vitest";
+import type { Kysely } from "kysely";
+import { describe, expect, it, vi } from "vitest";
 
-import { createFakeDb } from "#server/test-utils/fake-db.ts";
+import type { DB } from "#server/db/index.ts";
+import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
 
-import { computeAudioTagCounts, listAudioTags } from "../playlist-tags.ts";
+let currentMockDb: Kysely<DB>;
+
+vi.mock("#server/db/index.ts", () => ({
+  get db() {
+    return currentMockDb;
+  },
+}));
+
+const { computeAudioTagCounts, listAudioTags } = await import("../playlist-tags.ts");
+
+const createMock = (): MockDb => {
+  const mockDb = createMockDb();
+
+  currentMockDb = mockDb;
+
+  return mockDb as unknown as MockDb;
+};
 
 describe("computeAudioTagCounts", () => {
   it("counts audio assets per tag, ignoring non-audio files", () => {
@@ -29,25 +47,13 @@ describe("computeAudioTagCounts", () => {
 
 describe("listAudioTags", () => {
   it("reads assets from the db and reuses computeAudioTagCounts", async () => {
-    const db = createFakeDb();
+    const mock = createMock();
 
-    db.seed("assets", [
-      {
-        id: "1",
-        path: "sfx/thunder.mp3",
-        size: 1,
-        hash: "h1",
-        tags: ["storm"],
-      },
-      {
-        id: "2",
-        path: "images/map.webp",
-        size: 1,
-        hash: "h2",
-        tags: ["storm"],
-      },
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      { path: "sfx/thunder.mp3", tags: ["storm"] },
+      { path: "images/map.webp", tags: ["storm"] },
     ]);
 
-    expect(await listAudioTags(db)).toEqual([{ tag: "storm", count: 1 }]);
+    expect(await listAudioTags()).toEqual([{ tag: "storm", count: 1 }]);
   });
 });
