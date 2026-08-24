@@ -5,6 +5,7 @@ import { joinRelativePath } from "#utils/paths.ts";
 import { ROOT_PATH } from "#web/utils/breadcrumbs.ts";
 
 import { TreeNode } from "./tree-node.tsx";
+import { TreeViewContext } from "./tree-view-context.ts";
 import styles from "./tree-view.module.css";
 import { useTreeData } from "./use-tree-data.ts";
 
@@ -56,37 +57,41 @@ export const TreeView = ({
   const rootState = childrenByPath[ROOT_PATH];
 
   return (
-    <ul className={styles.tree} onDragOver={handleRootDragOver} onDrop={handleRootDrop}>
-      {rootState === "error" && (
-        <li className={styles.error}>
-          Failed to load.{" "}
-          <Button variant="secondary" onClick={() => handleRetry(ROOT_PATH)}>
-            Retry
-          </Button>
-        </li>
-      )}
-      {Array.isArray(rootState) &&
-        rootState.map((child) => (
-          <TreeNode
-            key={child.name}
-            path={joinRelativePath(ROOT_PATH, child.name)}
-            name={child.name}
-            depth={0}
-            hasPendingSync={child.hasPendingSync === true}
-            activePath={activePath}
-            expandedPaths={expandedPaths}
-            childrenByPath={childrenByPath}
-            onToggle={handleToggle}
-            onRetry={handleRetry}
-            onNavigate={onNavigate}
-            canDropOnPath={canDropOnPath}
-            onDropEntry={onDropEntry}
-            onRename={onRename}
-            onDelete={onDelete}
-            availableTags={availableTags}
-            onTagsChange={onTagsChange}
-          />
-        ))}
-    </ul>
+    <TreeViewContext.Provider
+      value={{
+        activePath,
+        expandedPaths,
+        childrenByPath,
+        onToggle: handleToggle,
+        onRetry: handleRetry,
+        onNavigate,
+        canDropOnPath,
+        onDropEntry,
+        onRename,
+        onDelete,
+        availableTags,
+        onTagsChange,
+      }}>
+      <ul className={styles.tree} onDragOver={handleRootDragOver} onDrop={handleRootDrop}>
+        {rootState === "error" && (
+          <li className={styles.error}>
+            Failed to load.{" "}
+            <Button variant="secondary" onClick={() => handleRetry(ROOT_PATH)}>
+              Retry
+            </Button>
+          </li>
+        )}
+        {Array.isArray(rootState) &&
+          rootState.map((child) => (
+            <TreeNode
+              key={child.name}
+              path={joinRelativePath(ROOT_PATH, child.name)}
+              name={child.name}
+              depth={0}
+              hasPendingSync={child.hasPendingSync === true}
+            />
+          ))}
+      </ul>
+    </TreeViewContext.Provider>
   );
 };

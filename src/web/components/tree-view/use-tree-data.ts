@@ -4,7 +4,7 @@ import { joinRelativePath } from "#utils/paths.ts";
 import * as api from "#web/requests/index.ts";
 import { buildBreadcrumbs, ROOT_PATH } from "#web/utils/breadcrumbs.ts";
 
-import type { TreeChildrenState } from "./tree-node.tsx";
+import type { TreeChildrenState } from "./tree-view-context.ts";
 
 export interface UseTreeDataResult {
   expandedPaths: Set<string>;

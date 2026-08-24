@@ -11,9 +11,8 @@ import { useContextMenu } from "#web/utils/use-context-menu.ts";
 import { useDragExpand } from "#web/utils/use-drag-expand.ts";
 import { useInlineRename } from "#web/utils/use-inline-rename.ts";
 
+import { useTreeViewContext } from "./tree-view-context.ts";
 import styles from "./tree-view.module.css";
-
-export type TreeChildrenState = "loading" | "error" | DirectoryEntry[];
 
 const INDENT_PX = 16;
 const DRAG_EXPAND_DELAY_MS = 600;
@@ -34,38 +33,24 @@ export interface TreeNodeProps {
   name: string;
   depth: number;
   hasPendingSync: boolean;
-  activePath: string;
-  expandedPaths: Set<string>;
-  childrenByPath: Record<string, TreeChildrenState>;
-  onToggle: (path: string) => void;
-  onRetry: (path: string) => void;
-  onNavigate: (path: string) => void;
-  canDropOnPath: (path: string) => boolean;
-  onDropEntry: (path: string) => void;
-  onRename: (path: string, newName: string) => void;
-  onDelete: (path: string) => void;
-  availableTags: string[];
-  onTagsChange: (path: string, tags: string[]) => void;
 }
 
-export const TreeNode = ({
-  path,
-  name,
-  depth,
-  hasPendingSync,
-  activePath,
-  expandedPaths,
-  childrenByPath,
-  onToggle,
-  onRetry,
-  onNavigate,
-  canDropOnPath,
-  onDropEntry,
-  onRename,
-  onDelete,
-  availableTags,
-  onTagsChange,
-}: TreeNodeProps): JSX.Element => {
+export const TreeNode = ({ path, name, depth, hasPendingSync }: TreeNodeProps): JSX.Element => {
+  const {
+    activePath,
+    expandedPaths,
+    childrenByPath,
+    onToggle,
+    onRetry,
+    onNavigate,
+    canDropOnPath,
+    onDropEntry,
+    onRename,
+    onDelete,
+    availableTags,
+    onTagsChange,
+  } = useTreeViewContext();
+
   const {
     isRenaming,
     renameDraft,
@@ -170,18 +155,6 @@ export const TreeNode = ({
               name={child.name}
               depth={depth + 1}
               hasPendingSync={child.hasPendingSync === true}
-              activePath={activePath}
-              expandedPaths={expandedPaths}
-              childrenByPath={childrenByPath}
-              onToggle={onToggle}
-              onRetry={onRetry}
-              onNavigate={onNavigate}
-              canDropOnPath={canDropOnPath}
-              onDropEntry={onDropEntry}
-              onRename={onRename}
-              onDelete={onDelete}
-              availableTags={availableTags}
-              onTagsChange={onTagsChange}
             />
           ))}
         </ul>
