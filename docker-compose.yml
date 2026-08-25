@@ -42,6 +42,10 @@ services:
       RCLONE_CONFIG_R2_ENDPOINT: ${RCLONE_CONFIG_R2_ENDPOINT}
       RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${RCLONE_CONFIG_R2_ACCESS_KEY_ID}
       RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_R2_SECRET_ACCESS_KEY}
+      # R2 tokens are scoped to object read/write only, so rclone's default
+      # bucket-existence check (an S3 CreateBucket call) gets a 403. The
+      # bucket already exists, so skip that check.
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
       CF_ZONE_ID: ${CF_ZONE_ID}
       CF_API_TOKEN: ${CF_API_TOKEN}
       ASSETS_PUBLIC_BASE_URL: ${ASSETS_PUBLIC_BASE_URL}
@@ -71,6 +75,7 @@ services:
       RCLONE_CONFIG_R2_ENDPOINT: ${RCLONE_CONFIG_R2_ENDPOINT}
       RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${RCLONE_CONFIG_R2_ACCESS_KEY_ID}
       RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${RCLONE_CONFIG_R2_SECRET_ACCESS_KEY}
+      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
     depends_on:
       - postgres
 
