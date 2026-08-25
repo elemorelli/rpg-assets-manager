@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: rpgassets
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rpgassets_dev}
@@ -13,6 +14,7 @@ services:
 
   api:
     image: ghcr.io/elemorelli/rpg-assets-manager:latest
+    restart: unless-stopped
     build:
       context: .
       args:
@@ -53,6 +55,7 @@ services:
 
   backup:
     image: ghcr.io/elemorelli/rpg-assets-manager:latest
+    restart: unless-stopped
     # Shares the api image (rclone and now postgresql-client both live
     # there already) instead of a separate build context, so the backup
     # loop needs no image of its own to publish or copy to the server.
