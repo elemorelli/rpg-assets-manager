@@ -5,7 +5,7 @@ R2 bucket in sync with it. It replaces a manual `upload.sh` workflow with a
 file browser plus an explicit diff/apply sync flow, and it can generate a
 Foundry macro that rewrites asset references after a rename or move.
 
-Single-user tool, not a catalog: no tags, no metadata, no orphan detection.
+Single-user tool, not a catalog: no orphan detection, no versioning.
 See `docs/asset-manager-v1-handoff.md` for the full design.
 
 ## Features
@@ -16,6 +16,8 @@ See `docs/asset-manager-v1-handoff.md` for the full design.
   unsynced file can be reviewed before deciding whether to sync it.
 - WebP/Ogg conversion, explicit and user-triggered, honouring `.skip`
   directories.
+- Free-form tags per asset, with a tag editor, filtering, and badges shown
+  in the browser views.
 - Sync flow: rescan the local tree, diff it against the last known R2 state,
   review a confirmation screen (additions, modifications, deletions,
   renames), then apply. Renames use rclone's server-side `moveto`, no bytes
@@ -94,17 +96,12 @@ against a real remote.
 
 ## Docker / deploy
 
-`docker-compose.yml` defines `postgres`, `api` and `backup`. The `api`
-service's `image` points at `ghcr.io/elemorelli/rpg-assets-manager:latest`,
-published by `.github/workflows/docker-publish.yml` on every push to `main`;
-it also keeps a `build` block for local image builds. `backup` runs
-`pg_dump` on a loop and uploads the compressed dump to a dedicated R2
-bucket via `rclone`, pruning old dumps past `BACKUP_RETENTION_DAYS`. Full
+`docker-compose.yml` defines `postgres`, `api` and `backup`. Both `api` and
+`backup` share the same `image`, `ghcr.io/elemorelli/rpg-assets-manager:latest`,
+published by `.github/workflows/docker-publish.yml` on every push to `main`
+(`api` also keeps a `build` block for local image builds); `backup`
+overrides the `command` to run `backup.sh` in a loop instead of the server.
+It runs `pg_dump`, uploads the compressed dump to a dedicated R2 bucket via
+`rclone`, and prunes old dumps past `BACKUP_RETENTION_DAYS`. Full
 deploy runbook, including the dev-bucket dry run and the production
 bootstrap, is in `docs/deploy.md`.
-
-## Docs
-
-- `docs/asset-manager-v1-handoff.md`: full v1 design (data model, diff and
-  apply semantics, macro generator, infrastructure).
-- `docs/deploy.md`: dev-bucket test procedure and the real deploy runbook.

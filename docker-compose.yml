@@ -43,7 +43,6 @@ services:
       CF_ZONE_ID: ${CF_ZONE_ID}
       CF_API_TOKEN: ${CF_API_TOKEN}
       ASSETS_PUBLIC_BASE_URL: ${ASSETS_PUBLIC_BASE_URL}
-      FOUNDRY_WORLD_NAMES: ${FOUNDRY_WORLD_NAMES}
     volumes:
       - ${ASSET_TREE_HOST_PATH:-./fixtures/tree}:/assets
       - thumb-cache:/thumbnails
@@ -53,8 +52,11 @@ services:
       - postgres
 
   backup:
-    build:
-      context: ./backup
+    image: ghcr.io/elemorelli/rpg-assets-manager:latest
+    # Shares the api image (rclone and now postgresql-client both live
+    # there already) instead of a separate build context, so the backup
+    # loop needs no image of its own to publish or copy to the server.
+    command: ["/bin/sh", "-c", "while true; do /app/backup/backup.sh; sleep \"${BACKUP_INTERVAL_SECONDS:-86400}\"; done"]
     environment:
       DATABASE_URL: postgres://rpgassets:${POSTGRES_PASSWORD:-rpgassets_dev}@postgres:5432/rpgassets
       BACKUP_RCLONE_REMOTE: ${BACKUP_RCLONE_REMOTE}
