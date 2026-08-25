@@ -17,7 +17,10 @@ export interface BootstrapSummary {
 }
 
 export const bootstrapAssets = async (rootDir: string): Promise<BootstrapSummary> => {
-  const existingRows = await db.selectFrom("assets").select("path").execute();
+  // Checked against remote_assets, not assets: the server's own boot-time
+  // rescan already fills assets from the local tree on every startup, which
+  // would make that table useless as a marker of bootstrap's own progress.
+  const existingRows = await db.selectFrom("remote_assets").select("path").execute();
   const existingPaths = new Set(existingRows.map((row) => row.path));
 
   const walkedFiles = await walkAssetTree(rootDir);
@@ -38,9 +41,13 @@ export const bootstrapAssets = async (rootDir: string): Promise<BootstrapSummary
     const mtime = new Date(file.mtimeMs);
 
     await db.transaction().execute(async (trx) => {
+      // Upsert, not a plain insert: the boot-time rescan may have already
+      // written this path to assets, since existingPaths only tracks
+      // remote_assets (see the comment above).
       await trx
         .insertInto("assets")
         .values({ path: file.relativePath, size: file.size, mtime, hash })
+        .onConflict((oc) => oc.column("path").doUpdateSet({ size: file.size, mtime, hash }))
         .execute();
 
       await trx

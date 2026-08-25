@@ -46,7 +46,8 @@ describe("bootstrapAssets", () => {
   });
 
   it("writes a matching snapshot to assets and remote_assets", async () => {
-    mock.selectFrom("assets").execute.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    mock.selectFrom("remote_assets").execute.mockResolvedValueOnce([]);
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([]);
 
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "b.png"), "fake-bytes-b");
@@ -82,11 +83,10 @@ describe("bootstrapAssets", () => {
 
   it("skips paths already present, so a second run is resumable", async () => {
     mock
-      .selectFrom("assets")
+      .selectFrom("remote_assets")
       .execute.mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([{ path: `${PREFIX}a.png` }])
-      .mockResolvedValueOnce([]);
+      .mockResolvedValueOnce([{ path: `${PREFIX}a.png` }]);
+    mock.selectFrom("assets").execute.mockResolvedValue([]);
 
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
 
@@ -99,16 +99,29 @@ describe("bootstrapAssets", () => {
     expect(secondSummary).toEqual({ inserted: 1, skipped: 1 });
   });
 
+  it("still inserts a path already scanned by the boot rescan, since only remote_assets tracks bootstrap progress", async () => {
+    mock.selectFrom("remote_assets").execute.mockResolvedValueOnce([]);
+    mock
+      .selectFrom("assets")
+      .execute.mockResolvedValueOnce([{ path: `${PREFIX}a.png` }])
+      .mockResolvedValueOnce([]);
+
+    await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
+
+    const summary = await bootstrapAssets(tempDir);
+
+    expect(summary).toEqual({ inserted: 1, skipped: 0 });
+    expect(mock.insertInto("remote_assets").values.mock.calls).toHaveLength(1);
+  });
+
   it("computes directory aggregates for the scanned tree", async () => {
     const fileSize = Buffer.byteLength("fake-bytes-a");
 
-    mock
-      .selectFrom("assets")
-      .execute.mockResolvedValueOnce([])
-      .mockResolvedValueOnce([
-        { path: `${PREFIX}a.png`, size: fileSize },
-        { path: `${PREFIX}b.png`, size: fileSize },
-      ]);
+    mock.selectFrom("remote_assets").execute.mockResolvedValueOnce([]);
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      { path: `${PREFIX}a.png`, size: fileSize },
+      { path: `${PREFIX}b.png`, size: fileSize },
+    ]);
 
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "b.png"), "fake-bytes-b");
@@ -133,11 +146,11 @@ describe("bootstrapAssets", () => {
       .selectFrom("assets")
       .execute.mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ path: `${PREFIX}a.png`, hash: "h", previous_hash: null }]);
     mock
       .selectFrom("remote_assets")
       .execute.mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{ path: `${PREFIX}a.png`, hash: "h", size: 1 }]);
 
     await fs.writeFile(path.join(tempDir, "bootstrap-test", "a.png"), "fake-bytes-a");

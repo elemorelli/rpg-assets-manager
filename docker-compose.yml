@@ -49,7 +49,7 @@ services:
       - ${ASSET_TREE_HOST_PATH:-./fixtures/tree}:/assets
       - thumb-cache:/thumbnails
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:45624:3001"
     depends_on:
       - postgres
 
