@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Toolbar } from "./toolbar.tsx";
 
 describe("Toolbar", () => {
-  it("triggers a rescan without forcing a rehash by default", async () => {
+  it("shows a confirmation before triggering a rescan", async () => {
     const user = userEvent.setup();
     const onRescan = vi.fn();
 
@@ -26,7 +26,35 @@ describe("Toolbar", () => {
     );
     await user.click(screen.getByRole("button", { name: "Rescan" }));
 
+    expect(onRescan).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Rescan now" }));
+
     expect(onRescan).toHaveBeenCalledWith(false);
+  });
+
+  it("does not trigger a rescan when the confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    const onRescan = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={onRescan}
+        onConvert={vi.fn()}
+        onSync={vi.fn()}
+        onReconcile={vi.fn()}
+        onFoundry={vi.fn()}
+        hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Rescan" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(onRescan).not.toHaveBeenCalled();
   });
 
   it("shows a warning before triggering a full rehash", async () => {

@@ -44,8 +44,14 @@ export const Toolbar = ({
   hasPendingFoundryMacro,
   hasPendingSyncChanges,
 }: ToolbarProps): JSX.Element => {
+  const [confirmingRescan, setConfirmingRescan] = useState<boolean>(false);
   const [confirmingRehash, setConfirmingRehash] = useState<boolean>(false);
   const directoryActionsMenu = useContextMenu();
+
+  const handleConfirmRescan = (): void => {
+    setConfirmingRescan(false);
+    onRescan(false);
+  };
 
   const handleConfirmRehash = (): void => {
     setConfirmingRehash(false);
@@ -59,7 +65,7 @@ export const Toolbar = ({
           disabled={busy}
           aria-label="Rescan"
           title="Rescan"
-          onClick={() => onRescan(false)}>
+          onClick={() => setConfirmingRescan(true)}>
           <FontAwesomeIcon icon={faArrowsRotate} />
         </SegmentedButton>
         <SegmentedButton disabled={busy} aria-label="Convert" title="Convert" onClick={onConvert}>
@@ -89,6 +95,16 @@ export const Toolbar = ({
           onReconcile={onReconcile}
         />
       </SegmentedGroup>
+      {confirmingRescan && (
+        <ConfirmDialog
+          title="Rescan"
+          icon={faArrowsRotate}
+          message="Rescan the collection for new, changed, or removed files. This can take a while for large collections. Continue?"
+          confirmLabel="Rescan now"
+          onConfirm={handleConfirmRescan}
+          onCancel={() => setConfirmingRescan(false)}
+        />
+      )}
       {confirmingRehash && (
         <ConfirmDialog
           title="Full rehash"

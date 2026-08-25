@@ -1,5 +1,5 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import type { JSX } from "react";
+import type { JSX, ReactNode } from "react";
 
 import { Modal } from "#components/modal/modal.tsx";
 import { formatEta } from "#web/utils/job-eta.ts";
@@ -15,6 +15,7 @@ export interface ProgressModalProps {
   etaSeconds?: number | null;
   onClose: () => void;
   dismissible?: boolean;
+  footer?: ReactNode;
 }
 
 export const ProgressModal = ({
@@ -26,11 +27,18 @@ export const ProgressModal = ({
   etaSeconds,
   onClose,
   dismissible = false,
+  footer,
 }: ProgressModalProps): JSX.Element => {
   const indeterminate = total === 0;
 
   return (
-    <Modal title={title} icon={icon} onClose={onClose} dismissible={dismissible} size="sm">
+    <Modal
+      title={title}
+      icon={icon}
+      onClose={onClose}
+      dismissible={dismissible}
+      footer={footer}
+      size="sm">
       <div className={styles.progress}>
         {indeterminate ? (
           <span className={styles.spinner} data-testid="progress-modal-spinner" />

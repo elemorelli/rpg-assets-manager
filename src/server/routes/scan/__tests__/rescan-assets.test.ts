@@ -152,6 +152,52 @@ describe("rescanAssets", () => {
     expect(rescanTestRow).toMatchObject({ total_size: fileSize, file_count: 1 });
   });
 
+  it("stops hashing and reports nothing changed once the signal is aborted", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
+    await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");
+
+    const controller = new AbortController();
+    const progressUpdates: { done: number; total: number; detail?: string }[] = [];
+
+    controller.abort();
+
+    const summary = await rescanAssets(
+      tempDir,
+      {},
+      (progress) => progressUpdates.push(progress),
+      controller.signal,
+    );
+
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
+    expect(progressUpdates).toHaveLength(0);
+    expect(mock.insertInto).not.toHaveBeenCalledWith("assets");
+  });
+
+  it("does not delete existing assets when cancelled before the walk finishes", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
+
+    const stat = await fs.stat(path.join(tempDir, "rescan-test", "stays.png"));
+
+    mock.selectFrom("assets").execute.mockResolvedValueOnce([
+      {
+        path: `${PREFIX}stays.png`,
+        size: stat.size,
+        mtime: new Date(Math.trunc(stat.mtimeMs)),
+        hash: "irrelevant-hash",
+      },
+    ]);
+
+    const controller = new AbortController();
+
+    controller.abort();
+
+    const summary = await rescanAssets(tempDir, {}, undefined, controller.signal);
+
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
+    expect(mock.deleteFrom).not.toHaveBeenCalledWith("assets");
+    expect(mock.updateTable).not.toHaveBeenCalledWith("assets");
+  });
+
   it("reports progress via the onProgress callback", async () => {
     await fs.writeFile(path.join(tempDir, "rescan-test", "one.png"), "one");
     await fs.writeFile(path.join(tempDir, "rescan-test", "two.png"), "two");

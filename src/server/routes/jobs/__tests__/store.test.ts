@@ -1,10 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "../store.ts";
+import {
+  cancelCurrentJob,
+  getCurrentJob,
+  setCurrentJob,
+  setCurrentJobController,
+  subscribeToJobChanges,
+} from "../store.ts";
 
 describe("jobStore", () => {
   beforeEach(() => {
     setCurrentJob(null);
+    setCurrentJobController(null);
   });
 
   it("starts with no current job", () => {
@@ -44,5 +51,32 @@ describe("jobStore", () => {
     });
 
     expect(listener).not.toHaveBeenCalled();
+  });
+});
+
+describe("cancelCurrentJob", () => {
+  beforeEach(() => {
+    setCurrentJob(null);
+    setCurrentJobController(null);
+  });
+
+  it("returns false when no job is registered", () => {
+    expect(cancelCurrentJob()).toBe(false);
+  });
+
+  it("returns false and leaves the controller untouched when the job isn't cancellable", () => {
+    const controller = new AbortController();
+    setCurrentJobController({ controller, cancellable: false });
+
+    expect(cancelCurrentJob()).toBe(false);
+    expect(controller.signal.aborted).toBe(false);
+  });
+
+  it("aborts the controller and returns true when the job is cancellable", () => {
+    const controller = new AbortController();
+    setCurrentJobController({ controller, cancellable: true });
+
+    expect(cancelCurrentJob()).toBe(true);
+    expect(controller.signal.aborted).toBe(true);
   });
 });

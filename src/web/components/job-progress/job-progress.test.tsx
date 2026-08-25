@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { JobProgress } from "./job-progress.tsx";
 
@@ -49,6 +50,110 @@ describe("JobProgress", () => {
 
     expect(screen.getByRole("dialog", { name: "rescan: hashing" })).toBeInTheDocument();
     expect(screen.getByText("3 / 10")).toBeInTheDocument();
+  });
+
+  it("offers a cancel button while a rescan is running", () => {
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "rescan",
+          stage: "hashing",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+  });
+
+  it("does not offer a cancel button for job types that can't be cancelled", () => {
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "sync",
+          stage: "applying",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
+  });
+
+  it("posts to the cancel endpoint when the cancel button is clicked", async () => {
+    const fetchMock = stubFetch(new Response(JSON.stringify({ cancelled: true })));
+    const user = userEvent.setup();
+
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "rescan",
+          stage: "hashing",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/jobs/cancel", { method: "POST" });
+  });
+
+  it("re-enables the cancel button without throwing when the cancel request fails", async () => {
+    stubFetch(new Response(null, { status: 500 }));
+    const user = userEvent.setup();
+
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "rescan",
+          stage: "hashing",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(await screen.findByRole("button", { name: "Cancel" })).toBeEnabled();
+  });
+
+  it("shows a cancelled confirmation when the server reports the job as cancelled", () => {
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "rescan",
+          stage: "hashing",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+          cancelled: true,
+        }),
+      ),
+    );
+
+    expect(screen.getByRole("dialog", { name: "rescan: cancelled" })).toBeInTheDocument();
   });
 
   it("does not allow dismissing the dialog while the job is running", () => {

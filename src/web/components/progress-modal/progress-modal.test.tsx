@@ -48,4 +48,18 @@ describe("ProgressModal", () => {
 
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
   });
+
+  it("renders a footer when one is given", () => {
+    render(
+      <ProgressModal
+        title="Uploading files"
+        done={1}
+        total={2}
+        onClose={vi.fn()}
+        footer={<button type="button">Cancel</button>}
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+  });
 });

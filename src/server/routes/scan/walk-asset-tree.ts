@@ -12,11 +12,20 @@ interface WalkedFile {
 export const walkAssetTree = async (
   rootDir: string,
   options: WalkDirectoryOptions = {},
+  signal?: AbortSignal,
 ): Promise<WalkedFile[]> => {
   const entries = await walkDirectory(rootDir, options);
   const results: WalkedFile[] = [];
 
   for (const entry of entries) {
+    // The stat below is the expensive part of a walk over a large collection,
+    // so this is where cancellation needs to land to be responsive. Any
+    // resulting truncated list is safe because rescan.ts re-checks the signal
+    // right after the walk, before this list is used to plan removals.
+    if (signal?.aborted) {
+      break;
+    }
+
     if (!entry.dirent.isFile()) {
       continue;
     }

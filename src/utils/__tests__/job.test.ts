@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { advanceJob, failJob, formatJobEvent, parseJobEvent, startJob } from "../job.ts";
+import { advanceJob, cancelJob, failJob, formatJobEvent, parseJobEvent, startJob } from "../job.ts";
 
 const TOTAL_FILES = 10;
 const DONE_AFTER_ADVANCE = 4;
@@ -76,6 +76,27 @@ describe("failJob", () => {
       total: TOTAL_FILES,
       startedAt: FIXED_NOW.getTime(),
       error: "disk full",
+    });
+  });
+});
+
+describe("cancelJob", () => {
+  it("marks the job cancelled while leaving progress and detail alone", () => {
+    const job = advanceJob(
+      startJob("rescan", "hashing", TOTAL_FILES),
+      DONE_BEFORE_FAILURE,
+      "assets/goblin.png",
+    );
+
+    expect(cancelJob(job)).toEqual({
+      type: "rescan",
+      stage: "hashing",
+      detail: "assets/goblin.png",
+      done: DONE_BEFORE_FAILURE,
+      total: TOTAL_FILES,
+      startedAt: FIXED_NOW.getTime(),
+      error: null,
+      cancelled: true,
     });
   });
 });

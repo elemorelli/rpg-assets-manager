@@ -146,4 +146,18 @@ describe("nextJobDisplayState", () => {
 
     expect(next).toEqual(IDLE);
   });
+
+  it("moves to cancelled when a running job is cancelled", () => {
+    const next = nextJobDisplayState(IDLE, {
+      type: "rescan",
+      stage: "hashing",
+      done: 3,
+      total: 10,
+      startedAt: 1000,
+      error: null,
+      cancelled: true,
+    });
+
+    expect(next).toEqual({ kind: "cancelled", type: "rescan" });
+  });
 });

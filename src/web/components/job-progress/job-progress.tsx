@@ -4,6 +4,7 @@ import { parseJobEvent } from "#utils/job.ts";
 import { Button } from "#web/components/button/button.tsx";
 import { Modal } from "#web/components/modal/modal.tsx";
 import { ProgressModal } from "#web/components/progress-modal/progress-modal.tsx";
+import { cancelJob } from "#web/requests/index.ts";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
 import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
 import { iconForJobType } from "#web/utils/job-type-icon.ts";
@@ -15,6 +16,10 @@ const ETA_TICK_MS = 1000;
 
 const IDLE: JobDisplayState = { kind: "idle" };
 
+// Only job types whose own operation actually checks the abort signal it's
+// given may offer cancellation; see runTrackedJob's cancellable option.
+const CANCELLABLE_JOB_TYPES = new Set(["rescan"]);
+
 type RunningState = Extract<JobDisplayState, { kind: "running" }>;
 
 const runningTitle = (state: RunningState): string => `${state.type}: ${state.stage}`;
@@ -25,6 +30,7 @@ export interface JobProgressProps {
 
 export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Element | null => {
   const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
+  const [isCancelling, setIsCancelling] = useState<boolean>(false);
   const [, tick] = useReducer((count: number) => count + 1, 0);
   const onJobSucceededRef = useRef(onJobSucceeded);
   onJobSucceededRef.current = onJobSucceeded;
@@ -75,6 +81,13 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
     setDisplayState(IDLE);
   };
 
+  const handleCancel = (): void => {
+    setIsCancelling(true);
+    cancelJob()
+      .catch(() => {})
+      .finally(() => setIsCancelling(false));
+  };
+
   if (displayState.kind === "idle") {
     return null;
   }
@@ -88,6 +101,11 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
           displayState.startedAt,
           Date.now(),
         );
+    const cancelButton = CANCELLABLE_JOB_TYPES.has(displayState.type) && (
+      <Button variant="secondary" onClick={handleCancel} disabled={isCancelling}>
+        {isCancelling ? "Cancelling…" : "Cancel"}
+      </Button>
+    );
 
     return (
       <ProgressModal
@@ -98,6 +116,7 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
         detail={displayState.detail}
         etaSeconds={eta}
         onClose={handleDismiss}
+        footer={cancelButton}
       />
     );
   }
@@ -117,6 +136,19 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
         footer={dismissButton}
         size="sm">
         <span>Operation completed successfully.</span>
+      </Modal>
+    );
+  }
+
+  if (displayState.kind === "cancelled") {
+    return (
+      <Modal
+        title={`${displayState.type}: cancelled`}
+        icon={iconForJobType(displayState.type)}
+        onClose={handleDismiss}
+        footer={dismissButton}
+        size="sm">
+        <span>Operation cancelled.</span>
       </Modal>
     );
   }

@@ -13,6 +13,7 @@ export type JobDisplayState =
       indeterminate: boolean;
     }
   | { kind: "succeeded"; type: string }
+  | { kind: "cancelled"; type: string }
   | { kind: "failed"; type: string; detail?: string; error: string };
 
 export const nextJobDisplayState = (
@@ -25,6 +26,10 @@ export const nextJobDisplayState = (
     }
 
     return { kind: "idle" };
+  }
+
+  if (incoming.cancelled === true) {
+    return { kind: "cancelled", type: incoming.type };
   }
 
   if (incoming.error !== null) {

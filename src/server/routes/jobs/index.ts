@@ -1,3 +1,4 @@
+export { cancelJobHandler } from "./cancel.ts";
 export { runTrackedJob } from "./run-tracked-job.ts";
 export { getCurrentJob, setCurrentJob, subscribeToJobChanges } from "./store.ts";
 export { jobsStreamHandler } from "./stream.ts";

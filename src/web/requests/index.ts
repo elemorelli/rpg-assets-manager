@@ -21,6 +21,7 @@ export {
   type FoundryPlaylistTag,
   fetchFoundryPlaylistTags,
 } from "./foundry-worlds/playlist-tags.ts";
+export { cancelJob } from "./jobs/cancel.ts";
 export { type RcloneCheckResult, reconcile } from "./reconcile/check.ts";
 export { rescan } from "./scan/rescan.ts";
 export { fetchTags } from "./tags/list.ts";

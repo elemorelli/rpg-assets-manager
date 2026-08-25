@@ -6,6 +6,7 @@ export interface JobState {
   total: number;
   startedAt: number;
   error: string | null;
+  cancelled?: boolean;
 }
 
 export type CurrentJob = JobState | null;
@@ -29,6 +30,11 @@ export const advanceJob = (job: JobState, done: number, detail?: string): JobSta
 export const failJob = (job: JobState, error: string): JobState => ({
   ...job,
   error,
+});
+
+export const cancelJob = (job: JobState): JobState => ({
+  ...job,
+  cancelled: true,
 });
 
 export const toErrorMessage = (error: unknown, fallback: string): string =>

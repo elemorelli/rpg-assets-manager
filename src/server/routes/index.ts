@@ -25,7 +25,7 @@ import {
   markFoundryWorldAppliedHandler,
 } from "./foundry-worlds/index.ts";
 import { healthHandler } from "./health/index.ts";
-import { jobsStreamHandler } from "./jobs/index.ts";
+import { cancelJobHandler, jobsStreamHandler } from "./jobs/index.ts";
 import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
@@ -51,6 +51,7 @@ export const registerRoutes = (
   app.post("/api/reconcile", reconcileHandler(assetTreeRoot));
   app.get("/api/diff", diffHandler);
   app.get("/api/jobs/stream", jobsStreamHandler);
+  app.post("/api/jobs/cancel", cancelJobHandler);
   app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));
   app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
   app.post("/api/apply", applyBatchHandler(assetTreeRoot));

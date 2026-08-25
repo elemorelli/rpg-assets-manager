@@ -267,6 +267,7 @@ describe("FileBrowser", () => {
     await screen.findAllByText("tiles");
 
     await user.click(screen.getByRole("button", { name: "Rescan" }));
+    await user.click(screen.getByRole("button", { name: "Rescan now" }));
 
     await waitFor(() => {
       expect(rescanMock).toHaveBeenCalledWith(false);

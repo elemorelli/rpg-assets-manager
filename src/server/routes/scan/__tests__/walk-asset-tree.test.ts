@@ -64,4 +64,19 @@ describe("walkAssetTree", () => {
 
     expect(files.map((file) => file.relativePath)).toEqual(["root-file.txt"]);
   });
+
+  it("stops statting files once the signal is aborted", async () => {
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "walk-asset-tree-"));
+
+    await fs.writeFile(path.join(tempDir, "one.png"), "one");
+    await fs.writeFile(path.join(tempDir, "two.png"), "two");
+
+    const controller = new AbortController();
+
+    controller.abort();
+
+    const files = await walkAssetTree(tempDir, {}, controller.signal);
+
+    expect(files).toEqual([]);
+  });
 });
