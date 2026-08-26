@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { searchEntries } from "../search-entries.ts";
+import { searchEntries } from "../search.ts";
 
 describe("searchEntries", () => {
   let tempDir = "";

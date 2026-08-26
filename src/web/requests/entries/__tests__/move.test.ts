@@ -10,7 +10,7 @@ describe("moveEntry", () => {
 
     await moveEntry("a.png", "tiles/a.png");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files/move", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/entries/move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fromPath: "a.png", toPath: "tiles/a.png", overwrite: false }),
@@ -22,7 +22,7 @@ describe("moveEntry", () => {
 
     await moveEntry("a.png", "tiles/a.png", true);
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files/move", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/entries/move", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fromPath: "a.png", toPath: "tiles/a.png", overwrite: true }),

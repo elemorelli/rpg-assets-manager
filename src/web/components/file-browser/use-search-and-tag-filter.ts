@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
 import { parentDirectory } from "#utils/paths.ts";
-import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
+import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 import * as api from "#web/requests/index.ts";
 import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
 

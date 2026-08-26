@@ -12,7 +12,7 @@ describe("searchEntries", () => {
 
     const result = await searchEntries("legacy pack");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files/search?q=legacy%20pack", undefined);
+    expect(fetchMock).toHaveBeenCalledWith("/api/entries/search?q=legacy%20pack", undefined);
     expect(result).toEqual(results);
   });
 

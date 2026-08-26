@@ -68,14 +68,14 @@ describe("file routes", () => {
     expect((await fs.stat(path.join(tempDir.path, "tiles"))).isDirectory()).toBe(true);
   });
 
-  it("deletes an entry via DELETE /api/files", async () => {
+  it("deletes an entry via DELETE /api/entries", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "DELETE",
-      url: "/api/files",
+      url: "/api/entries",
       payload: { path: "forest.png" },
       headers: { cookie: sessionCookie },
     });
@@ -84,14 +84,14 @@ describe("file routes", () => {
     await expect(fs.stat(path.join(tempDir.path, "forest.png"))).rejects.toThrow();
   });
 
-  it("renames an entry via POST /api/files/rename", async () => {
+  it("renames an entry via POST /api/entries/rename", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
-      url: "/api/files/rename",
+      url: "/api/entries/rename",
       payload: { path: "forest.png", newName: "forest-renamed.png" },
       headers: { cookie: sessionCookie },
     });
@@ -100,14 +100,14 @@ describe("file routes", () => {
     expect((await fs.stat(path.join(tempDir.path, "forest-renamed.png"))).isFile()).toBe(true);
   });
 
-  it("moves an entry via POST /api/files/move", async () => {
+  it("moves an entry via POST /api/entries/move", async () => {
     await fs.writeFile(path.join(tempDir.path, "forest.png"), "fake-png-bytes");
     const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
-      url: "/api/files/move",
+      url: "/api/entries/move",
       payload: { fromPath: "forest.png", toPath: "tiles/forest.png" },
       headers: { cookie: sessionCookie },
     });
@@ -116,7 +116,7 @@ describe("file routes", () => {
     expect((await fs.stat(path.join(tempDir.path, "tiles", "forest.png"))).isFile()).toBe(true);
   });
 
-  it("overwrites the destination via POST /api/files/move when overwrite is true", async () => {
+  it("overwrites the destination via POST /api/entries/move when overwrite is true", async () => {
     await fs.writeFile(path.join(tempDir.path, "a.png"), "source-bytes");
     await fs.writeFile(path.join(tempDir.path, "b.png"), "dest-bytes");
     const app = buildTestApp(tempDir);
@@ -124,7 +124,7 @@ describe("file routes", () => {
 
     const response = await app.inject({
       method: "POST",
-      url: "/api/files/move",
+      url: "/api/entries/move",
       payload: { fromPath: "a.png", toPath: "b.png", overwrite: true },
       headers: { cookie: sessionCookie },
     });
@@ -211,7 +211,7 @@ describe("file routes", () => {
     );
   });
 
-  it("searches for entries by name via GET /api/files/search", async () => {
+  it("searches for entries by name via GET /api/entries/search", async () => {
     await fs.mkdir(path.join(tempDir.path, "tiles"));
     await fs.writeFile(path.join(tempDir.path, "tiles", "forest.png"), "fake-png-bytes");
     const app = buildTestApp(tempDir);
@@ -219,7 +219,7 @@ describe("file routes", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/api/files/search?q=forest",
+      url: "/api/entries/search?q=forest",
       headers: { cookie: sessionCookie },
     });
 

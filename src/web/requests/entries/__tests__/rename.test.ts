@@ -10,7 +10,7 @@ describe("renameEntry", () => {
 
     await renameEntry("tiles/old.png", "new.png");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files/rename", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/entries/rename", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: "tiles/old.png", newName: "new.png" }),

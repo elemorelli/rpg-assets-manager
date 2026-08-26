@@ -1,6 +1,6 @@
 import type { JSX } from "react";
 
-import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
+import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 
 import styles from "./search-results.module.css";
 

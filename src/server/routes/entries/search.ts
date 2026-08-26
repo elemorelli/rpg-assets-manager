@@ -2,7 +2,7 @@ import type { FastifyRequest } from "fastify";
 
 import { walkDirectory } from "#server/utils/walk-directory.ts";
 
-import { type SearchableEntry, searchEntriesByName } from "./searchable-entries.ts";
+import { type SearchableEntry, searchEntriesByName } from "./searchable.ts";
 
 export const searchEntries = async (rootDir: string, query: string): Promise<SearchableEntry[]> => {
   const normalizedQuery = query.trim();

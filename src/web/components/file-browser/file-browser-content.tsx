@@ -5,7 +5,7 @@ import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
+import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 import type { EntryGroup } from "#web/utils/entry-grouping.ts";
 import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
 import type { SortCriterion, SortDirection } from "#web/utils/sort-entries.ts";

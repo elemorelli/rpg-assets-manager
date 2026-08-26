@@ -1,4 +1,4 @@
-import { requestJson } from "../../http-client.ts";
+import { requestJson } from "../http-client.ts";
 
 export interface SearchResultEntry {
   relativePath: string;
@@ -6,4 +6,4 @@ export interface SearchResultEntry {
 }
 
 export const searchEntries = (query: string): Promise<SearchResultEntry[]> =>
-  requestJson<SearchResultEntry[]>(`/api/files/search?q=${encodeURIComponent(query)}`);
+  requestJson<SearchResultEntry[]>(`/api/entries/search?q=${encodeURIComponent(query)}`);

@@ -10,7 +10,7 @@ describe("deleteEntry", () => {
 
     await deleteEntry("tiles/old.png");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/entries", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: "tiles/old.png" }),

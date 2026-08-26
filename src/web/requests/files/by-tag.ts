@@ -1,5 +1,5 @@
+import type { SearchResultEntry } from "../entries/search.ts";
 import { requestJson } from "../http-client.ts";
-import type { SearchResultEntry } from "./entry/search.ts";
 
 export const fetchFilesByTag = (tags: string[]): Promise<SearchResultEntry[]> => {
   const params = new URLSearchParams();

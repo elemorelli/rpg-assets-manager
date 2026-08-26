@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import type { SearchResultEntry } from "#web/requests/files/entry/search.ts";
+import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 
 import { SearchResults } from "./search-results.tsx";
 

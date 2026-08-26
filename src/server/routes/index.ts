@@ -12,11 +12,13 @@ import {
 } from "./directories/index.ts";
 import {
   deleteEntryHandler,
-  filesByTagHandler,
   moveEntryHandler,
-  rawFileHandler,
   renameEntryHandler,
   searchEntriesHandler,
+} from "./entries/index.ts";
+import {
+  filesByTagHandler,
+  rawFileHandler,
   setAssetTagsHandler,
   thumbnailHandler,
   uploadFileHandler,
@@ -61,12 +63,13 @@ export const registerRoutes = (
   app.get("/api/directories", directoryTreeHandler(assetTreeRoot));
   app.post("/api/directories", createDirectoryHandler(assetTreeRoot));
 
+  app.delete("/api/entries", deleteEntryHandler(assetTreeRoot));
+  app.post("/api/entries/rename", renameEntryHandler(assetTreeRoot));
+  app.post("/api/entries/move", moveEntryHandler(assetTreeRoot));
+  app.get("/api/entries/search", searchEntriesHandler(assetTreeRoot));
+
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
-  app.delete("/api/files", deleteEntryHandler(assetTreeRoot));
-  app.post("/api/files/rename", renameEntryHandler(assetTreeRoot));
-  app.post("/api/files/move", moveEntryHandler(assetTreeRoot));
   app.post("/api/files/upload", uploadFileHandler(assetTreeRoot));
-  app.get("/api/files/search", searchEntriesHandler(assetTreeRoot));
   app.get("/api/files/raw", rawFileHandler(assetTreeRoot));
   app.get("/api/files/thumbnail", thumbnailHandler(assetTreeRoot, thumbnailCacheDir));
   app.put("/api/files/tags", setAssetTagsHandler(assetTreeRoot));
