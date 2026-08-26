@@ -3,6 +3,7 @@ import type { FastifyInstance } from "fastify";
 
 import { applyBatchHandler } from "./apply/index.ts";
 import { loginHandler, logoutHandler, sessionHandler } from "./auth/index.ts";
+import { configHandler } from "./config/index.ts";
 import { convertAssetsHandler, convertPlanHandler } from "./convert/index.ts";
 import { diffHandler } from "./diff/index.ts";
 import {
@@ -52,6 +53,7 @@ export const registerRoutes = (
   app.post("/api/login", loginHandler);
   app.post("/api/logout", logoutHandler);
   app.get("/api/session", sessionHandler);
+  app.get("/api/config", configHandler);
 
   app.post("/api/apply", applyBatchHandler(assetTreeRoot));
 

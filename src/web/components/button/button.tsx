@@ -10,6 +10,8 @@ export interface ButtonProps {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
   children: ReactNode;
+  href?: string;
+  newTab?: boolean;
 }
 
 const DEFAULT_VARIANT: NonNullable<ButtonProps["variant"]> = "secondary";
@@ -28,8 +30,22 @@ export const Button = ({
   onClick,
   className,
   children,
+  href,
+  newTab,
 }: ButtonProps): JSX.Element => {
   const classNames = clsx(styles.button, VARIANT_CLASS_NAMES[variant], className);
+
+  if (href) {
+    return (
+      <a
+        className={classNames}
+        href={href}
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}>
+        {children}
+      </a>
+    );
+  }
 
   return (
     <button type={type} className={classNames} disabled={disabled} onClick={onClick}>

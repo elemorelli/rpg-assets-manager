@@ -1,5 +1,5 @@
 import type { RenamePair } from "#server/routes/diff/index.ts";
-import { joinUrl } from "#server/utils/url.ts";
+import { joinUrl } from "#utils/url.ts";
 
 import { buildMacroTemplate } from "./template.ts";
 

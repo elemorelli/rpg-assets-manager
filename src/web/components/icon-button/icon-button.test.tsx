@@ -24,4 +24,13 @@ describe("IconButton", () => {
 
     expect(link).toHaveAttribute("href", "/export");
   });
+
+  it("opens in a new tab, safely, when newTab is set", () => {
+    render(<IconButton icon={faDownload} label="Open" href="https://example.com/a.png" newTab />);
+
+    const link = screen.getByRole("link", { name: "Open" });
+
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
 });

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "#web/requests/http-client.ts";
@@ -31,10 +31,18 @@ const fetchDiffMock = vi.mocked(api.fetchDiff);
 const applyBatchMock = vi.mocked(api.applyBatch);
 const fetchConversionPlanMock = vi.mocked(api.fetchConversionPlan);
 const convertMock = vi.mocked(api.convert);
+const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
+
+const LocationDisplay = () => {
+  const location = useLocation();
+
+  return <div data-testid="location-display">{location.pathname}</div>;
+};
 
 const renderFileBrowser = (initialPath = "/"): ReturnType<typeof render> =>
   render(
     <MemoryRouter initialEntries={[initialPath]}>
+      <LocationDisplay />
       <Routes>
         <Route path="/*" element={<FileBrowser />} />
       </Routes>
@@ -78,6 +86,7 @@ describe("FileBrowser", () => {
     fetchTagsMock.mockResolvedValue(["npc", "loot"]);
     setAssetTagsMock.mockResolvedValue([]);
     fetchFilesByTagMock.mockResolvedValue([]);
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
     FakeEventSource.reset();
     // @ts-expect-error test double
     globalThis.EventSource = FakeEventSource;
@@ -1362,5 +1371,41 @@ describe("FileBrowser", () => {
 
     expect(renameEntryMock).toHaveBeenCalledWith("map.png", "castle.png");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("reflects the open entry in the url when the lightbox is opened by click", async () => {
+    const user = userEvent.setup();
+
+    renderFileBrowser();
+    await screen.findByText("map.png");
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+
+    expect(screen.getByTestId("location-display")).toHaveTextContent("/map.png");
+  });
+
+  it("navigates back to the plain directory url when the lightbox is closed", async () => {
+    const user = userEvent.setup();
+
+    renderFileBrowser();
+    await screen.findByText("map.png");
+    await user.click(screen.getByRole("button", { name: "map.png" }));
+    await user.click(screen.getByRole("button", { name: "Close" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByTestId("location-display")).toHaveTextContent("/");
+  });
+
+  it("opens straight into a folder and the lightbox when navigated directly to a file url", async () => {
+    listDirectoryMock.mockImplementation((path: string) =>
+      Promise.resolve(
+        path === "handouts" ? [{ name: "the_queen.webp", type: "file", size: 1024 }] : [],
+      ),
+    );
+
+    renderFileBrowser("/handouts/the_queen.webp");
+
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "the_queen.webp" })).toBeInTheDocument();
+    expect(listDirectoryMock).toHaveBeenCalledWith("handouts");
   });
 });

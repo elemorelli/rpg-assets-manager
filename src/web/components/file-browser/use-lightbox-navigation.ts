@@ -1,9 +1,11 @@
-import { useState } from "react";
-
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 
 export interface UseLightboxNavigationParams {
+  directoryPath: string;
+  deepLinkedFileName: string | null;
   previewableEntries: DirectoryEntry[];
+  navigateToPath: (path: string) => void;
   onRename: (entry: DirectoryEntry, newName: string) => void;
   onDelete: (entry: DirectoryEntry) => void;
 }
@@ -19,42 +21,51 @@ export interface UseLightboxNavigationResult {
   handleLightboxDelete: (entry: DirectoryEntry) => void;
 }
 
+// The URL is the single source of truth for "which file is open": the
+// lightbox entry is derived fresh every render from deepLinkedFileName
+// (parsed from the route) instead of being tracked as separate React state
+// that then needs to be kept in sync with the address bar.
 export const useLightboxNavigation = ({
+  directoryPath,
+  deepLinkedFileName,
   previewableEntries,
+  navigateToPath,
   onRename,
   onDelete,
 }: UseLightboxNavigationParams): UseLightboxNavigationResult => {
-  const [lightboxEntryName, setLightboxEntryName] = useState<string | null>(null);
-
   const lightboxIndex =
-    lightboxEntryName === null
+    deepLinkedFileName === null
       ? -1
-      : previewableEntries.findIndex((entry) => entry.name === lightboxEntryName);
+      : previewableEntries.findIndex((entry) => entry.name === deepLinkedFileName);
   const lightboxEntry = lightboxIndex === -1 ? null : previewableEntries[lightboxIndex];
 
+  const navigateToEntry = (entry: DirectoryEntry): void => {
+    navigateToPath(joinRelativePath(directoryPath, entry.name));
+  };
+
   const handleOpenLightbox = (entry: DirectoryEntry): void => {
-    setLightboxEntryName(entry.name);
+    navigateToEntry(entry);
   };
 
   const handleCloseLightbox = (): void => {
-    setLightboxEntryName(null);
+    navigateToPath(directoryPath);
   };
 
   const handleLightboxPrev = (): void => {
     if (lightboxIndex > 0) {
-      setLightboxEntryName(previewableEntries[lightboxIndex - 1].name);
+      navigateToEntry(previewableEntries[lightboxIndex - 1]);
     }
   };
 
   const handleLightboxNext = (): void => {
     if (lightboxIndex !== -1 && lightboxIndex < previewableEntries.length - 1) {
-      setLightboxEntryName(previewableEntries[lightboxIndex + 1].name);
+      navigateToEntry(previewableEntries[lightboxIndex + 1]);
     }
   };
 
   const handleLightboxRename = (entry: DirectoryEntry, newName: string): void => {
     onRename(entry, newName);
-    setLightboxEntryName(newName);
+    navigateToPath(joinRelativePath(directoryPath, newName));
   };
 
   const handleLightboxDelete = (entry: DirectoryEntry): void => {
@@ -62,7 +73,12 @@ export const useLightboxNavigation = ({
       previewableEntries[lightboxIndex + 1] ?? previewableEntries[lightboxIndex - 1];
 
     onDelete(entry);
-    setLightboxEntryName(fallbackEntry?.name ?? null);
+
+    if (fallbackEntry) {
+      navigateToEntry(fallbackEntry);
+    } else {
+      navigateToPath(directoryPath);
+    }
   };
 
   return {

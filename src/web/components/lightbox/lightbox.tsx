@@ -132,6 +132,7 @@ export const Lightbox = ({
         </div>
         <LightboxDetails
           entry={entry}
+          relativePath={relativePath}
           onRename={onRename}
           onDelete={onDelete}
           availableTags={availableTags}

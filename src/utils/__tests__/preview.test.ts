@@ -7,6 +7,7 @@ import {
   extensionOf,
   isPreviewableEntry,
   mimeTypeForFile,
+  parseBrowserPath,
   resolvePreviewSource,
   shouldServeThumbnail,
   THUMBNAIL_THRESHOLD_BYTES,
@@ -142,5 +143,39 @@ describe("extensionOf", () => {
 
   it("returns an empty string when there is no extension", () => {
     expect(extensionOf("README")).toBe("");
+  });
+});
+
+describe("parseBrowserPath", () => {
+  it("treats an empty path as the root directory with no deep-linked file", () => {
+    expect(parseBrowserPath("")).toEqual({ directoryPath: "", deepLinkedFileName: null });
+  });
+
+  it("treats a path whose last segment has no previewable extension as a plain directory", () => {
+    expect(parseBrowserPath("handouts/kingmaker")).toEqual({
+      directoryPath: "handouts/kingmaker",
+      deepLinkedFileName: null,
+    });
+  });
+
+  it("splits off a previewable image file as a deep link into its parent directory", () => {
+    expect(parseBrowserPath("handouts/kingmaker/the_queen_of_forgotten_time.webp")).toEqual({
+      directoryPath: "handouts/kingmaker",
+      deepLinkedFileName: "the_queen_of_forgotten_time.webp",
+    });
+  });
+
+  it("splits off a previewable audio file the same way", () => {
+    expect(parseBrowserPath("music/battle-theme.mp3")).toEqual({
+      directoryPath: "music",
+      deepLinkedFileName: "battle-theme.mp3",
+    });
+  });
+
+  it("treats a root-level previewable file as a deep link into the root directory", () => {
+    expect(parseBrowserPath("banner.png")).toEqual({
+      directoryPath: "",
+      deepLinkedFileName: "banner.png",
+    });
   });
 });

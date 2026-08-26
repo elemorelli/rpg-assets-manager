@@ -11,7 +11,7 @@ import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { ProgressModal } from "#components/progress-modal/progress-modal.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
-import { isPreviewableEntry } from "#utils/preview.ts";
+import { isPreviewableEntry, parseBrowserPath } from "#utils/preview.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
 import { initialSelectionState } from "#web/utils/row-selection.ts";
 import type { SortCriterion } from "#web/utils/sort-entries.ts";
@@ -41,7 +41,11 @@ export const FileBrowser = (): JSX.Element => {
   const params = useParams();
   const navigate = useNavigate();
 
-  const currentPath = params["*"] ?? "";
+  const rawPath = params["*"] ?? "";
+  // The route doesn't distinguish a folder from a deep-linked file; a
+  // previewable last segment (e.g. .../map.webp) is treated as one, which
+  // splits it into the directory to list and the entry to open.
+  const { directoryPath: currentPath, deepLinkedFileName } = parseBrowserPath(rawPath);
 
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
@@ -80,6 +84,13 @@ export const FileBrowser = (): JSX.Element => {
 
   const navigateToPath = (path: string): void => {
     navigate(`/${path}`);
+  };
+
+  // The lightbox reflects itself in the URL on every open/prev/next/rename,
+  // so paging through a folder with `push` would flood browser history;
+  // `replace` keeps each step from adding a new entry.
+  const navigateReplacingLightboxPath = (path: string): void => {
+    navigate(`/${path}`, { replace: true });
   };
 
   const handleJobSucceeded = (type: string): void => {
@@ -176,7 +187,14 @@ export const FileBrowser = (): JSX.Element => {
     handleLightboxNext,
     handleLightboxRename,
     handleLightboxDelete,
-  } = useLightboxNavigation({ previewableEntries, onRename: handleRename, onDelete: handleDelete });
+  } = useLightboxNavigation({
+    directoryPath: currentPath,
+    deepLinkedFileName,
+    previewableEntries,
+    navigateToPath: navigateReplacingLightboxPath,
+    onRename: handleRename,
+    onDelete: handleDelete,
+  });
 
   const {
     handleUploadFile,

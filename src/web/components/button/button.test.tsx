@@ -60,4 +60,30 @@ describe("Button", () => {
 
     expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute("type", "button");
   });
+
+  it("renders as a styled link with the given href when href is provided", () => {
+    render(
+      <Button variant="secondary" href="/export">
+        Download
+      </Button>,
+    );
+
+    const link = screen.getByRole("link", { name: "Download" });
+
+    expect(link).toHaveAttribute("href", "/export");
+    expect(link).toHaveClass(styles.secondary);
+  });
+
+  it("opens in a new tab, safely, when newTab is set", () => {
+    render(
+      <Button href="https://example.com/a.png" newTab>
+        Open
+      </Button>,
+    );
+
+    const link = screen.getByRole("link", { name: "Open" });
+
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
 });

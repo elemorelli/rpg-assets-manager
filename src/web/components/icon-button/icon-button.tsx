@@ -12,6 +12,7 @@ export interface IconButtonProps {
   onClick?: MouseEventHandler<HTMLButtonElement>;
   href?: string;
   download?: boolean;
+  newTab?: boolean;
 }
 
 export const IconButton = ({
@@ -21,12 +22,20 @@ export const IconButton = ({
   onClick,
   href,
   download,
+  newTab,
 }: IconButtonProps): JSX.Element => {
   const classNames = clsx(styles.iconButton, className);
 
   if (href) {
     return (
-      <a className={classNames} href={href} download={download} aria-label={label} title={label}>
+      <a
+        className={classNames}
+        href={href}
+        download={download}
+        target={newTab ? "_blank" : undefined}
+        rel={newTab ? "noopener noreferrer" : undefined}
+        aria-label={label}
+        title={label}>
         <FontAwesomeIcon icon={icon} aria-hidden="true" />
       </a>
     );

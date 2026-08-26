@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import * as api from "#web/requests/index.ts";
@@ -41,7 +41,19 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
     }
   }, []);
 
+  // Track the path our own navigation last loaded, distinct from same-path
+  // refreshes triggered elsewhere (rename, upload, rescan...), which should
+  // keep showing stale entries while they reload to avoid a skeleton flash.
+  const lastNavigatedPathRef = useRef<string | null>(null);
+
   useEffect(() => {
+    if (lastNavigatedPathRef.current !== currentPath) {
+      // Entries belong to the previous path; combining them with the new
+      // one produces broken preview URLs until the fresh listing arrives.
+      setEntries([]);
+    }
+
+    lastNavigatedPathRef.current = currentPath;
     loadDirectory(currentPath);
   }, [currentPath, loadDirectory]);
 

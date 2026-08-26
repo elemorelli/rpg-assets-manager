@@ -1,4 +1,4 @@
-import { joinUrl } from "#server/utils/url.ts";
+import { joinUrl } from "#utils/url.ts";
 
 import type { RenamePair } from "../diff/index.ts";
 

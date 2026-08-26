@@ -94,3 +94,29 @@ export const buildRawFileUrl = (relativePath: string): string =>
 
 export const buildThumbnailUrl = (relativePath: string): string =>
   `/api/files/thumbnail?path=${encodeURIComponent(relativePath)}`;
+
+export interface ParsedBrowserPath {
+  directoryPath: string;
+  deepLinkedFileName: string | null;
+}
+
+// The browser URL doesn't distinguish a folder segment from a deep-linked
+// file, so we infer it from the last segment's extension: a folder can't be
+// opened in the lightbox, so anything else must be treated as one.
+export const parseBrowserPath = (rawPath: string): ParsedBrowserPath => {
+  if (rawPath === "") {
+    return { directoryPath: "", deepLinkedFileName: null };
+  }
+
+  const segments = rawPath.split("/");
+  const lastSegment = segments[segments.length - 1];
+
+  if (classifyPreviewKind(lastSegment) === "unsupported") {
+    return { directoryPath: rawPath, deepLinkedFileName: null };
+  }
+
+  return {
+    directoryPath: segments.slice(0, -1).join("/"),
+    deepLinkedFileName: lastSegment,
+  };
+};
