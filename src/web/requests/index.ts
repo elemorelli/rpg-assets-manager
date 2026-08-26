@@ -9,6 +9,7 @@ export { fetchFilesByTag } from "./files/by-tag.ts";
 export { uploadFile } from "./files/content/upload.ts";
 export { createDirectory } from "./files/directory/create.ts";
 export { listDirectory } from "./files/directory/list.ts";
+export { getDirectoryTree } from "./files/directory/tree.ts";
 export { deleteEntry } from "./files/entry/delete.ts";
 export { moveEntry } from "./files/entry/move.ts";
 export { renameEntry } from "./files/entry/rename.ts";

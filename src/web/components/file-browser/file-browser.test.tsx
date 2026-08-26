@@ -15,6 +15,7 @@ vi.mock("../../requests/index.ts");
 const CONFLICT_STATUS = 409;
 
 const listDirectoryMock = vi.mocked(api.listDirectory);
+const getDirectoryTreeMock = vi.mocked(api.getDirectoryTree);
 const createDirectoryMock = vi.mocked(api.createDirectory);
 const deleteEntryMock = vi.mocked(api.deleteEntry);
 const renameEntryMock = vi.mocked(api.renameEntry);
@@ -44,12 +45,10 @@ describe("FileBrowser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    // Path-conditional, not a blanket mockResolvedValue: FileBrowser now
-    // mounts TreeView alongside the table, and TreeView prefetches one level
-    // ahead of whatever it loads. A blanket "tiles" result would make the
-    // prefetch of "tiles" itself return another "tiles" directory, and so on
-    // forever. Only "" (root) has content here; every other path a test
-    // doesn't override resolves to empty.
+    // Path-conditional so navigating into a subdirectory (root -> "tiles" ->
+    // ...) gets sensible data at each level; any path a test doesn't
+    // override resolves to empty. The sidebar tree is a separate fetch (see
+    // getDirectoryTreeMock below), not driven by this mock at all.
     listDirectoryMock.mockImplementation((path: string) =>
       Promise.resolve(
         path === ""
@@ -60,6 +59,7 @@ describe("FileBrowser", () => {
           : [],
       ),
     );
+    getDirectoryTreeMock.mockResolvedValue({ "": [{ name: "tiles", type: "directory" }] });
     createDirectoryMock.mockResolvedValue(undefined);
     deleteEntryMock.mockResolvedValue(undefined);
     renameEntryMock.mockResolvedValue(undefined);
@@ -115,13 +115,7 @@ describe("FileBrowser", () => {
   });
 
   it("shows an inline error with a link back to root for an unresolvable deep link", async () => {
-    // Path-conditional rather than mockRejectedValueOnce: TreeView's own
-    // mount-time load of "" races with FileBrowser's load of "missing", and
-    // a plain "reject the next call" would be applied to whichever of those
-    // two happens to run first instead of specifically to "missing".
-    listDirectoryMock.mockImplementation((path: string) =>
-      path === "missing" ? Promise.reject(new Error("not found")) : Promise.resolve([]),
-    );
+    listDirectoryMock.mockRejectedValueOnce(new Error("not found"));
 
     renderFileBrowser("/missing");
 
@@ -166,13 +160,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    // FileBrowser's own listing and TreeView's independent mount fetch have
-    // both already requested "" once by now; clear that baseline so the
-    // count below only reflects what the create action itself triggers.
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "New directory" }));
@@ -180,13 +169,12 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(createDirectoryMock).toHaveBeenCalledWith("new-folder");
     });
-    // Both FileBrowser's listing and TreeView's cache must refetch "" on
-    // their own: one call each, not a single shared refresh.
+    // FileBrowser's own listing and the sidebar tree keep separate caches, so
+    // both must refetch on their own after the mutation.
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
     promptSpy.mockRestore();
   });
 
@@ -196,10 +184,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     const table = screen.getByRole("table");
 
@@ -211,10 +197,9 @@ describe("FileBrowser", () => {
       expect(deleteEntryMock).toHaveBeenCalledWith("tiles");
     });
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
   });
 
   it("opens the directory actions menu when right-clicking empty space in the file list", async () => {
@@ -425,10 +410,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     const sourceRow = screen.getByText("map.png").closest("tr");
     const targetRow = screen.getAllByText("tiles").find((el) => el.closest("tr") !== null);
@@ -445,10 +428,9 @@ describe("FileBrowser", () => {
       expect(moveEntryMock).toHaveBeenCalledWith("map.png", "tiles/map.png");
     });
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
   });
 
   it("prompts to overwrite when a drop conflicts with an existing entry, and retries with overwrite on confirm", async () => {
@@ -508,9 +490,8 @@ describe("FileBrowser", () => {
 
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
-    // Path-conditional rather than mockResolvedValueOnce: TreeView eagerly
-    // prefetches subdirectories in the background, so a queued "once" value
-    // can be consumed by that prefetch instead of the click this test drives.
+    // Path-conditional since the test navigates root -> tiles -> legacy-pack
+    // via real clicks, and each level needs its own listing.
     listDirectoryMock.mockImplementation((path: string) => {
       if (path === "") {
         return Promise.resolve([
@@ -664,10 +645,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     await user.click(screen.getByRole("button", { name: "Sync" }));
     await user.click(await screen.findByRole("button", { name: "Apply changes" }));
@@ -676,10 +655,9 @@ describe("FileBrowser", () => {
       expect(applyBatchMock).toHaveBeenCalled();
     });
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
   });
 
   it("refreshes the tree after converting assets from the Convert modal", async () => {
@@ -699,10 +677,8 @@ describe("FileBrowser", () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     await user.click(screen.getByRole("button", { name: "Directory actions" }));
     await user.click(screen.getByRole("button", { name: "Convert" }));
@@ -712,20 +688,17 @@ describe("FileBrowser", () => {
       expect(convertMock).toHaveBeenCalled();
     });
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
   });
 
   it("refreshes the tree after an upload, so a newly created directory shows up", async () => {
     renderFileBrowser();
     await screen.findAllByText("tiles");
 
-    await waitFor(() => {
-      expect(listDirectoryMock.mock.calls.filter(([path]) => path === "").length).toBe(2);
-    });
     listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     const file = new File(["content"], "new-map.png", { type: "image/png" });
     const dropzone = screen.getByTestId("directory-dropzone");
@@ -737,10 +710,9 @@ describe("FileBrowser", () => {
       expect(uploadFileMock).toHaveBeenCalledWith("", file);
     });
     await waitFor(() => {
-      const rootCallCount = listDirectoryMock.mock.calls.filter(([path]) => path === "").length;
-
-      expect(rootCallCount).toBeGreaterThanOrEqual(2);
+      expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
+    expect(getDirectoryTreeMock).toHaveBeenCalled();
   });
 
   it("uploads files inside a dropped folder to the matching subdirectory", async () => {

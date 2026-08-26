@@ -12,6 +12,7 @@ vi.mock("./requests/index.ts");
 
 const checkSessionMock = vi.mocked(api.checkSession);
 const listDirectoryMock = vi.mocked(api.listDirectory);
+const getDirectoryTreeMock = vi.mocked(api.getDirectoryTree);
 const fetchFoundryWorldsMock = vi.mocked(api.fetchFoundryWorlds);
 const fetchDiffMock = vi.mocked(api.fetchDiff);
 const fetchTagsMock = vi.mocked(api.fetchTags);
@@ -21,6 +22,7 @@ describe("App", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     listDirectoryMock.mockResolvedValue([]);
+    getDirectoryTreeMock.mockResolvedValue({ "": [] });
     fetchFoundryWorldsMock.mockResolvedValue([]);
     fetchDiffMock.mockResolvedValue({
       added: [],

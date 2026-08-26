@@ -1,3 +1,5 @@
+import { parentDirectory } from "./paths.ts";
+
 export interface RemoteIndexRecord {
   hash: string;
   size: number;
@@ -39,7 +41,7 @@ interface RenameMatches {
 const buildDirectoryPrefix = (relativeDir: string): string =>
   relativeDir === "" ? "" : `${relativeDir}/`;
 
-const findChangedPaths = (
+export const findChangedPaths = (
   localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,
 ): Set<string> => {
@@ -217,4 +219,28 @@ export const computeDirectorySyncStatus = ({
     deletedFiles: findDeletedFiles(fileNames, directoryPrefix, remoteIndex, consumedRemotePaths),
     pendingDirectoryNames: findPendingDirectoryNames(directoryNames, directoryPrefix, changedPaths),
   };
+};
+
+// Marks every ancestor of a changed path as pending in a single pass over the
+// changed paths, rather than the per-directory approach above (one scan of
+// every changed path per directory listed). That's cheap enough for a single
+// directory's listing, but too slow to repeat for every directory in the
+// whole tree at once.
+export const computeTreeWidePendingDirectoryPaths = (
+  localIndex: Map<string, LocalIndexRecord>,
+  remoteIndex: Map<string, RemoteIndexRecord>,
+): Set<string> => {
+  const changedPaths = findChangedPaths(localIndex, remoteIndex);
+  const pendingDirectoryPaths = new Set<string>();
+
+  for (const changedPath of changedPaths) {
+    let ancestorPath = parentDirectory(changedPath);
+
+    while (ancestorPath !== "") {
+      pendingDirectoryPaths.add(ancestorPath);
+      ancestorPath = parentDirectory(ancestorPath);
+    }
+  }
+
+  return pendingDirectoryPaths;
 };

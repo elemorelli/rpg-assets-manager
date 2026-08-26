@@ -8,6 +8,7 @@ import { diffHandler } from "./diff/index.ts";
 import {
   createDirectoryHandler,
   deleteEntryHandler,
+  directoryTreeHandler,
   filesByTagHandler,
   listDirectoryHandler,
   moveEntryHandler,
@@ -61,6 +62,7 @@ export const registerRoutes = (
   app.get("/api/foundry-worlds/playlists/:tag/export", exportFoundryPlaylistHandler);
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
+  app.get("/api/directories", directoryTreeHandler(assetTreeRoot));
   app.post("/api/files/mkdir", createDirectoryHandler(assetTreeRoot));
   app.delete("/api/files", deleteEntryHandler(assetTreeRoot));
   app.post("/api/files/rename", renameEntryHandler(assetTreeRoot));

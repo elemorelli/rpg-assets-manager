@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { computeDirectorySyncStatus } from "../sync-status.ts";
+import {
+  computeDirectorySyncStatus,
+  computeTreeWidePendingDirectoryPaths,
+} from "../sync-status.ts";
 
 describe("computeDirectorySyncStatus", () => {
   it("does not mark a file pending when its local and remote hashes match", () => {
@@ -229,5 +232,43 @@ describe("computeDirectorySyncStatus", () => {
     expect(renamedCount).toBe(1);
     expect(newCount).toBe(1);
     expect(result.deletedFiles).toEqual([]);
+  });
+});
+
+describe("computeTreeWidePendingDirectoryPaths", () => {
+  it("marks every ancestor of a changed path as pending", () => {
+    const result = computeTreeWidePendingDirectoryPaths(
+      new Map([["tiles/forests/deep/leaf.png", { hash: "hash-b" }]]),
+      new Map([["tiles/forests/deep/leaf.png", { hash: "hash-a", size: 100 }]]),
+    );
+
+    expect(result).toEqual(new Set(["tiles", "tiles/forests", "tiles/forests/deep"]));
+  });
+
+  it("does not mark a top-level file's non-existent parent directory", () => {
+    const result = computeTreeWidePendingDirectoryPaths(
+      new Map([["forest.png", { hash: "hash-b" }]]),
+      new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
+    );
+
+    expect(result).toEqual(new Set());
+  });
+
+  it("returns an empty set when nothing changed", () => {
+    const result = computeTreeWidePendingDirectoryPaths(
+      new Map([["forest.png", { hash: "hash-a" }]]),
+      new Map([["forest.png", { hash: "hash-a", size: 100 }]]),
+    );
+
+    expect(result).toEqual(new Set());
+  });
+
+  it("does not confuse a sibling directory with a similarly named prefix", () => {
+    const result = computeTreeWidePendingDirectoryPaths(
+      new Map([["tiles-extra/forest.png", { hash: "hash-b" }]]),
+      new Map([["tiles-extra/forest.png", { hash: "hash-a", size: 100 }]]),
+    );
+
+    expect(result).toEqual(new Set(["tiles-extra"]));
   });
 });

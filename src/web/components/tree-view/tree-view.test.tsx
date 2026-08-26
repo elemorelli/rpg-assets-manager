@@ -10,17 +10,15 @@ import { TreeView } from "./tree-view.tsx";
 
 vi.mock("#web/requests/index.ts");
 
-const listDirectoryMock = vi.mocked(api.listDirectory);
+const getDirectoryTreeMock = vi.mocked(api.getDirectoryTree);
 
 const DRAG_EXPAND_DELAY_MS = 600;
 
-// Every test's tree is finite and explicit per path; any path not listed
-// resolves to an empty directory. This keeps the component's one-level
-// prefetch from recursing into paths the test never described.
-const mockTree = (entriesByPath: Record<string, DirectoryEntry[]>): void => {
-  listDirectoryMock.mockImplementation((path: string) =>
-    Promise.resolve(entriesByPath[path] ?? []),
-  );
+// The tree loads whole, in one request, so a test's fixture is the full
+// children-by-path map the server would return: every directory already
+// known up front, not fetched lazily per path.
+const mockTree = (childrenByPath: Record<string, DirectoryEntry[]>): void => {
+  getDirectoryTreeMock.mockResolvedValue(childrenByPath);
 };
 
 const baseProps = {
@@ -40,19 +38,13 @@ describe("TreeView", () => {
     vi.clearAllMocks();
   });
 
-  it("loads and renders the root's subdirectories on mount, filtering out files", async () => {
-    mockTree({
-      "": [
-        { name: "tiles", type: "directory" },
-        { name: "map.png", type: "file", size: 10 },
-      ],
-    });
+  it("loads and renders the root's subdirectories on mount", async () => {
+    mockTree({ "": [{ name: "tiles", type: "directory" }] });
 
     render(<TreeView {...baseProps} />);
 
     expect(await screen.findByRole("button", { name: "tiles" })).toBeInTheDocument();
-    expect(screen.queryByText("map.png")).not.toBeInTheDocument();
-    expect(listDirectoryMock).toHaveBeenCalledWith("");
+    expect(getDirectoryTreeMock).toHaveBeenCalledTimes(1);
   });
 
   it("expands a node on toggle click and shows its children", async () => {
@@ -70,21 +62,8 @@ describe("TreeView", () => {
     expect(await screen.findByRole("button", { name: "legacy-pack" })).toBeInTheDocument();
   });
 
-  it("prefetches a newly-loaded node's children's children in the background", async () => {
-    mockTree({
-      "": [{ name: "tiles", type: "directory" }],
-      tiles: [{ name: "legacy-pack", type: "directory" }],
-    });
-
-    render(<TreeView {...baseProps} />);
-    await screen.findByRole("button", { name: "tiles" });
-
-    await waitFor(() => {
-      expect(listDirectoryMock).toHaveBeenCalledWith("tiles");
-    });
-  });
-
-  it("stops the eager prefetch at one level below the expanded node, not the whole subtree", async () => {
+  it("loads the whole tree in a single request, however deep it goes", async () => {
+    const user = userEvent.setup();
     mockTree({
       "": [{ name: "tiles", type: "directory" }],
       tiles: [{ name: "legacy-pack", type: "directory" }],
@@ -93,12 +72,11 @@ describe("TreeView", () => {
 
     render(<TreeView {...baseProps} />);
     await screen.findByRole("button", { name: "tiles" });
+    await user.click(screen.getByRole("button", { name: "Expand tiles" }));
+    await user.click(screen.getByRole("button", { name: "Expand legacy-pack" }));
 
-    await waitFor(() => {
-      expect(listDirectoryMock).toHaveBeenCalledWith("tiles");
-    });
-
-    expect(listDirectoryMock).not.toHaveBeenCalledWith("tiles/legacy-pack");
+    expect(await screen.findByRole("button", { name: "deep" })).toBeInTheDocument();
+    expect(getDirectoryTreeMock).toHaveBeenCalledTimes(1);
   });
 
   it("navigates when a node's name is clicked", async () => {
@@ -166,15 +144,14 @@ describe("TreeView", () => {
     expect(onDropEntry).not.toHaveBeenCalled();
   });
 
-  it("shows a retry affordance when a node fails to load, and retries on click", async () => {
+  it("shows a retry affordance when the tree fails to load, and retries on click", async () => {
     const user = userEvent.setup();
-    mockTree({});
-    listDirectoryMock.mockRejectedValueOnce(new Error("network down"));
+    getDirectoryTreeMock.mockRejectedValueOnce(new Error("network down"));
 
     render(<TreeView {...baseProps} />);
 
     await screen.findByRole("button", { name: "Retry" });
-    listDirectoryMock.mockResolvedValueOnce([{ name: "tiles", type: "directory" }]);
+    getDirectoryTreeMock.mockResolvedValueOnce({ "": [{ name: "tiles", type: "directory" }] });
 
     await user.click(screen.getByRole("button", { name: "Retry" }));
 
@@ -273,9 +250,6 @@ describe("TreeView", () => {
 
     render(<TreeView {...baseProps} canDropOnPath={(path) => path === "tiles"} />);
     await screen.findByRole("button", { name: "tiles" });
-
-    // Expand once with real timers to guarantee "tiles"'s children are
-    // loaded, then collapse again so the test starts from a collapsed node.
     await user.click(screen.getByRole("button", { name: "Expand tiles" }));
     await screen.findByRole("button", { name: "legacy-pack" });
     await user.click(screen.getByRole("button", { name: "Collapse tiles" }));
@@ -328,7 +302,7 @@ describe("TreeView", () => {
     vi.useRealTimers();
   });
 
-  it("refetches every already-loaded node when refreshToken changes, picking up new pending-sync state", async () => {
+  it("refetches the whole tree when refreshToken changes, picking up new pending-sync state", async () => {
     mockTree({
       "": [{ name: "tiles", type: "directory" }],
       tiles: [{ name: "legacy-pack", type: "directory" }],
@@ -337,12 +311,9 @@ describe("TreeView", () => {
     const { rerender } = render(<TreeView {...baseProps} />);
 
     await screen.findByRole("button", { name: "tiles" });
-    await waitFor(() => {
-      expect(listDirectoryMock).toHaveBeenCalledWith("tiles");
-    });
     expect(screen.getByRole("button", { name: "tiles" }).className).not.toMatch(/pending/);
+    expect(getDirectoryTreeMock).toHaveBeenCalledTimes(1);
 
-    listDirectoryMock.mockClear();
     mockTree({
       "": [{ name: "tiles", type: "directory", hasPendingSync: true }],
       tiles: [{ name: "legacy-pack", type: "directory" }],
@@ -353,8 +324,7 @@ describe("TreeView", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "tiles" }).className).toMatch(/pending/);
     });
-    expect(listDirectoryMock).toHaveBeenCalledWith("");
-    expect(listDirectoryMock).toHaveBeenCalledWith("tiles");
+    expect(getDirectoryTreeMock).toHaveBeenCalledTimes(2);
   });
 
   it("does not refetch when rerendered with the same refreshToken", async () => {
@@ -363,10 +333,10 @@ describe("TreeView", () => {
     const { rerender } = render(<TreeView {...baseProps} refreshToken={0} />);
 
     await screen.findByRole("button", { name: "tiles" });
-    listDirectoryMock.mockClear();
+    getDirectoryTreeMock.mockClear();
 
     rerender(<TreeView {...baseProps} refreshToken={0} />);
 
-    expect(listDirectoryMock).not.toHaveBeenCalled();
+    expect(getDirectoryTreeMock).not.toHaveBeenCalled();
   });
 });
