@@ -93,10 +93,7 @@ export const FileBrowserContent = ({
   sortDirection,
   onSortCriterionClick,
 }: FileBrowserContentProps): JSX.Element => {
-  // Only show the skeleton in place of a directory that has nothing to show
-  // yet (first load into it). A navigation that already has stale content
-  // on screen keeps showing it while the fresh listing loads, so the view
-  // doesn't flash blank mid-browse.
+  // Skeleton only replaces an empty view; a navigation with stale content stays visible while it reloads.
   const isLoadingWithNothingToShow = busy && groups.every((group) => group.entries.length === 0);
 
   return (

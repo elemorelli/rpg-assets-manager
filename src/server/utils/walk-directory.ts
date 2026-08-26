@@ -12,42 +12,42 @@ export interface WalkDirectoryOptions {
   recursive?: boolean;
 }
 
-// Recurses breadth-first-ish via Promise.all over each directory's
-// subdirectories, rather than awaiting one subtree at a time. `fs.readdir`
-// runs on libuv's threadpool, so a fully serial walk (the previous
-// implementation) could only ever have one readdir in flight, which made
-// this scale with the *total number of directories* in the tree instead of
-// its depth, on disks where each syscall has real per-call latency.
-const collectEntries = async (
+// Iterative BFS, not recursive: a recursive Promise.all version of this
+// crashed in production with "Maximum call stack size exceeded" on the real
+// asset tree.
+export const walkDirectory = async (
   rootDir: string,
-  currentDir: string,
-  recursive: boolean,
+  options: WalkDirectoryOptions = {},
 ): Promise<WalkedEntry[]> => {
-  const dirents = await fs.readdir(currentDir, { withFileTypes: true });
+  const recursive = options.recursive ?? true;
   const entries: WalkedEntry[] = [];
-  const subdirectoryWalks: Promise<WalkedEntry[]>[] = [];
+  let directoriesAtCurrentDepth = [rootDir];
 
-  for (const dirent of dirents) {
-    const entryPath = path.join(currentDir, dirent.name);
-    const relativePath = path.relative(rootDir, entryPath).split(path.sep).join("/");
+  while (directoriesAtCurrentDepth.length > 0) {
+    const readResults = await Promise.all(
+      directoriesAtCurrentDepth.map(async (currentDir) => ({
+        currentDir,
+        dirents: await fs.readdir(currentDir, { withFileTypes: true }),
+      })),
+    );
 
-    entries.push({ relativePath, entryPath, dirent });
+    const directoriesAtNextDepth: string[] = [];
 
-    if (dirent.isDirectory() && recursive) {
-      subdirectoryWalks.push(collectEntries(rootDir, entryPath, recursive));
+    for (const { currentDir, dirents } of readResults) {
+      for (const dirent of dirents) {
+        const entryPath = path.join(currentDir, dirent.name);
+        const relativePath = path.relative(rootDir, entryPath).split(path.sep).join("/");
+
+        entries.push({ relativePath, entryPath, dirent });
+
+        if (dirent.isDirectory() && recursive) {
+          directoriesAtNextDepth.push(entryPath);
+        }
+      }
     }
-  }
 
-  const subdirectoryEntries = await Promise.all(subdirectoryWalks);
-
-  for (const nestedEntries of subdirectoryEntries) {
-    entries.push(...nestedEntries);
+    directoriesAtCurrentDepth = directoriesAtNextDepth;
   }
 
   return entries;
 };
-
-export const walkDirectory = async (
-  rootDir: string,
-  options: WalkDirectoryOptions = {},
-): Promise<WalkedEntry[]> => await collectEntries(rootDir, rootDir, options.recursive ?? true);

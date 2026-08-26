@@ -54,10 +54,7 @@ export const listDirectory = async (
     }
   }
 
-  // Stat every file concurrently instead of one at a time: on slower disks
-  // (spinning or network-mounted, as opposed to this dev machine's NVMe),
-  // each `fs.stat` syscall has real per-call latency, and a directory with
-  // hundreds of files turned that into a sequential wait chain.
+  // Stat every file concurrently: on slower disks, doing it one at a time turned into a real wait chain.
   const fileEntries = await Promise.all(
     fileDirents.map(async (dirent) => {
       const stat = await fs.stat(path.join(absoluteDir, dirent.name));

@@ -72,4 +72,24 @@ describe("walkDirectory", () => {
 
     expect(entries).toEqual([]);
   });
+
+  it("walks a deeply nested chain of directories without overflowing the call stack", async () => {
+    // Regression test for the production stack-overflow crash (see walk-directory.ts).
+    const DEPTH = 500;
+    tempDir = await fs.mkdtemp(path.join(os.tmpdir(), "walk-directory-"));
+
+    const segments = Array.from({ length: DEPTH }, (_, index) => `d${index}`);
+    const deepestDir = path.join(tempDir, ...segments);
+
+    await fs.mkdir(deepestDir, { recursive: true });
+    await fs.writeFile(path.join(deepestDir, "leaf.png"), "fake-png-bytes");
+
+    const entries = await walkDirectory(tempDir);
+
+    // DEPTH directories plus the one leaf file.
+    expect(entries).toHaveLength(DEPTH + 1);
+    expect(
+      entries.some((entry) => entry.relativePath === [...segments, "leaf.png"].join("/")),
+    ).toBe(true);
+  });
 });
