@@ -138,6 +138,7 @@ export const DirectoryGridTile = ({
       {!isDeleted && (
         <EntryContextMenu
           entry={entry}
+          relativePath={joinRelativePath(currentPath, entry.name)}
           selectedEntries={entriesForContextMenu}
           position={contextMenu.position}
           onClose={contextMenu.close}

@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import * as api from "#web/requests/index.ts";
+import { __resetAppConfigCacheForTests } from "#web/utils/use-app-config.ts";
 
 import { Lightbox } from "./lightbox.tsx";
+
+vi.mock("#web/requests/index.ts");
+
+const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
 
 const imageEntry: DirectoryEntry = { name: "map.png", type: "file", size: 1024, tags: [] };
 const audioEntry: DirectoryEntry = { name: "ambient.wav", type: "file", size: 1024, tags: [] };
@@ -24,6 +30,12 @@ const baseProps = {
 };
 
 describe("Lightbox", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    __resetAppConfigCacheForTests();
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
+  });
+
   afterEach(() => {
     vi.restoreAllMocks();
   });

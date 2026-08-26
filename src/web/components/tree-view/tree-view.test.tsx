@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import * as api from "#web/requests/index.ts";
+import { __resetAppConfigCacheForTests } from "#web/utils/use-app-config.ts";
 
 import { TreeView } from "./tree-view.tsx";
 
 vi.mock("#web/requests/index.ts");
 
 const getDirectoryTreeMock = vi.mocked(api.getDirectoryTree);
+const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
 
 const DRAG_EXPAND_DELAY_MS = 600;
 
@@ -36,6 +38,8 @@ const baseProps = {
 describe("TreeView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetAppConfigCacheForTests();
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
   });
 
   it("loads and renders the root's subdirectories on mount", async () => {

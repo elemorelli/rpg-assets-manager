@@ -1,17 +1,24 @@
 // @vitest-environment jsdom
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import * as api from "#web/requests/index.ts";
+import { __resetAppConfigCacheForTests } from "#web/utils/use-app-config.ts";
 
 import { EntryContextMenu } from "./entry-context-menu.tsx";
+
+vi.mock("#web/requests/index.ts");
+
+const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
 
 const fileEntry: DirectoryEntry = { name: "map.png", type: "file", size: 10, tags: ["npc"] };
 const otherFileEntry: DirectoryEntry = { name: "portrait.png", type: "file", size: 20 };
 const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };
 
 const baseProps = {
+  relativePath: "handouts/map.png",
   position: { x: 10, y: 20 },
   onClose: vi.fn(),
   onView: vi.fn(),
@@ -24,6 +31,12 @@ const baseProps = {
 };
 
 describe("EntryContextMenu", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    __resetAppConfigCacheForTests();
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
+  });
+
   it("calls onRenameRequested and onClose when Rename is clicked", async () => {
     const user = userEvent.setup();
     const onRenameRequested = vi.fn();
@@ -170,6 +183,96 @@ describe("EntryContextMenu", () => {
     );
 
     expect(screen.queryByRole("button", { name: "View" })).not.toBeInTheDocument();
+  });
+
+  it("does not show link actions when no public base url is configured", async () => {
+    render(<EntryContextMenu {...baseProps} entry={fileEntry} selectedEntries={[fileEntry]} />);
+
+    await screen.findByRole("button", { name: "Delete" });
+
+    expect(screen.queryByRole("button", { name: "Open in new tab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy URL" })).not.toBeInTheDocument();
+  });
+
+  it("does not show link actions for a directory entry, even with a public base url configured", async () => {
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: "https://assets.example.com" });
+
+    render(
+      <EntryContextMenu {...baseProps} entry={directoryEntry} selectedEntries={[directoryEntry]} />,
+    );
+
+    await screen.findByRole("button", { name: "Delete" });
+
+    expect(screen.queryByRole("button", { name: "Open in new tab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy URL" })).not.toBeInTheDocument();
+  });
+
+  it("does not show link actions during a multi-selection", async () => {
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: "https://assets.example.com" });
+
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry, otherFileEntry]}
+      />,
+    );
+
+    await screen.findByRole("button", { name: "Delete 2 items" });
+
+    expect(screen.queryByRole("button", { name: "Open in new tab" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Copy URL" })).not.toBeInTheDocument();
+  });
+
+  it("opens the public url in a new tab and closes the menu when Open in new tab is clicked", async () => {
+    const windowOpenMock = vi.fn();
+    vi.stubGlobal("open", windowOpenMock);
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: "https://assets.example.com" });
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onClose={onClose}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: "Open in new tab" }));
+
+    expect(windowOpenMock).toHaveBeenCalledWith(
+      "https://assets.example.com/handouts/map.png",
+      "_blank",
+      "noopener,noreferrer",
+    );
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("copies the public url to the clipboard and closes the menu when Copy URL is clicked", async () => {
+    const writeTextMock = vi.fn().mockResolvedValue(undefined);
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: "https://assets.example.com" });
+    const user = userEvent.setup();
+    // userEvent.setup() installs its own clipboard stub, so ours must be
+    // defined after setup() or it gets immediately overwritten.
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText: writeTextMock },
+      configurable: true,
+    });
+    const onClose = vi.fn();
+
+    render(
+      <EntryContextMenu
+        {...baseProps}
+        entry={fileEntry}
+        selectedEntries={[fileEntry]}
+        onClose={onClose}
+      />,
+    );
+    await user.click(await screen.findByRole("button", { name: "Copy URL" }));
+
+    expect(writeTextMock).toHaveBeenCalledWith("https://assets.example.com/handouts/map.png");
+    expect(onClose).toHaveBeenCalled();
   });
 
   describe("with a multi-entry selection", () => {

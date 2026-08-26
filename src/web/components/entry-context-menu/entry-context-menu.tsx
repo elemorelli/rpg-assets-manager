@@ -1,4 +1,10 @@
-import { faEye, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faCopy,
+  faEye,
+  faPen,
+  faTrash,
+  faUpRightFromSquare,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { type JSX, useState } from "react";
 
@@ -9,11 +15,13 @@ import { MenuList } from "#components/context-menu/menu-list.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
+import { usePublicAssetLink } from "#web/utils/use-public-asset-link.ts";
 
 import styles from "./entry-context-menu.module.css";
 
 export interface EntryContextMenuProps {
   entry: DirectoryEntry;
+  relativePath: string;
   selectedEntries: DirectoryEntry[];
   position: { x: number; y: number } | null;
   onClose: () => void;
@@ -28,6 +36,7 @@ export interface EntryContextMenuProps {
 
 export const EntryContextMenu = ({
   entry,
+  relativePath,
   selectedEntries,
   position,
   onClose,
@@ -40,10 +49,12 @@ export const EntryContextMenu = ({
   onAddTagToMany = () => {},
 }: EntryContextMenuProps): JSX.Element => {
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
+  const { publicAssetUrl, handleCopyLink } = usePublicAssetLink(relativePath);
 
   const isMultiSelection = selectedEntries.length > 1;
   const isPreviewable = !isMultiSelection && isPreviewableEntry(entry);
   const selectedFileEntries = selectedEntries.filter((candidate) => candidate.type === "file");
+  const showLinkActions = !isMultiSelection && entry.type === "file" && publicAssetUrl !== null;
 
   const handleView = (): void => {
     onView(entry);
@@ -52,6 +63,19 @@ export const EntryContextMenu = ({
 
   const handleRename = (): void => {
     onRenameRequested();
+    onClose();
+  };
+
+  const handleOpenInNewTab = (): void => {
+    if (publicAssetUrl) {
+      window.open(publicAssetUrl, "_blank", "noopener,noreferrer");
+    }
+
+    onClose();
+  };
+
+  const handleCopyUrl = (): void => {
+    handleCopyLink();
     onClose();
   };
 
@@ -85,6 +109,18 @@ export const EntryContextMenu = ({
               <FontAwesomeIcon icon={faPen} fixedWidth />
               Rename
             </MenuItem>
+          )}
+          {showLinkActions && (
+            <>
+              <MenuItem onClick={handleOpenInNewTab}>
+                <FontAwesomeIcon icon={faUpRightFromSquare} fixedWidth />
+                Open in new tab
+              </MenuItem>
+              <MenuItem onClick={handleCopyUrl}>
+                <FontAwesomeIcon icon={faCopy} fixedWidth />
+                Copy URL
+              </MenuItem>
+            </>
           )}
           <MenuItem onClick={handleDeleteRequested}>
             <FontAwesomeIcon icon={faTrash} fixedWidth />

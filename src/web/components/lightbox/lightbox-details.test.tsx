@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import * as api from "#web/requests/index.ts";
+import { __resetAppConfigCacheForTests } from "#web/utils/use-app-config.ts";
 
 import { LightboxDetails } from "./lightbox-details.tsx";
 
@@ -32,6 +33,7 @@ const baseProps = {
 describe("LightboxDetails", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    __resetAppConfigCacheForTests();
     fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
   });
 

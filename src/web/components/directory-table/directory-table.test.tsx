@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
+import * as api from "#web/requests/index.ts";
+import { __resetAppConfigCacheForTests } from "#web/utils/use-app-config.ts";
 
 import { DirectoryTable } from "./directory-table.tsx";
+
+vi.mock("#web/requests/index.ts");
+
+const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
 
 const directoryEntry: DirectoryEntry = { name: "tiles", type: "directory" };
 const fileEntry: DirectoryEntry = { name: "map.png", type: "file", size: 2048 };
@@ -43,6 +49,12 @@ const getRow = (text: string): HTMLElement => {
 };
 
 describe("DirectoryTable", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    __resetAppConfigCacheForTests();
+    fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
+  });
+
   it("renders a name button for directories and plain text for files", () => {
     render(
       <DirectoryTable

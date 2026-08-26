@@ -6,17 +6,15 @@ import {
   faUpRightFromSquare,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { type JSX, useEffect, useRef, useState } from "react";
+import { type JSX, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { joinUrl } from "#utils/url.ts";
-import * as api from "#web/requests/index.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
-import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 import { useInlineRename } from "#web/utils/use-inline-rename.ts";
+import { usePublicAssetLink } from "#web/utils/use-public-asset-link.ts";
 
 import styles from "./lightbox-details.module.css";
 
@@ -28,8 +26,6 @@ export interface LightboxDetailsProps {
   availableTags: string[];
   onTagsChange: (entry: DirectoryEntry, tags: string[]) => void;
 }
-
-const COPY_FEEDBACK_DURATION_MS = 1500;
 
 export const LightboxDetails = ({
   entry,
@@ -49,40 +45,7 @@ export const LightboxDetails = ({
     handleRenameDraftChange,
   } = useInlineRename(entry.name, (newName) => onRename(entry, newName));
   const [confirmingDelete, setConfirmingDelete] = useState<boolean>(false);
-
-  const { data: appConfig } = useFetchOnMount(() => api.fetchAppConfig(), []);
-  const publicAssetUrl = appConfig?.assetsPublicBaseUrl
-    ? joinUrl(appConfig.assetsPublicBaseUrl, relativePath)
-    : null;
-
-  const [copied, setCopied] = useState<boolean>(false);
-  const copyResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (copyResetTimeoutRef.current) {
-        clearTimeout(copyResetTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const handleCopyLink = (): void => {
-    if (!publicAssetUrl) {
-      return;
-    }
-
-    void navigator.clipboard.writeText(publicAssetUrl).then(() => {
-      setCopied(true);
-
-      if (copyResetTimeoutRef.current) {
-        clearTimeout(copyResetTimeoutRef.current);
-      }
-
-      copyResetTimeoutRef.current = setTimeout(() => {
-        setCopied(false);
-      }, COPY_FEEDBACK_DURATION_MS);
-    });
-  };
+  const { publicAssetUrl, copied, handleCopyLink } = usePublicAssetLink(relativePath);
 
   const handleConfirmDelete = (): void => {
     onDelete(entry);
@@ -157,7 +120,10 @@ export const LightboxDetails = ({
             </Button>
           </>
         )}
-        <Button variant="danger" onClick={() => setConfirmingDelete(true)}>
+        <Button
+          variant="danger"
+          className={styles.deleteButtonOutline}
+          onClick={() => setConfirmingDelete(true)}>
           <FontAwesomeIcon icon={faTrash} />
           Delete
         </Button>

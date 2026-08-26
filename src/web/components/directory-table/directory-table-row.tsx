@@ -143,6 +143,7 @@ export const DirectoryTableRow = ({
             </button>
             <EntryContextMenu
               entry={entry}
+              relativePath={joinRelativePath(currentPath, entry.name)}
               selectedEntries={entriesForContextMenu}
               position={contextMenu.position}
               onClose={contextMenu.close}

@@ -126,6 +126,7 @@ export const TreeNode = ({ path, name, depth, hasPendingSync }: TreeNodeProps): 
         </button>
         <EntryContextMenu
           entry={nodeEntry}
+          relativePath={path}
           selectedEntries={[nodeEntry]}
           position={contextMenu.position}
           onClose={contextMenu.close}
