@@ -7,6 +7,7 @@ import { ROOT_PATH } from "#web/utils/breadcrumbs.ts";
 import { TreeNode } from "./tree-node.tsx";
 import styles from "./tree-view.module.css";
 import { TreeViewContext } from "./tree-view-context.ts";
+import { TreeViewSkeleton } from "./tree-view-skeleton.tsx";
 import { useTreeData } from "./use-tree-data.ts";
 
 export interface TreeViewProps {
@@ -55,6 +56,10 @@ export const TreeView = ({
   };
 
   const rootState = childrenByPath[ROOT_PATH];
+
+  if (rootState === "loading") {
+    return <TreeViewSkeleton />;
+  }
 
   return (
     <TreeViewContext.Provider

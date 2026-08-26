@@ -47,6 +47,26 @@ describe("TreeView", () => {
     expect(getDirectoryTreeMock).toHaveBeenCalledTimes(1);
   });
 
+  it("shows a skeleton while the tree is loading, then the real nodes", async () => {
+    let resolveTree: (childrenByPath: Record<string, DirectoryEntry[]>) => void = () => {};
+
+    getDirectoryTreeMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveTree = resolve;
+        }),
+    );
+
+    render(<TreeView {...baseProps} />);
+
+    expect(screen.getByLabelText("Loading directory tree")).toBeInTheDocument();
+
+    resolveTree({ "": [{ name: "tiles", type: "directory" }] });
+
+    expect(await screen.findByRole("button", { name: "tiles" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Loading directory tree")).not.toBeInTheDocument();
+  });
+
   it("expands a node on toggle click and shows its children", async () => {
     const user = userEvent.setup();
     mockTree({
