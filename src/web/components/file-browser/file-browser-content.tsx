@@ -2,7 +2,9 @@ import type { DragEvent, JSX } from "react";
 
 import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
 import { DirectoryGrid } from "#components/directory-grid/directory-grid.tsx";
+import { DirectoryGridSkeleton } from "#components/directory-grid/directory-grid-skeleton.tsx";
 import { DirectoryTable } from "#components/directory-table/directory-table.tsx";
+import { DirectoryTableSkeleton } from "#components/directory-table/directory-table-skeleton.tsx";
 import { SearchResults } from "#components/search-results/search-results.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import type { SearchResultEntry } from "#web/requests/entries/search.ts";
@@ -90,74 +92,88 @@ export const FileBrowserContent = ({
   sortCriterion,
   sortDirection,
   onSortCriterionClick,
-}: FileBrowserContentProps): JSX.Element => (
-  <div
-    className={styles.dropzone}
-    data-testid="directory-dropzone"
-    onDragEnter={onDropzoneDragEnter}
-    onDragOver={onDropzoneDragOver}
-    onDragLeave={onDropzoneDragLeave}
-    onDrop={onDropzoneDrop}
-    onContextMenu={busy ? undefined : onOpenDirectoryContextMenu}>
-    <DirectoryActionsMenu
-      position={directoryContextMenuPosition}
-      onClose={onCloseDirectoryContextMenu}
-      onCreateDirectory={onCreateDirectory}
-      onUploadFile={onUploadFile}
-      onConvert={onConvert}
-    />
-    {isDropzoneActive && (
-      <div className={styles.dropzoneOverlay}>
-        {`Drop files to upload to ${currentPath === "" ? "root" : currentPath}`}
-      </div>
-    )}
-    {searchResults !== null ? (
-      <SearchResults results={searchResults} onOpenResult={onOpenSearchResult} />
-    ) : tagFilterResults !== null ? (
-      <SearchResults results={tagFilterResults} onOpenResult={onOpenSearchResult} />
-    ) : viewMode === "table" ? (
-      <DirectoryTable
-        groups={groups}
-        currentPath={currentPath}
-        onOpenDirectory={onOpenDirectory}
-        onRename={onRename}
-        onDelete={onDelete}
-        onDeleteMany={onDeleteMany}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        canDropEntry={canDropEntry}
-        onDropEntry={onDropEntry}
-        availableTags={availableTags}
-        onTagsChange={onTagsChange}
-        onAddTagToMany={onAddTagToMany}
-        selectedNames={selectedNames}
-        selectedEntries={selectedEntries}
-        onSelectRow={onSelectRow}
-        onOpenLightbox={onOpenLightbox}
-        sortCriterion={sortCriterion}
-        sortDirection={sortDirection}
-        onSortCriterionClick={onSortCriterionClick}
+}: FileBrowserContentProps): JSX.Element => {
+  // Only show the skeleton in place of a directory that has nothing to show
+  // yet (first load into it). A navigation that already has stale content
+  // on screen keeps showing it while the fresh listing loads, so the view
+  // doesn't flash blank mid-browse.
+  const isLoadingWithNothingToShow = busy && groups.every((group) => group.entries.length === 0);
+
+  return (
+    <div
+      className={styles.dropzone}
+      data-testid="directory-dropzone"
+      onDragEnter={onDropzoneDragEnter}
+      onDragOver={onDropzoneDragOver}
+      onDragLeave={onDropzoneDragLeave}
+      onDrop={onDropzoneDrop}
+      onContextMenu={busy ? undefined : onOpenDirectoryContextMenu}>
+      <DirectoryActionsMenu
+        position={directoryContextMenuPosition}
+        onClose={onCloseDirectoryContextMenu}
+        onCreateDirectory={onCreateDirectory}
+        onUploadFile={onUploadFile}
+        onConvert={onConvert}
       />
-    ) : (
-      <DirectoryGrid
-        groups={groups}
-        currentPath={currentPath}
-        onOpenDirectory={onOpenDirectory}
-        onRename={onRename}
-        onDelete={onDelete}
-        onDeleteMany={onDeleteMany}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
-        canDropEntry={canDropEntry}
-        onDropEntry={onDropEntry}
-        availableTags={availableTags}
-        onTagsChange={onTagsChange}
-        onAddTagToMany={onAddTagToMany}
-        selectedNames={selectedNames}
-        selectedEntries={selectedEntries}
-        onSelectRow={onSelectRow}
-        onOpenLightbox={onOpenLightbox}
-      />
-    )}
-  </div>
-);
+      {isDropzoneActive && (
+        <div className={styles.dropzoneOverlay}>
+          {`Drop files to upload to ${currentPath === "" ? "root" : currentPath}`}
+        </div>
+      )}
+      {searchResults !== null ? (
+        <SearchResults results={searchResults} onOpenResult={onOpenSearchResult} />
+      ) : tagFilterResults !== null ? (
+        <SearchResults results={tagFilterResults} onOpenResult={onOpenSearchResult} />
+      ) : isLoadingWithNothingToShow ? (
+        viewMode === "table" ? (
+          <DirectoryTableSkeleton />
+        ) : (
+          <DirectoryGridSkeleton />
+        )
+      ) : viewMode === "table" ? (
+        <DirectoryTable
+          groups={groups}
+          currentPath={currentPath}
+          onOpenDirectory={onOpenDirectory}
+          onRename={onRename}
+          onDelete={onDelete}
+          onDeleteMany={onDeleteMany}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          canDropEntry={canDropEntry}
+          onDropEntry={onDropEntry}
+          availableTags={availableTags}
+          onTagsChange={onTagsChange}
+          onAddTagToMany={onAddTagToMany}
+          selectedNames={selectedNames}
+          selectedEntries={selectedEntries}
+          onSelectRow={onSelectRow}
+          onOpenLightbox={onOpenLightbox}
+          sortCriterion={sortCriterion}
+          sortDirection={sortDirection}
+          onSortCriterionClick={onSortCriterionClick}
+        />
+      ) : (
+        <DirectoryGrid
+          groups={groups}
+          currentPath={currentPath}
+          onOpenDirectory={onOpenDirectory}
+          onRename={onRename}
+          onDelete={onDelete}
+          onDeleteMany={onDeleteMany}
+          onDragStart={onDragStart}
+          onDragEnd={onDragEnd}
+          canDropEntry={canDropEntry}
+          onDropEntry={onDropEntry}
+          availableTags={availableTags}
+          onTagsChange={onTagsChange}
+          onAddTagToMany={onAddTagToMany}
+          selectedNames={selectedNames}
+          selectedEntries={selectedEntries}
+          onSelectRow={onSelectRow}
+          onOpenLightbox={onOpenLightbox}
+        />
+      )}
+    </div>
+  );
+};

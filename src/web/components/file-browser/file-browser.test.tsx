@@ -101,6 +101,34 @@ describe("FileBrowser", () => {
     expect(screen.getByText("map.png")).toBeInTheDocument();
   });
 
+  it("shows a skeleton while the initial directory listing is loading, then the real rows", async () => {
+    let resolveListing: (entries: { name: string; type: "directory" | "file" }[]) => void =
+      () => {};
+
+    listDirectoryMock.mockReset();
+    listDirectoryMock.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          resolveListing = resolve;
+        }),
+    );
+
+    renderFileBrowser();
+
+    expect(
+      await screen.findByRole("table", { name: "Loading directory contents" }),
+    ).toBeInTheDocument();
+
+    resolveListing([{ name: "tiles", type: "directory" }]);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("table", { name: "Loading directory contents" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(await screen.findAllByText("tiles")).not.toHaveLength(0);
+  });
+
   it("deep-links directly into a subdirectory from the URL", async () => {
     listDirectoryMock.mockImplementation((path: string) =>
       path === "icons"

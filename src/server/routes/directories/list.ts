@@ -46,31 +46,33 @@ export const listDirectory = async (
   const dirents = await fs.readdir(absoluteDir, { withFileTypes: true });
 
   const directoryEntries: DirectoryEntry[] = [];
-  const fileEntries: { entry: DirectoryEntry; relativePath: string }[] = [];
+  const fileDirents = dirents.filter((dirent) => dirent.isFile());
 
   for (const dirent of dirents) {
     if (dirent.isDirectory()) {
       directoryEntries.push({ name: dirent.name, type: "directory" });
-      continue;
     }
+  }
 
-    if (!dirent.isFile()) {
-      continue;
-    }
+  // Stat every file concurrently instead of one at a time: on slower disks
+  // (spinning or network-mounted, as opposed to this dev machine's NVMe),
+  // each `fs.stat` syscall has real per-call latency, and a directory with
+  // hundreds of files turned that into a sequential wait chain.
+  const fileEntries = await Promise.all(
+    fileDirents.map(async (dirent) => {
+      const stat = await fs.stat(path.join(absoluteDir, dirent.name));
+      const relativePath = relativeDir ? `${relativeDir}/${dirent.name}` : dirent.name;
 
-    const stat = await fs.stat(path.join(absoluteDir, dirent.name));
-    const relativePath = relativeDir ? `${relativeDir}/${dirent.name}` : dirent.name;
-
-    fileEntries.push({
-      entry: {
+      const entry: DirectoryEntry = {
         name: dirent.name,
         type: "file",
         size: stat.size,
         mtimeMs: Math.trunc(stat.mtimeMs),
-      },
-      relativePath,
-    });
-  }
+      };
+
+      return { entry, relativePath };
+    }),
+  );
 
   const [tagsByPath, localIndex, remoteIndex, sizeByDirectoryPath] = await Promise.all([
     fetchTagsForPaths(fileEntries.map((file) => file.relativePath)),
