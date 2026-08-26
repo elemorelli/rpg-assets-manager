@@ -7,10 +7,12 @@ import { convertAssetsHandler, convertPlanHandler } from "./convert/index.ts";
 import { diffHandler } from "./diff/index.ts";
 import {
   createDirectoryHandler,
-  deleteEntryHandler,
   directoryTreeHandler,
-  filesByTagHandler,
   listDirectoryHandler,
+} from "./directories/index.ts";
+import {
+  deleteEntryHandler,
+  filesByTagHandler,
   moveEntryHandler,
   rawFileHandler,
   renameEntryHandler,
@@ -44,26 +46,22 @@ export const registerRoutes = (
   app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_FILE_SIZE_BYTES } });
 
   app.get("/api/health", healthHandler);
+
   app.post("/api/login", loginHandler);
   app.post("/api/logout", logoutHandler);
   app.get("/api/session", sessionHandler);
-  app.post("/api/bootstrap", bootstrapHandler(assetTreeRoot));
-  app.post("/api/rescan", rescanHandler(assetTreeRoot));
-  app.post("/api/reconcile", reconcileHandler(assetTreeRoot));
-  app.get("/api/diff", diffHandler);
-  app.get("/api/jobs/stream", jobsStreamHandler);
-  app.post("/api/jobs/cancel", cancelJobHandler);
+
+  app.post("/api/apply", applyBatchHandler(assetTreeRoot));
+
   app.get("/api/convert/plan", convertPlanHandler(assetTreeRoot));
   app.post("/api/convert", convertAssetsHandler(assetTreeRoot));
-  app.post("/api/apply", applyBatchHandler(assetTreeRoot));
-  app.get("/api/foundry-worlds", listFoundryWorldsHandler);
-  app.post("/api/foundry-worlds/:id/mark-applied", markFoundryWorldAppliedHandler);
-  app.get("/api/foundry-worlds/playlists", listFoundryPlaylistTagsHandler);
-  app.get("/api/foundry-worlds/playlists/:tag/export", exportFoundryPlaylistHandler);
+
+  app.get("/api/diff", diffHandler);
+
+  app.get("/api/directories", directoryTreeHandler(assetTreeRoot));
+  app.post("/api/directories", createDirectoryHandler(assetTreeRoot));
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
-  app.get("/api/directories", directoryTreeHandler(assetTreeRoot));
-  app.post("/api/files/mkdir", createDirectoryHandler(assetTreeRoot));
   app.delete("/api/files", deleteEntryHandler(assetTreeRoot));
   app.post("/api/files/rename", renameEntryHandler(assetTreeRoot));
   app.post("/api/files/move", moveEntryHandler(assetTreeRoot));
@@ -73,5 +71,19 @@ export const registerRoutes = (
   app.get("/api/files/thumbnail", thumbnailHandler(assetTreeRoot, thumbnailCacheDir));
   app.put("/api/files/tags", setAssetTagsHandler(assetTreeRoot));
   app.get("/api/files/by-tag", filesByTagHandler);
+
+  app.get("/api/foundry-worlds", listFoundryWorldsHandler);
+  app.post("/api/foundry-worlds/:id/mark-applied", markFoundryWorldAppliedHandler);
+  app.get("/api/foundry-worlds/playlists", listFoundryPlaylistTagsHandler);
+  app.get("/api/foundry-worlds/playlists/:tag/export", exportFoundryPlaylistHandler);
+
+  app.get("/api/jobs/stream", jobsStreamHandler);
+  app.post("/api/jobs/cancel", cancelJobHandler);
+
+  app.post("/api/reconcile", reconcileHandler(assetTreeRoot));
+
+  app.post("/api/bootstrap", bootstrapHandler(assetTreeRoot));
+  app.post("/api/rescan", rescanHandler(assetTreeRoot));
+
   app.get("/api/tags", listTagsHandler);
 };

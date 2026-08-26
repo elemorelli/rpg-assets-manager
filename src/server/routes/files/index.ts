@@ -1,9 +1,6 @@
 export { rawFileHandler } from "./content/raw.ts";
 export { thumbnailHandler } from "./content/resolve-thumbnail.ts";
 export { uploadFileHandler } from "./content/upload.ts";
-export { createDirectoryHandler } from "./directory/create.ts";
-export { listDirectoryHandler } from "./directory/list.ts";
-export { directoryTreeHandler } from "./directory/tree.ts";
 export { deleteEntryHandler } from "./entry/delete.ts";
 export { moveEntryHandler } from "./entry/move.ts";
 export { renameEntryHandler } from "./entry/rename.ts";

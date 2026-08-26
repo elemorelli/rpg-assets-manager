@@ -10,7 +10,7 @@ describe("createDirectory", () => {
 
     await createDirectory("tiles/new-pack");
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/files/mkdir", {
+    expect(fetchMock).toHaveBeenCalledWith("/api/directories", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ path: "tiles/new-pack" }),

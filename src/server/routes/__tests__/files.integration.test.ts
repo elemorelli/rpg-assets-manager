@@ -53,13 +53,13 @@ describe("file routes", () => {
     expect(response.statusCode).toBe(HTTP_STATUS.badRequest);
   });
 
-  it("creates a directory via POST /api/files/mkdir", async () => {
+  it("creates a directory via POST /api/directories", async () => {
     const app = buildTestApp(tempDir);
     const sessionCookie = await loginTestSession(app);
 
     const response = await app.inject({
       method: "POST",
-      url: "/api/files/mkdir",
+      url: "/api/directories",
       payload: { path: "tiles" },
       headers: { cookie: sessionCookie },
     });
