@@ -70,10 +70,11 @@ describe("ReconciliationModal", () => {
     expect(screen.getByText("1 missing on source")).toBeInTheDocument();
     expect(screen.getByText("1 differ")).toBeInTheDocument();
     expect(screen.getByText("1 errored")).toBeInTheDocument();
-    expect(screen.getByText("> tiles/unsynced.png")).toBeInTheDocument();
-    expect(screen.getByText("< tiles/orphaned.png")).toBeInTheDocument();
-    expect(screen.getByText("~ tiles/stale.png")).toBeInTheDocument();
-    expect(screen.getByText("! tiles/unreadable.png")).toBeInTheDocument();
+    expect(screen.getByText("tiles/unsynced.png")).toBeInTheDocument();
+    expect(screen.getByText("tiles/orphaned.png")).toBeInTheDocument();
+    expect(screen.getAllByText("tiles/stale.png")).toHaveLength(2);
+    expect(screen.getByText("Errors:")).toBeInTheDocument();
+    expect(screen.getByText("tiles/unreadable.png")).toBeInTheDocument();
   });
 
   it("shows an error message when reconciliation fails", async () => {

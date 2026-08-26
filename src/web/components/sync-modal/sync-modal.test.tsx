@@ -66,11 +66,12 @@ describe("SyncModal", () => {
     expect(screen.getByText("1 modified")).toBeInTheDocument();
     expect(screen.getByText("2 deleted")).toBeInTheDocument();
     expect(screen.getByText("1 renamed")).toBeInTheDocument();
-    expect(screen.getByText("+ a.png")).toBeInTheDocument();
-    expect(screen.getByText("~ b.png")).toBeInTheDocument();
-    expect(screen.getByText("old.png -> new.png")).toBeInTheDocument();
-    expect(screen.getByText("- c.png")).toBeInTheDocument();
-    expect(screen.getByText("- d.png")).toBeInTheDocument();
+    expect(screen.getByText("a.png")).toBeInTheDocument();
+    expect(screen.getAllByText("b.png")).toHaveLength(2);
+    expect(screen.getByText("old.png")).toBeInTheDocument();
+    expect(screen.getByText("new.png")).toBeInTheDocument();
+    expect(screen.getByText("c.png")).toBeInTheDocument();
+    expect(screen.getByText("d.png")).toBeInTheDocument();
     expect(screen.getByText("x.png <-> y.png")).toBeInTheDocument();
   });
 

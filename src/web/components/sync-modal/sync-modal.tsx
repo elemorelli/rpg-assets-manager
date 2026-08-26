@@ -1,13 +1,14 @@
 import { type JSX, useMemo, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
+import { DiffTable } from "#components/diff-table/diff-table.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
-import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { OperationScope } from "#utils/operation-scope.ts";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
+import { buildSyncDiffRows } from "#web/utils/diff-rows.ts";
 import { describeScopedTitle } from "#web/utils/scope-title.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
@@ -20,29 +21,6 @@ export interface SyncModalProps {
   onApplied: () => void;
 }
 
-const buildChangeRows = (diff: BatchDiff): ScrollListRow[] => [
-  ...diff.added.map((relativePath) => ({
-    key: `added:${relativePath}`,
-    label: `+ ${relativePath}`,
-    className: styles.added,
-  })),
-  ...diff.modified.map((relativePath) => ({
-    key: `modified:${relativePath}`,
-    label: `~ ${relativePath}`,
-    className: styles.modified,
-  })),
-  ...diff.deleted.map((relativePath) => ({
-    key: `deleted:${relativePath}`,
-    label: `- ${relativePath}`,
-    className: styles.deleted,
-  })),
-  ...diff.renamed.map((pair) => ({
-    key: `renamed:${pair.oldPath}`,
-    label: `${pair.oldPath}\n-> ${pair.newPath}`,
-    className: styles.renamed,
-  })),
-];
-
 export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): JSX.Element => {
   const [scope, setScope] = useState<OperationScope>("folder");
   const directoryLabel = currentPath === "" ? "root" : currentPath;
@@ -54,7 +32,7 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
   } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(currentPath, scope), [currentPath, scope]);
   const { busy, runBusyAction } = useBusyAction(setMessage);
 
-  const changeRows = useMemo(() => (diff ? buildChangeRows(diff) : []), [diff]);
+  const changeRows = useMemo(() => (diff ? buildSyncDiffRows(diff) : []), [diff]);
 
   const handleApply = (): void => {
     runBusyAction(() =>
@@ -120,7 +98,7 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
               </ul>
             </div>
           )}
-          <ScrollList rows={changeRows} />
+          <DiffTable rows={changeRows} />
         </div>
       )}
     </Modal>

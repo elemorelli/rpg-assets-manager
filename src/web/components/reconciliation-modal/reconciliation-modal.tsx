@@ -1,12 +1,13 @@
 import { type JSX, useMemo, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
+import { DiffTable } from "#components/diff-table/diff-table.tsx";
 import { JobProgressBar } from "#components/job-progress-bar/job-progress-bar.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
-import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import * as api from "#web/requests/index.ts";
 import type { RcloneCheckResult } from "#web/requests/reconcile/check.ts";
+import { buildReconcileDiffRows } from "#web/utils/diff-rows.ts";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 import { useJobStream } from "#web/utils/use-job-stream.ts";
@@ -19,35 +20,12 @@ export interface ReconciliationModalProps {
   onClose: () => void;
 }
 
-const buildResultRows = (result: RcloneCheckResult): ScrollListRow[] => [
-  ...result.missingOnDestination.map((relativePath) => ({
-    key: `missing-destination:${relativePath}`,
-    label: `> ${relativePath}`,
-    className: styles.missingDestination,
-  })),
-  ...result.missingOnSource.map((relativePath) => ({
-    key: `missing-source:${relativePath}`,
-    label: `< ${relativePath}`,
-    className: styles.missingSource,
-  })),
-  ...result.differs.map((relativePath) => ({
-    key: `differs:${relativePath}`,
-    label: `~ ${relativePath}`,
-    className: styles.differs,
-  })),
-  ...result.errors.map((relativePath) => ({
-    key: `error:${relativePath}`,
-    label: `! ${relativePath}`,
-    className: styles.erroredPath,
-  })),
-];
-
 export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.Element => {
   const { data: result, message } = useFetchOnMount<RcloneCheckResult>(() => api.reconcile(), []);
   const [jobState] = useJobStream();
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
 
-  const resultRows = useMemo(() => (result ? buildResultRows(result) : []), [result]);
+  const resultRows = useMemo(() => (result ? buildReconcileDiffRows(result) : []), [result]);
 
   const isRunning = jobState.kind === "running" && jobState.type === RECONCILE_JOB_TYPE;
   const isCancelled = jobState.kind === "cancelled" && jobState.type === RECONCILE_JOB_TYPE;
@@ -113,7 +91,19 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
             {", "}
             <span className={styles.erroredPath}>{`${result.errors.length} errored`}</span>
           </p>
-          <ScrollList rows={resultRows} />
+          <DiffTable rows={resultRows} beforeLabel="Source" afterLabel="Destination" />
+          {result.errors.length > 0 && (
+            <div className={styles.section}>
+              <p>Errors:</p>
+              <ul className={styles.list}>
+                {result.errors.map((relativePath) => (
+                  <li key={relativePath} className={styles.erroredPath}>
+                    {relativePath}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </Modal>

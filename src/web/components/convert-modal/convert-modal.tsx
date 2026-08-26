@@ -1,13 +1,14 @@
 import { type JSX, useMemo, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
+import { DiffTable } from "#components/diff-table/diff-table.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
 import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
-import { ScrollList, type ScrollListRow } from "#components/scroll-list/scroll-list.tsx";
 import type { OperationScope } from "#utils/operation-scope.ts";
-import type { ConversionCandidate, ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
+import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
+import { buildConversionDiffRows } from "#web/utils/diff-rows.ts";
 import { describeScopedTitle } from "#web/utils/scope-title.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
@@ -19,13 +20,6 @@ export interface ConvertModalProps {
   onClose: () => void;
   onConverted: () => void;
 }
-
-const buildCandidateRows = (candidates: ConversionCandidate[]): ScrollListRow[] =>
-  candidates.map((candidate) => ({
-    key: candidate.relativePath,
-    label: `${candidate.relativePath} -> ${candidate.destinationPath}`,
-    className: candidate.willOverwrite ? styles.overwrite : styles.new,
-  }));
 
 export const ConvertModal = ({
   currentPath,
@@ -55,7 +49,10 @@ export const ConvertModal = ({
   };
 
   const hasNothingToConvert = plan !== null && plan.candidates.length === 0;
-  const candidateRows = useMemo(() => (plan ? buildCandidateRows(plan.candidates) : []), [plan]);
+  const candidateRows = useMemo(
+    () => (plan ? buildConversionDiffRows(plan.candidates) : []),
+    [plan],
+  );
 
   const footer =
     plan && plan.candidates.length > 0 ? (
@@ -85,7 +82,7 @@ export const ConvertModal = ({
       {plan && !hasNothingToConvert && (
         <div className={styles.section}>
           <p className={styles.summary}>{`${plan.candidates.length} file(s) to convert:`}</p>
-          <ScrollList rows={candidateRows} />
+          <DiffTable rows={candidateRows} />
         </div>
       )}
     </Modal>

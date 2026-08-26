@@ -9,6 +9,12 @@
   font-size: var(--font-size-sm);
 }
 
+.list {
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: var(--font-size-sm);
+}
+
 .missingDestination {
   color: var(--color-sync-new);
 }

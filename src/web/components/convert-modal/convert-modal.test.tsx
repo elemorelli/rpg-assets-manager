@@ -61,8 +61,11 @@ describe("ConvertModal", () => {
 
     expect(await screen.findByText("2 file(s) to convert:")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Convert 2 file(s)" })).toBeInTheDocument();
-    expect(screen.getByText("forest.png -> forest.webp")).toBeInTheDocument();
-    expect(screen.getByText("theme.wav -> theme.ogg")).toBeInTheDocument();
+    expect(screen.getByText("forest.png")).toBeInTheDocument();
+    expect(screen.getByText("forest.webp")).toBeInTheDocument();
+    expect(screen.getByText("theme.wav")).toBeInTheDocument();
+    expect(screen.getByText("theme.ogg")).toBeInTheDocument();
+    expect(screen.getByText("overwrites existing")).toBeInTheDocument();
   });
 
   it("shows a message when there is nothing to convert", async () => {

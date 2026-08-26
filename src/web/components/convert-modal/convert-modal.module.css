@@ -12,11 +12,3 @@
   margin: 0;
   font-size: var(--font-size-sm);
 }
-
-.new {
-  color: var(--color-sync-new);
-}
-
-.overwrite {
-  color: var(--color-sync-pending);
-}
