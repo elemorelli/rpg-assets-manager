@@ -84,6 +84,23 @@ describe("TreeView", () => {
     });
   });
 
+  it("stops the eager prefetch at one level below the expanded node, not the whole subtree", async () => {
+    mockTree({
+      "": [{ name: "tiles", type: "directory" }],
+      tiles: [{ name: "legacy-pack", type: "directory" }],
+      "tiles/legacy-pack": [{ name: "deep", type: "directory" }],
+    });
+
+    render(<TreeView {...baseProps} />);
+    await screen.findByRole("button", { name: "tiles" });
+
+    await waitFor(() => {
+      expect(listDirectoryMock).toHaveBeenCalledWith("tiles");
+    });
+
+    expect(listDirectoryMock).not.toHaveBeenCalledWith("tiles/legacy-pack");
+  });
+
   it("navigates when a node's name is clicked", async () => {
     const user = userEvent.setup();
     const onNavigate = vi.fn();

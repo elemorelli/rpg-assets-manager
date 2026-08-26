@@ -23,29 +23,43 @@ export const useTreeData = (activePath: string, refreshToken: number): UseTreeDa
   // `loadPath` never needs to read `childrenByPath` state to decide whether to
   // fetch: doing that inside a `setState` updater would run the fetch as a
   // side effect of a function React expects to be pure.
-  const loadPath = useCallback((path: string): void => {
-    requestedPathsRef.current.add(path);
-    setChildrenByPath((prev) => ({ ...prev, [path]: "loading" }));
+  //
+  // `preloadDepth` bounds how many extra levels get fetched eagerly below
+  // `path`, so a folder's children already look populated right when it's
+  // expanded. It must stay finite: fetching every descendant unconditionally
+  // fanned out into thousands of concurrent requests across the whole tree.
+  const PRELOAD_DEPTH_BELOW_EXPANDED_PATH = 1;
 
-    api
-      .listDirectory(path)
-      .then((entries) => {
-        const directories = entries.filter((entry) => entry.type === "directory");
+  const loadPath = useCallback(
+    (path: string, preloadDepth: number = PRELOAD_DEPTH_BELOW_EXPANDED_PATH): void => {
+      requestedPathsRef.current.add(path);
+      setChildrenByPath((prev) => ({ ...prev, [path]: "loading" }));
 
-        setChildrenByPath((prev) => ({ ...prev, [path]: directories }));
+      api
+        .listDirectory(path)
+        .then((entries) => {
+          const directories = entries.filter((entry) => entry.type === "directory");
 
-        for (const directory of directories) {
-          const childPath = joinRelativePath(path, directory.name);
+          setChildrenByPath((prev) => ({ ...prev, [path]: directories }));
 
-          if (!requestedPathsRef.current.has(childPath)) {
-            loadPath(childPath);
+          if (preloadDepth <= 0) {
+            return;
           }
-        }
-      })
-      .catch(() => {
-        setChildrenByPath((prev) => ({ ...prev, [path]: "error" }));
-      });
-  }, []);
+
+          for (const directory of directories) {
+            const childPath = joinRelativePath(path, directory.name);
+
+            if (!requestedPathsRef.current.has(childPath)) {
+              loadPath(childPath, preloadDepth - 1);
+            }
+          }
+        })
+        .catch(() => {
+          setChildrenByPath((prev) => ({ ...prev, [path]: "error" }));
+        });
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!requestedPathsRef.current.has(ROOT_PATH)) {
