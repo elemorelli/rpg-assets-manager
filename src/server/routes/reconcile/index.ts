@@ -3,6 +3,10 @@ import { type RcloneCheckResult, rcloneCheck, rcloneDestination } from "#server/
 import { runTrackedJob } from "../jobs/index.ts";
 
 export const reconcileHandler = (assetTreeRoot: string) => async (): Promise<RcloneCheckResult> =>
-  runTrackedJob("reconcile", "checking", "reconciliation failed", (onProgress) =>
-    rcloneCheck(assetTreeRoot, rcloneDestination, onProgress),
+  runTrackedJob(
+    "reconcile",
+    "checking",
+    "reconciliation failed",
+    (onProgress, signal) => rcloneCheck(assetTreeRoot, rcloneDestination, onProgress, signal),
+    { cancellable: true },
   );

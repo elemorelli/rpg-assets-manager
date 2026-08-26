@@ -224,8 +224,8 @@ describe("JobProgress", () => {
     act(() =>
       source?.emitMessage(
         JSON.stringify({
-          type: "reconcile",
-          stage: "checking",
+          type: "sync",
+          stage: "applying",
           done: 0,
           total: 0,
           startedAt: Date.now(),
@@ -235,6 +235,47 @@ describe("JobProgress", () => {
     );
 
     expect(screen.getByTestId("progress-modal-spinner")).toBeInTheDocument();
+  });
+
+  it("renders nothing for a job type with its own dedicated modal", () => {
+    const { container } = render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "reconcile",
+          stage: "checking",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("still calls onJobSucceeded for a job type with its own dedicated modal", () => {
+    const onJobSucceeded = vi.fn();
+
+    render(<JobProgress onJobSucceeded={onJobSucceeded} />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "reconcile",
+          stage: "checking",
+          done: 10,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+    act(() => source?.emitMessage("null"));
+
+    expect(onJobSucceeded).toHaveBeenCalledWith("reconcile");
   });
 
   it("renders an error message and the failing file when the job fails", () => {

@@ -1,10 +1,8 @@
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import type { JSX, ReactNode } from "react";
 
+import { JobProgressBar } from "#components/job-progress-bar/job-progress-bar.tsx";
 import { Modal } from "#components/modal/modal.tsx";
-import { formatEta } from "#web/utils/job-eta.ts";
-
-import styles from "./progress-modal.module.css";
 
 export interface ProgressModalProps {
   title: string;
@@ -28,34 +26,14 @@ export const ProgressModal = ({
   onClose,
   dismissible = false,
   footer,
-}: ProgressModalProps): JSX.Element => {
-  const indeterminate = total === 0;
-
-  return (
-    <Modal
-      title={title}
-      icon={icon}
-      onClose={onClose}
-      dismissible={dismissible}
-      footer={footer}
-      size="sm">
-      <div className={styles.progress}>
-        {indeterminate ? (
-          <span className={styles.spinner} data-testid="progress-modal-spinner" />
-        ) : (
-          <>
-            <progress className={styles.progressBar} value={done} max={total} />
-            <div className={styles.meta}>
-              <span>{`${done} / ${total}`}</span>
-              {etaSeconds !== null && etaSeconds !== undefined && (
-                <span>{`ETA: ${formatEta(etaSeconds)}`}</span>
-              )}
-            </div>
-          </>
-        )}
-
-        {detail !== undefined && <span className={styles.detail}>{detail}</span>}
-      </div>
-    </Modal>
-  );
-};
+}: ProgressModalProps): JSX.Element => (
+  <Modal
+    title={title}
+    icon={icon}
+    onClose={onClose}
+    dismissible={dismissible}
+    footer={footer}
+    size="sm">
+    <JobProgressBar done={done} total={total} detail={detail} etaSeconds={etaSeconds} />
+  </Modal>
+);

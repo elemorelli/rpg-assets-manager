@@ -20,6 +20,7 @@ type ExecFileCallback = (
 
 class FakeRcloneProcess extends EventEmitter {
   stderr = new EventEmitter();
+  kill = vi.fn();
 }
 
 const queueSpawn = (): FakeRcloneProcess => {
@@ -217,5 +218,39 @@ describe("rcloneCheck", () => {
     await promise;
 
     expect(onProgress).toHaveBeenCalledWith({ done: 5, total: 20 });
+  });
+
+  it("kills the rclone process when the signal is aborted", async () => {
+    const child = queueSpawn();
+    const controller = new AbortController();
+    const promise = rcloneCheck("/source", "/destination", undefined, controller.signal);
+
+    await waitForSpawn();
+    controller.abort();
+
+    expect(child.kill).toHaveBeenCalled();
+
+    child.emit("close", null);
+    await promise;
+  });
+
+  it("resolves with an empty result instead of reading the report when aborted", async () => {
+    const child = queueSpawn();
+    const controller = new AbortController();
+    const promise = rcloneCheck("/source", "/destination", undefined, controller.signal);
+
+    await waitForSpawn();
+    controller.abort();
+    child.emit("close", null);
+
+    const result = await promise;
+
+    expect(result).toEqual({
+      matchCount: 0,
+      missingOnSource: [],
+      missingOnDestination: [],
+      differs: [],
+      errors: [],
+    });
   });
 });

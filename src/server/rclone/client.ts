@@ -20,6 +20,7 @@ const writeRelativePathsListFile = async (relativePaths: string[]): Promise<stri
 interface RunRcloneCommandOptions {
   acceptableExitCodes?: number[];
   onLine?: (line: string) => void;
+  signal?: AbortSignal;
 }
 
 const DEFAULT_ACCEPTABLE_EXIT_CODES = [0];
@@ -30,6 +31,8 @@ const runRcloneCommand = (args: string[], options: RunRcloneCommandOptions = {})
     const child = spawn("rclone", [...args, "-v", "--use-json-log"]);
     let lineBuffer = "";
     let lastNonEmptyLine = "";
+
+    options.signal?.addEventListener("abort", () => child.kill(), { once: true });
 
     child.stderr.on("data", (chunk: Buffer) => {
       lineBuffer += chunk.toString("utf8");
@@ -48,7 +51,9 @@ const runRcloneCommand = (args: string[], options: RunRcloneCommandOptions = {})
     child.on("error", reject);
 
     child.on("close", (code) => {
-      if (code !== null && acceptableExitCodes.includes(code)) {
+      // An aborted signal means we killed the process ourselves, so a
+      // non-zero or null exit code here is expected, not a real failure.
+      if (options.signal?.aborted || (code !== null && acceptableExitCodes.includes(code))) {
         resolve();
         return;
       }
@@ -116,10 +121,22 @@ export const rcloneMoveTo = async (
 const RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE = 1;
 const CHECK_STATS_INTERVAL = "500ms";
 
+// Returned when the check was killed mid-run: the combined report file on
+// disk at that point is incomplete, so reading it would misreport files that
+// simply hadn't been checked yet as matching or missing.
+const CANCELLED_CHECK_RESULT: RcloneCheckResult = {
+  matchCount: 0,
+  missingOnSource: [],
+  missingOnDestination: [],
+  differs: [],
+  errors: [],
+};
+
 export const rcloneCheck = async (
   sourceRoot: string,
   destinationRoot: string,
   onProgress?: (progress: { done: number; total: number }) => void,
+  signal?: AbortSignal,
 ): Promise<RcloneCheckResult> => {
   const reportDir = await fs.mkdtemp(path.join(os.tmpdir(), "rclone-check-"));
   const reportFilePath = path.join(reportDir, "combined.txt");
@@ -144,8 +161,13 @@ export const rcloneCheck = async (
             onProgress?.(stats);
           }
         },
+        signal,
       },
     );
+
+    if (signal?.aborted) {
+      return CANCELLED_CHECK_RESULT;
+    }
 
     const reportContent = await fs.readFile(reportFilePath, "utf8");
 

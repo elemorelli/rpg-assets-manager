@@ -1,24 +1,32 @@
-import { type JSX, useEffect, useReducer, useRef, useState } from "react";
+import { type JSX, useEffect, useState } from "react";
 
-import { parseJobEvent } from "#utils/job.ts";
 import { Button } from "#web/components/button/button.tsx";
 import { Modal } from "#web/components/modal/modal.tsx";
 import { ProgressModal } from "#web/components/progress-modal/progress-modal.tsx";
 import { cancelJob } from "#web/requests/index.ts";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
-import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
+import { type JobDisplayState } from "#web/utils/job-progress-state.ts";
 import { iconForJobType } from "#web/utils/job-type-icon.ts";
+import { useJobStream } from "#web/utils/use-job-stream.ts";
 
 import styles from "./job-progress.module.css";
 
 const SUCCESS_AUTO_DISMISS_MS = 4000;
-const ETA_TICK_MS = 1000;
 
 const IDLE: JobDisplayState = { kind: "idle" };
 
 // Only job types whose own operation actually checks the abort signal it's
 // given may offer cancellation; see runTrackedJob's cancellable option.
+// Note: "reconcile" is also cancellable, but it never reaches this component
+// at all (see JOB_TYPES_WITH_DEDICATED_MODAL below) since its own dedicated
+// modal, ReconciliationModal, offers the cancel button instead.
 const CANCELLABLE_JOB_TYPES = new Set(["rescan"]);
+
+// These job types render their own dedicated modal (e.g. ReconciliationModal)
+// that already shows live progress and the final result, so this global
+// overlay must stay out of the way rather than stacking a second modal on
+// top of it.
+const JOB_TYPES_WITH_DEDICATED_MODAL = new Set(["reconcile"]);
 
 type RunningState = Extract<JobDisplayState, { kind: "running" }>;
 
@@ -29,33 +37,8 @@ export interface JobProgressProps {
 }
 
 export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Element | null => {
-  const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
+  const [displayState, setDisplayState] = useJobStream(onJobSucceeded);
   const [isCancelling, setIsCancelling] = useState<boolean>(false);
-  const [, tick] = useReducer((count: number) => count + 1, 0);
-  const onJobSucceededRef = useRef(onJobSucceeded);
-  onJobSucceededRef.current = onJobSucceeded;
-
-  useEffect(() => {
-    const source = new EventSource("/api/jobs/stream");
-
-    source.onmessage = (event) => {
-      const incoming = parseJobEvent(event.data);
-
-      setDisplayState((previous) => {
-        const next = nextJobDisplayState(previous, incoming);
-
-        if (next.kind === "succeeded" && previous.kind === "running") {
-          onJobSucceededRef.current?.(previous.type);
-        }
-
-        return next;
-      });
-    };
-
-    return () => {
-      source.close();
-    };
-  }, []);
 
   useEffect(() => {
     if (displayState.kind !== "succeeded") {
@@ -65,16 +48,6 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
     const timer = setTimeout(() => setDisplayState(IDLE), SUCCESS_AUTO_DISMISS_MS);
 
     return () => clearTimeout(timer);
-  }, [displayState]);
-
-  useEffect(() => {
-    if (displayState.kind !== "running" || displayState.indeterminate) {
-      return;
-    }
-
-    const interval = setInterval(tick, ETA_TICK_MS);
-
-    return () => clearInterval(interval);
   }, [displayState]);
 
   const handleDismiss = (): void => {
@@ -89,6 +62,10 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
   };
 
   if (displayState.kind === "idle") {
+    return null;
+  }
+
+  if (JOB_TYPES_WITH_DEDICATED_MODAL.has(displayState.type)) {
     return null;
   }
 
