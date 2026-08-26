@@ -51,7 +51,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
     );
 
     expect(summary).toEqual({ converted: 1, overwritten: 0 });
-    expect(progressUpdates[0]).toEqual({ done: 0, total: 1 });
+    expect(progressUpdates[0]).toEqual({ done: 0, total: 1, detail: "forest.png" });
     expect(progressUpdates.at(-1)).toEqual({ done: 1, total: 1 });
 
     await expect(
@@ -217,5 +217,83 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
 
     expect(index.has(`${PREFIX}forest.png`)).toBe(false);
     expect(index.has(`${PREFIX}forest.webp`)).toBe(true);
+  });
+
+  it("stops before converting the next candidate once the signal is aborted", async () => {
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "meadow.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+
+    const controller = new AbortController();
+    controller.abort();
+
+    const summary = await convertAssets(
+      path.join(tempDir.path, "convert-assets-test"),
+      "convert-assets-test",
+      undefined,
+      true,
+      controller.signal,
+    );
+
+    expect(summary).toEqual({ converted: 0, overwritten: 0 });
+    await expect(
+      fs.access(path.join(tempDir.path, "convert-assets-test", "forest.png")),
+    ).resolves.toBeUndefined();
+    await expect(
+      fs.access(path.join(tempDir.path, "convert-assets-test", "forest.webp")),
+    ).rejects.toThrow();
+  });
+
+  it("keeps whatever was already converted before the signal was aborted mid-run", async () => {
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "forest.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+    await fs.writeFile(
+      path.join(tempDir.path, "convert-assets-test", "meadow.png"),
+      Buffer.from(MINIMAL_PNG_BASE64, "base64"),
+    );
+
+    const controller = new AbortController();
+    const processedPaths: string[] = [];
+
+    const summary = await convertAssets(
+      path.join(tempDir.path, "convert-assets-test"),
+      "convert-assets-test",
+      (progress) => {
+        if (progress.detail !== undefined) {
+          processedPaths.push(progress.detail);
+        }
+
+        // Abort right after the first candidate is reported, before it (or
+        // any other candidate) is actually converted, so exactly one file
+        // finishes converting before the loop notices the abort.
+        if (processedPaths.length === 1) {
+          controller.abort();
+        }
+      },
+      true,
+      controller.signal,
+    );
+
+    expect(summary).toEqual({ converted: 1, overwritten: 0 });
+    expect(processedPaths).toHaveLength(1);
+
+    const [convertedRelativePath] = processedPaths;
+    const skippedRelativePath =
+      convertedRelativePath === "forest.png" ? "meadow.png" : "forest.png";
+    const convertedWebpName = convertedRelativePath.replace(".png", ".webp");
+
+    await expect(
+      fs.access(path.join(tempDir.path, "convert-assets-test", convertedWebpName)),
+    ).resolves.toBeUndefined();
+    await expect(
+      fs.access(path.join(tempDir.path, "convert-assets-test", skippedRelativePath)),
+    ).resolves.toBeUndefined();
   });
 });

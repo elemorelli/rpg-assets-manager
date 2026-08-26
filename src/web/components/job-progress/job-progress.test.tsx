@@ -71,6 +71,25 @@ describe("JobProgress", () => {
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
+  it("offers a cancel button while a convert is running", () => {
+    render(<JobProgress />);
+    const source = FakeEventSource.instances[0];
+    act(() =>
+      source?.emitMessage(
+        JSON.stringify({
+          type: "convert",
+          stage: "converting",
+          done: 3,
+          total: 10,
+          startedAt: Date.now(),
+          error: null,
+        }),
+      ),
+    );
+
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+  });
+
   it("does not offer a cancel button for job types that can't be cancelled", () => {
     render(<JobProgress />);
     const source = FakeEventSource.instances[0];

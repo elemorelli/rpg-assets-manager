@@ -20,7 +20,7 @@ const IDLE: JobDisplayState = { kind: "idle" };
 // Note: "reconcile" is also cancellable, but it never reaches this component
 // at all (see JOB_TYPES_WITH_DEDICATED_MODAL below) since its own dedicated
 // modal, ReconciliationModal, offers the cancel button instead.
-const CANCELLABLE_JOB_TYPES = new Set(["rescan"]);
+const CANCELLABLE_JOB_TYPES = new Set(["rescan", "convert"]);
 
 // These job types render their own dedicated modal (e.g. ReconciliationModal)
 // that already shows live progress and the final result, so this global

@@ -36,11 +36,22 @@ export const convertAssets = async (
   dbPathPrefix: string,
   onProgress?: (progress: ConversionProgress) => void,
   recursive = true,
+  signal?: AbortSignal,
 ): Promise<ConversionSummary> => {
   const plan = await getConversionPlan(rootDir, recursive);
   const total = plan.candidates.length;
+  let converted = 0;
+  let overwritten = 0;
 
   for (const [index, candidate] of plan.candidates.entries()) {
+    // Each candidate is fully converted, including its DB write, before the
+    // next one starts, so stopping here always leaves a consistent state:
+    // whatever ran to this point stays done, and the rest is picked up by
+    // the next convert pass.
+    if (signal?.aborted) {
+      break;
+    }
+
     onProgress?.({ done: index, total, detail: candidate.relativePath });
 
     const sourcePath = path.join(rootDir, candidate.relativePath);
@@ -88,17 +99,21 @@ export const convertAssets = async (
         }),
       )
       .execute();
+
+    converted += 1;
+
+    if (candidate.willOverwrite) {
+      overwritten += 1;
+    }
   }
 
-  onProgress?.({ done: total, total });
+  onProgress?.({ done: converted, total });
 
-  if (plan.candidates.length > 0) {
+  if (converted > 0) {
     invalidateLocalHashIndex();
   }
 
-  const overwritten = plan.candidates.filter((candidate) => candidate.willOverwrite).length;
-
-  return { converted: plan.candidates.length, overwritten };
+  return { converted, overwritten };
 };
 
 export const convertAssetsHandler = (assetTreeRoot: string) =>
@@ -109,7 +124,12 @@ export const convertAssetsHandler = (assetTreeRoot: string) =>
     const rootDir = scope === "all" ? assetTreeRoot : path.join(assetTreeRoot, relativeDir);
     const dbPathPrefix = scope === "all" ? "" : relativeDir;
 
-    return await runTrackedJob("convert", "converting", "conversion failed", (onProgress) =>
-      convertAssets(rootDir, dbPathPrefix, onProgress, scope !== "folder"),
+    return await runTrackedJob(
+      "convert",
+      "converting",
+      "conversion failed",
+      (onProgress, signal) =>
+        convertAssets(rootDir, dbPathPrefix, onProgress, scope !== "folder", signal),
+      { cancellable: true },
     );
   });
