@@ -77,6 +77,44 @@ describe("ReconciliationModal", () => {
     expect(screen.getByText("tiles/unreadable.png")).toBeInTheDocument();
   });
 
+  it("hides a kind's rows from the table when its filter chip is clicked", async () => {
+    const user = userEvent.setup();
+    reconcileMock.mockResolvedValue({
+      matchCount: 1,
+      missingOnSource: ["tiles/orphaned.png"],
+      missingOnDestination: ["tiles/unsynced.png"],
+      differs: [],
+      errors: [],
+    });
+
+    render(<ReconciliationModal onClose={vi.fn()} />);
+    await screen.findByText("tiles/unsynced.png");
+    const missingSourceChip = screen.getByRole("button", { name: "1 missing on source" });
+    await user.click(missingSourceChip);
+
+    expect(screen.queryByText("tiles/orphaned.png")).not.toBeInTheDocument();
+    expect(screen.getByText("tiles/unsynced.png")).toBeInTheDocument();
+    expect(missingSourceChip).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("hides the separate errors list when the errored filter chip is clicked", async () => {
+    const user = userEvent.setup();
+    reconcileMock.mockResolvedValue({
+      matchCount: 0,
+      missingOnSource: [],
+      missingOnDestination: [],
+      differs: [],
+      errors: ["tiles/unreadable.png"],
+    });
+
+    render(<ReconciliationModal onClose={vi.fn()} />);
+    await screen.findByText("tiles/unreadable.png");
+    await user.click(screen.getByRole("button", { name: "1 errored" }));
+
+    expect(screen.queryByText("tiles/unreadable.png")).not.toBeInTheDocument();
+    expect(screen.queryByText("Errors:")).not.toBeInTheDocument();
+  });
+
   it("shows an error message when reconciliation fails", async () => {
     reconcileMock.mockRejectedValue(new Error("rclone check failed"));
 

@@ -4,6 +4,8 @@ import {
   buildConversionDiffRows,
   buildReconcileDiffRows,
   buildSyncDiffRows,
+  type DiffRow,
+  filterRowsByKind,
 } from "#web/utils/diff-rows.ts";
 
 describe("buildSyncDiffRows", () => {
@@ -155,5 +157,27 @@ describe("buildReconcileDiffRows", () => {
     });
 
     expect(rows).toEqual([]);
+  });
+});
+
+describe("filterRowsByKind", () => {
+  const rows: DiffRow[] = [
+    { key: "added:a.png", kind: "added", after: "a.png" },
+    { key: "removed:b.png", kind: "removed", before: "b.png" },
+    { key: "renamed:c.png", kind: "renamed", before: "c.png", after: "d.png" },
+  ];
+
+  it("keeps every row when no kinds are hidden", () => {
+    expect(filterRowsByKind(rows, new Set())).toEqual(rows);
+  });
+
+  it("drops rows whose kind is in the hidden set", () => {
+    const filtered = filterRowsByKind(rows, new Set(["removed"]));
+
+    expect(filtered.map((row) => row.key)).toEqual(["added:a.png", "renamed:c.png"]);
+  });
+
+  it("drops every row when all of their kinds are hidden", () => {
+    expect(filterRowsByKind(rows, new Set(["added", "removed", "renamed"]))).toEqual([]);
   });
 });

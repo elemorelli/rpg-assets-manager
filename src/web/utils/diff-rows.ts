@@ -46,6 +46,11 @@ export const buildConversionDiffRows = (candidates: ConversionCandidate[]): Diff
     overwrite: candidate.willOverwrite,
   }));
 
+export const filterRowsByKind = (
+  rows: DiffRow[],
+  hiddenKinds: ReadonlySet<DiffRowKind>,
+): DiffRow[] => rows.filter((row) => !hiddenKinds.has(row.kind));
+
 export const buildReconcileDiffRows = (result: RcloneCheckResult): DiffRow[] => [
   ...result.missingOnDestination.map((relativePath) => ({
     key: `missing-destination:${relativePath}`,

@@ -1,0 +1,33 @@
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px var(--spacing-sm);
+  border: 1px solid currentColor;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.chip:not(:disabled):hover {
+  background: var(--color-surface-raised);
+}
+
+.chip:disabled {
+  cursor: not-allowed;
+}
+
+.chipHidden {
+  opacity: 0.4;
+}

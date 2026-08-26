@@ -14,11 +14,6 @@
   font-size: var(--font-size-sm);
 }
 
-.summary {
-  margin: 0;
-  font-size: var(--font-size-sm);
-}
-
 .added {
   color: var(--color-sync-new);
 }

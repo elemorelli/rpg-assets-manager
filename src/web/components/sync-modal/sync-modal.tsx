@@ -1,6 +1,10 @@
 import { type JSX, useMemo, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
+import {
+  type DiffFilterChipItem,
+  DiffFilterChips,
+} from "#components/diff-filter-chips/diff-filter-chips.tsx";
 import { DiffTable } from "#components/diff-table/diff-table.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
@@ -8,7 +12,7 @@ import { ScopeSelector } from "#components/scope-selector/scope-selector.tsx";
 import type { OperationScope } from "#utils/operation-scope.ts";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
-import { buildSyncDiffRows } from "#web/utils/diff-rows.ts";
+import { buildSyncDiffRows, type DiffRowKind, filterRowsByKind } from "#web/utils/diff-rows.ts";
 import { describeScopedTitle } from "#web/utils/scope-title.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
@@ -31,8 +35,51 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
     setMessage,
   } = useFetchOnMount<BatchDiff>(() => api.fetchDiff(currentPath, scope), [currentPath, scope]);
   const { busy, runBusyAction } = useBusyAction(setMessage);
+  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<DiffRowKind>>(new Set());
+
+  const toggleKind = (kind: DiffRowKind): void => {
+    setHiddenKinds((current) => {
+      const next = new Set(current);
+
+      if (next.has(kind)) {
+        next.delete(kind);
+      } else {
+        next.add(kind);
+      }
+
+      return next;
+    });
+  };
 
   const changeRows = useMemo(() => (diff ? buildSyncDiffRows(diff) : []), [diff]);
+  const visibleChangeRows = useMemo(
+    () => filterRowsByKind(changeRows, hiddenKinds),
+    [changeRows, hiddenKinds],
+  );
+
+  const filterItems: DiffFilterChipItem<DiffRowKind>[] = diff
+    ? [
+        { id: "added", label: "added", count: diff.added.length, colorClassName: styles.added },
+        {
+          id: "modified",
+          label: "modified",
+          count: diff.modified.length,
+          colorClassName: styles.modified,
+        },
+        {
+          id: "removed",
+          label: "deleted",
+          count: diff.deleted.length,
+          colorClassName: styles.deleted,
+        },
+        {
+          id: "renamed",
+          label: "renamed",
+          count: diff.renamed.length,
+          colorClassName: styles.renamed,
+        },
+      ]
+    : [];
 
   const handleApply = (): void => {
     runBusyAction(() =>
@@ -77,15 +124,7 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
       {hasNothingToSync && <p>Nothing to sync.</p>}
       {diff && !hasNothingToSync && (
         <div className={styles.section}>
-          <p className={styles.summary}>
-            <span className={styles.added}>{`${diff.added.length} added`}</span>
-            {", "}
-            <span className={styles.modified}>{`${diff.modified.length} modified`}</span>
-            {", "}
-            <span className={styles.deleted}>{`${diff.deleted.length} deleted`}</span>
-            {", "}
-            <span className={styles.renamed}>{`${diff.renamed.length} renamed`}</span>
-          </p>
+          <DiffFilterChips items={filterItems} hiddenIds={hiddenKinds} onToggle={toggleKind} />
           {diff.ambiguousWarnings.length > 0 && (
             <div className={styles.section}>
               <p>Ambiguous renames (resolved as delete plus add):</p>
@@ -98,7 +137,7 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
               </ul>
             </div>
           )}
-          <DiffTable rows={changeRows} />
+          <DiffTable rows={visibleChangeRows} />
         </div>
       )}
     </Modal>

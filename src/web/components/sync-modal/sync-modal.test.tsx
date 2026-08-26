@@ -75,6 +75,31 @@ describe("SyncModal", () => {
     expect(screen.getByText("x.png <-> y.png")).toBeInTheDocument();
   });
 
+  it("hides a kind's rows from the table when its filter chip is clicked", async () => {
+    const user = userEvent.setup();
+    fetchDiffMock.mockResolvedValue({
+      added: ["a.png"],
+      modified: [],
+      deleted: ["c.png"],
+      renamed: [],
+      ambiguousWarnings: [],
+    });
+
+    render(<SyncModal currentPath="tiles" onClose={vi.fn()} onApplied={vi.fn()} />);
+    await screen.findByText("a.png");
+    const addedChip = screen.getByRole("button", { name: "1 added" });
+    await user.click(addedChip);
+
+    expect(screen.queryByText("a.png")).not.toBeInTheDocument();
+    expect(screen.getByText("c.png")).toBeInTheDocument();
+    expect(addedChip).toHaveAttribute("aria-pressed", "false");
+
+    await user.click(addedChip);
+
+    expect(screen.getByText("a.png")).toBeInTheDocument();
+    expect(addedChip).toHaveAttribute("aria-pressed", "true");
+  });
+
   it("shows a message when there is nothing to sync", async () => {
     fetchDiffMock.mockResolvedValue({
       added: [],
