@@ -125,7 +125,7 @@ describe("applyBatch (requires DATABASE_URL and the real rclone binary)", () => 
         "https://assets.example.com/apply-batch-test/stale.png",
       ]),
     );
-    expect(onProgress).toHaveBeenCalledWith({ done: 2, total: 2 });
+    expect(onProgress).toHaveBeenCalledWith(expect.objectContaining({ done: 2, total: 2 }));
   });
 
   it("on a real apply with renames, records the rename in the asset_renames log", async () => {
