@@ -1,13 +1,13 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: rpgassets
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-rpgassets_dev}
       POSTGRES_DB: rpgassets
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - pg-data:/var/lib/postgresql
     # Host-side bind stays on loopback, same rule as the api service below.
     ports:
       - "127.0.0.1:5433:5432"

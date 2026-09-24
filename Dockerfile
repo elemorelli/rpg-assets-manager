@@ -1,6 +1,6 @@
 FROM node:24-alpine AS base
 
-RUN apk add --no-cache ca-certificates curl unzip ffmpeg libwebp-tools rclone postgresql17-client bash
+RUN apk add --no-cache ca-certificates curl unzip ffmpeg libwebp-tools rclone postgresql18-client bash
 
 ARG UID=1000
 ARG GID=1000
