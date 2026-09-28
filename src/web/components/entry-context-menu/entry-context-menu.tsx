@@ -17,6 +17,7 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
 import { usePublicAssetLink } from "#web/utils/use-public-asset-link.ts";
 
+import { DownloadMenuItems } from "./download-menu-items.tsx";
 import styles from "./entry-context-menu.module.css";
 
 export interface EntryContextMenuProps {
@@ -122,6 +123,11 @@ export const EntryContextMenu = ({
               </MenuItem>
             </>
           )}
+          <DownloadMenuItems
+            relativePath={relativePath}
+            selectedEntries={selectedEntries}
+            onClose={onClose}
+          />
           <MenuItem onClick={handleDeleteRequested}>
             <FontAwesomeIcon icon={faTrash} fixedWidth />
             {isMultiSelection ? `Delete ${selectedEntries.length} items` : "Delete"}

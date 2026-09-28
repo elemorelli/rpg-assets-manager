@@ -1,3 +1,4 @@
+export { downloadFileHandler } from "./content/download.ts";
 export { rawFileHandler } from "./content/raw.ts";
 export { thumbnailHandler } from "./content/resolve-thumbnail.ts";
 export { uploadFileHandler } from "./content/upload.ts";

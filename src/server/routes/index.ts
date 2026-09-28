@@ -13,11 +13,13 @@ import {
 } from "./directories/index.ts";
 import {
   deleteEntryHandler,
+  downloadZipHandler,
   moveEntryHandler,
   renameEntryHandler,
   searchEntriesHandler,
 } from "./entries/index.ts";
 import {
+  downloadFileHandler,
   filesByTagHandler,
   rawFileHandler,
   setAssetTagsHandler,
@@ -69,10 +71,12 @@ export const registerRoutes = (
   app.post("/api/entries/rename", renameEntryHandler(assetTreeRoot));
   app.post("/api/entries/move", moveEntryHandler(assetTreeRoot));
   app.get("/api/entries/search", searchEntriesHandler(assetTreeRoot));
+  app.get("/api/entries/download-zip", downloadZipHandler(assetTreeRoot));
 
   app.get("/api/files", listDirectoryHandler(assetTreeRoot));
   app.post("/api/files/upload", uploadFileHandler(assetTreeRoot));
   app.get("/api/files/raw", rawFileHandler(assetTreeRoot));
+  app.get("/api/files/download", downloadFileHandler(assetTreeRoot));
   app.get("/api/files/thumbnail", thumbnailHandler(assetTreeRoot, thumbnailCacheDir));
   app.put("/api/files/tags", setAssetTagsHandler(assetTreeRoot));
   app.get("/api/files/by-tag", filesByTagHandler);
