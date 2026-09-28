@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 
-import { parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 import * as api from "#web/requests/index.ts";
 import { describeErrorAsMessage, type Message } from "#web/utils/message.ts";
@@ -97,7 +97,7 @@ export const useSearchAndTagFilter = ({
 
   const handleOpenSearchResult = (entry: SearchResultEntry): void => {
     const targetDirectory =
-      entry.type === "directory" ? entry.relativePath : parentDirectory(entry.relativePath);
+      entry.type === "directory" ? entry.relativePath : getParentPath(entry.relativePath);
 
     onNavigate(targetDirectory);
   };

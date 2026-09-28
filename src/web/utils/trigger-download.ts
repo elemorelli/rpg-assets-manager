@@ -17,6 +17,7 @@ export const triggerDownloads = (urls: string[]): void => {
   urls.forEach((url, index) => {
     const delayMs = index * DOWNLOAD_SPACING_MS;
 
+    // The first download fires synchronously so it stays inside the user's click activation.
     if (delayMs === 0) {
       triggerDownload(url);
 

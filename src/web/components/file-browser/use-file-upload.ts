@@ -1,6 +1,7 @@
 import { useState } from "react";
 
-import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 import * as api from "#web/requests/index.ts";
 import { describeError } from "#web/utils/describe-error.ts";
 import { isConflictError } from "#web/utils/is-conflict-error.ts";
@@ -50,7 +51,7 @@ export const useFileUpload = ({
     useOverwriteConfirmation<UploadItem>();
 
   const resolveTargetDir = (relativePath: string): string => {
-    const parent = parentDirectory(relativePath);
+    const parent = getParentPath(relativePath);
 
     return parent ? joinRelativePath(currentPath, parent) : currentPath;
   };

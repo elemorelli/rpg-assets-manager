@@ -1,4 +1,4 @@
-import { parentDirectory } from "./paths.ts";
+import { getParentPath } from "./directory-path.ts";
 
 export interface RemoteIndexRecord {
   hash: string;
@@ -234,11 +234,11 @@ export const computeTreeWidePendingDirectoryPaths = (
   const pendingDirectoryPaths = new Set<string>();
 
   for (const changedPath of changedPaths) {
-    let ancestorPath = parentDirectory(changedPath);
+    let ancestorPath = getParentPath(changedPath);
 
     while (ancestorPath !== "") {
       pendingDirectoryPaths.add(ancestorPath);
-      ancestorPath = parentDirectory(ancestorPath);
+      ancestorPath = getParentPath(ancestorPath);
     }
   }
 

@@ -2,7 +2,7 @@ import { getLocalHashIndex, getRemoteHashIndex } from "#server/asset-index-cache
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { walkDirectory } from "#server/utils/walk-directory.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
-import { parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 import { computeTreeWidePendingDirectoryPaths } from "#utils/sync-status.ts";
 
 export type DirectoryTree = Record<string, DirectoryEntry[]>;
@@ -36,7 +36,7 @@ export const buildDirectoryTree = async (rootDir: string): Promise<DirectoryTree
       directoryEntry.hasPendingSync = true;
     }
 
-    const parentPath = parentDirectory(entry.relativePath);
+    const parentPath = getParentPath(entry.relativePath);
 
     childrenByPath[parentPath].push(directoryEntry);
   }

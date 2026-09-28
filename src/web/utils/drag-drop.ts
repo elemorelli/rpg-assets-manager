@@ -1,4 +1,4 @@
-import { parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 
 export interface DraggedEntry {
   relativePath: string;
@@ -6,7 +6,7 @@ export interface DraggedEntry {
 }
 
 export const isValidDropTarget = (entry: DraggedEntry, targetDirectoryPath: string): boolean => {
-  const sourceParentPath = parentDirectory(entry.relativePath);
+  const sourceParentPath = getParentPath(entry.relativePath);
 
   if (targetDirectoryPath === sourceParentPath) {
     return false;

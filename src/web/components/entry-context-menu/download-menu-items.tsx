@@ -4,7 +4,8 @@ import type { JSX } from "react";
 
 import { MenuItem } from "#components/context-menu/menu-item.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { joinRelativePath, parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 import * as api from "#web/requests/index.ts";
 import { triggerDownload, triggerDownloads } from "#web/utils/trigger-download.ts";
 
@@ -23,7 +24,7 @@ export const DownloadMenuItems = ({
   onClose,
 }: DownloadMenuItemsProps): JSX.Element => {
   // Every selected entry lives in the same directory as the one the menu was opened on.
-  const parentPath = parentDirectory(relativePath);
+  const parentPath = getParentPath(relativePath);
   const toSelectedPath = (selected: DirectoryEntry): string =>
     joinRelativePath(parentPath, selected.name);
 

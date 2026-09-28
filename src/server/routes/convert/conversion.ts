@@ -1,4 +1,4 @@
-import { parentDirectory } from "#utils/paths.ts";
+import { getParentPath } from "#utils/directory-path.ts";
 
 export type ConversionKind = "image" | "audio";
 
@@ -57,7 +57,7 @@ export const computeConversionPlan = (files: { relativePath: string }[]): Conver
   const skippedDirectories = new Set(
     files
       .filter((file) => file.relativePath.split("/").at(-1) === SKIP_FILE_NAME)
-      .map((file) => parentDirectory(file.relativePath)),
+      .map((file) => getParentPath(file.relativePath)),
   );
 
   const sortedFiles = [...files].sort((a, b) => a.relativePath.localeCompare(b.relativePath));
@@ -72,7 +72,7 @@ export const computeConversionPlan = (files: { relativePath: string }[]): Conver
       continue;
     }
 
-    if (skippedDirectories.has(parentDirectory(file.relativePath))) {
+    if (skippedDirectories.has(getParentPath(file.relativePath))) {
       continue;
     }
 

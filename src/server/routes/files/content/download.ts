@@ -28,7 +28,7 @@ export const openFileDownload = async (
     throw new HttpError("Only files can be downloaded directly", HTTP_STATUS.badRequest);
   }
 
-  const fileName = path.basename(relativePath);
+  const fileName = path.posix.basename(relativePath);
   const mimeType = mimeTypeForFile(fileName) ?? GENERIC_BINARY_MIME_TYPE;
   const stream = createReadStream(absolutePath);
 

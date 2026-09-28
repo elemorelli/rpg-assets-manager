@@ -12,13 +12,12 @@ import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { ContextMenu } from "#components/context-menu/context-menu.tsx";
 import { MenuItem } from "#components/context-menu/menu-item.tsx";
 import { MenuList } from "#components/context-menu/menu-list.tsx";
-import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { isPreviewableEntry } from "#utils/preview.ts";
 import { usePublicAssetLink } from "#web/utils/use-public-asset-link.ts";
 
 import { DownloadMenuItems } from "./download-menu-items.tsx";
-import styles from "./entry-context-menu.module.css";
+import { EntryTagsSection } from "./entry-tags-section.tsx";
 
 export interface EntryContextMenuProps {
   entry: DirectoryEntry;
@@ -54,7 +53,6 @@ export const EntryContextMenu = ({
 
   const isMultiSelection = selectedEntries.length > 1;
   const isPreviewable = !isMultiSelection && isPreviewableEntry(entry);
-  const selectedFileEntries = selectedEntries.filter((candidate) => candidate.type === "file");
   const showLinkActions = !isMultiSelection && entry.type === "file" && publicAssetUrl !== null;
 
   const handleView = (): void => {
@@ -132,27 +130,13 @@ export const EntryContextMenu = ({
             <FontAwesomeIcon icon={faTrash} fixedWidth />
             {isMultiSelection ? `Delete ${selectedEntries.length} items` : "Delete"}
           </MenuItem>
-          {isMultiSelection
-            ? selectedFileEntries.length > 0 && (
-                <div className={styles.tagsSection}>
-                  <TagEditor
-                    entryKey={`batch-${entry.name}`}
-                    tags={[]}
-                    availableTags={availableTags}
-                    onChange={(tags) => onAddTagToMany(selectedFileEntries, tags[0] ?? "")}
-                  />
-                </div>
-              )
-            : entry.type === "file" && (
-                <div className={styles.tagsSection}>
-                  <TagEditor
-                    entryKey={entry.name}
-                    tags={entry.tags ?? []}
-                    availableTags={availableTags}
-                    onChange={(tags) => onTagsChange(entry, tags)}
-                  />
-                </div>
-              )}
+          <EntryTagsSection
+            entry={entry}
+            selectedEntries={selectedEntries}
+            availableTags={availableTags}
+            onTagsChange={onTagsChange}
+            onAddTagToMany={onAddTagToMany}
+          />
         </MenuList>
       </ContextMenu>
       {confirmingDelete && (

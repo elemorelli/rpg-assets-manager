@@ -1,6 +1,7 @@
 import { assetsPublicBaseUrl } from "#server/cloudflare/index.ts";
 import { db } from "#server/db/index.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
+import { buildAttachmentDisposition } from "#server/utils/content-disposition.ts";
 import { classifyPreviewKind, extensionOf } from "#utils/preview.ts";
 import { joinUrl } from "#utils/url.ts";
 
@@ -102,7 +103,7 @@ export const exportFoundryPlaylistHandler = withHttpErrorHandling(async (request
   const playlist = buildFoundryPlaylistExport(tag, assets, assetsPublicBaseUrl);
   const fileName = `foundry-playlist-${sanitizeFilenameSegment(tag)}.json`;
 
-  reply.header("Content-Disposition", `attachment; filename="${fileName}"`);
+  reply.header("Content-Disposition", buildAttachmentDisposition(fileName));
   reply.type("application/json");
 
   return playlist;
