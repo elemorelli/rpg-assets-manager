@@ -8,23 +8,25 @@ let clickSpy: MockInstance<() => void>;
 const clickedHrefs = (): string[] =>
   clickSpy.mock.contexts.map((anchor) => (anchor as HTMLAnchorElement).getAttribute("href") ?? "");
 
+beforeEach(() => {
+  clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+});
+
 describe("triggerDownload", () => {
-  beforeEach(() => {
-    clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-    vi.useRealTimers();
-  });
-
   it("clicks a temporary download link and removes it afterwards", () => {
     triggerDownload("/api/files/download?path=map.png");
 
     expect(clickedHrefs()).toEqual(["/api/files/download?path=map.png"]);
     expect(document.querySelector("a[download]")).toBeNull();
   });
+});
 
+describe("triggerDownloads", () => {
   it("spaces out several downloads so the browser does not drop any of them", () => {
     vi.useFakeTimers();
 
