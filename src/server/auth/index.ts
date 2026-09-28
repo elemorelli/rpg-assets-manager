@@ -1,4 +1,5 @@
 export { authConfig, resolveAuthConfig } from "./config.ts";
+export { PUBLIC_ROUTE_OPTIONS } from "./public-route.ts";
 export { requireAuthHook } from "./require-auth-hook.ts";
 export {
   buildSessionCookieOptions,

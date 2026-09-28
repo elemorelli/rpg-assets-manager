@@ -8,17 +8,20 @@ import { SESSION_COOKIE_NAME, SESSION_COOKIE_VALUE } from "../session-cookie.ts"
 
 interface FakeRequestOptions {
   url: string;
+  isPublic?: boolean;
   cookieValue?: string;
   unsignResult?: { valid: boolean; value?: string };
 }
 
 const createFakeRequest = ({
   url,
+  isPublic,
   cookieValue,
   unsignResult,
 }: FakeRequestOptions): FastifyRequest =>
   ({
     raw: { url },
+    routeOptions: { config: { isPublic } },
     cookies: cookieValue ? { [SESSION_COOKIE_NAME]: cookieValue } : {},
     unsignCookie: vi.fn().mockReturnValue(unsignResult),
   }) as unknown as FastifyRequest;
@@ -35,31 +38,22 @@ const createFakeReply = (): FastifyReply & { code: ReturnType<typeof vi.fn> } =>
 };
 
 describe("requireAuthHook", () => {
-  it("allows GET /api/health without a session cookie", async () => {
+  it("allows a route marked public without a session cookie", async () => {
+    const request = createFakeRequest({ url: "/api/health", isPublic: true });
+    const reply = createFakeReply();
+
+    await requireAuthHook(request, reply);
+
+    expect(reply.code).not.toHaveBeenCalled();
+  });
+
+  it("rejects an api route that is not marked public, whatever its path looks like", async () => {
     const request = createFakeRequest({ url: "/api/health" });
     const reply = createFakeReply();
 
     await requireAuthHook(request, reply);
 
-    expect(reply.code).not.toHaveBeenCalled();
-  });
-
-  it("allows /api/health with a query string, since the path is matched before the '?'", async () => {
-    const request = createFakeRequest({ url: "/api/health?foo=1" });
-    const reply = createFakeReply();
-
-    await requireAuthHook(request, reply);
-
-    expect(reply.code).not.toHaveBeenCalled();
-  });
-
-  it("allows POST /api/login without a session cookie", async () => {
-    const request = createFakeRequest({ url: "/api/login" });
-    const reply = createFakeReply();
-
-    await requireAuthHook(request, reply);
-
-    expect(reply.code).not.toHaveBeenCalled();
+    expect(reply.code).toHaveBeenCalledWith(HTTP_STATUS.unauthorized);
   });
 
   it("allows a non-api path through without checking cookies", async () => {

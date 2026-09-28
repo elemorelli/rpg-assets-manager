@@ -1,6 +1,8 @@
 import fastifyMultipart from "@fastify/multipart";
 import type { FastifyInstance } from "fastify";
 
+import { PUBLIC_ROUTE_OPTIONS } from "#server/auth/index.ts";
+
 import { applyBatchHandler } from "./apply/index.ts";
 import { loginHandler, logoutHandler, sessionHandler } from "./auth/index.ts";
 import { configHandler } from "./config/index.ts";
@@ -50,9 +52,9 @@ export const registerRoutes = (
 ): void => {
   app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_FILE_SIZE_BYTES } });
 
-  app.get("/api/health", healthHandler);
+  app.get("/api/health", PUBLIC_ROUTE_OPTIONS, healthHandler);
 
-  app.post("/api/login", loginHandler);
+  app.post("/api/login", PUBLIC_ROUTE_OPTIONS, loginHandler);
   app.post("/api/logout", logoutHandler);
   app.get("/api/session", sessionHandler);
   app.get("/api/config", configHandler);

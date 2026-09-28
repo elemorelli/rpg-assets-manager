@@ -4,15 +4,15 @@ import { HTTP_STATUS } from "#server/errors/index.ts";
 
 import { SESSION_COOKIE_NAME, SESSION_COOKIE_VALUE } from "./session-cookie.ts";
 
-const UNPROTECTED_PATHS = new Set(["/api/health", "/api/login"]);
-
 export const requireAuthHook = async (
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> => {
   const requestPath = (request.raw.url ?? "").split("?")[0];
+  const isApiRequest = requestPath.startsWith("/api/");
+  const isPublicRoute = request.routeOptions.config.isPublic === true;
 
-  if (!requestPath.startsWith("/api/") || UNPROTECTED_PATHS.has(requestPath)) {
+  if (!isApiRequest || isPublicRoute) {
     return;
   }
 
