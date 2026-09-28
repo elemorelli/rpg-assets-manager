@@ -6,9 +6,10 @@ import { afterAll, afterEach, beforeEach } from "vitest";
 import { db } from "#server/db/index.ts";
 
 // Shared setup/teardown for *.integration.test.ts files, which all run against
-// the real dev Postgres and (for filesystem-touching ones) real temp
-// directories: no dedicated test database, no per-test transaction rollback,
-// so every file is responsible for cleaning up exactly what it created. See
+// one real Postgres test database (recreated per run by the global setup) and
+// (for filesystem-touching ones) real temp directories: no per-test
+// transaction rollback, so every file is responsible for cleaning up exactly
+// what it created, since files in the same run share that database. See
 // the memory on the integration/unit test boundary for which files this
 // applies to and which stay fully custom (raw SQL assertions, full-app
 // wiring, external binaries).
