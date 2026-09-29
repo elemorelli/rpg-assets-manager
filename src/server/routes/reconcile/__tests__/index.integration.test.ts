@@ -6,10 +6,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getCurrentJob, subscribeToJobChanges } from "#server/routes/jobs/index.ts";
 import { useTempDir } from "#server/test-utils/integration-lifecycle.ts";
 
-// destinationRoot has to exist and be assigned to RCLONE_REMOTE before
-// reconcile/index.ts (and the rclone config module it pulls in) is imported,
-// since that module reads process.env.RCLONE_REMOTE once at import time. That
-// rules out useTempDir here, which only creates its directory in beforeEach.
+// The rclone config reads RCLONE_REMOTE at import time, so the destination must exist before importing, which rules out useTempDir.
 const destinationRoot = await fs.mkdtemp(path.join(os.tmpdir(), "reconcile-dest-"));
 process.env.RCLONE_REMOTE = destinationRoot;
 

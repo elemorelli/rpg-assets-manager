@@ -113,9 +113,7 @@ describe("planRemoteAssetChanges", () => {
   });
 });
 
-// The decision of which operation applies to which path is covered above by
-// planRemoteAssetChanges's own tests. This only exercises the wiring from a
-// planned operation to the correct Kysely call (insert/delete/update).
+// planRemoteAssetChanges's tests cover which operation applies; these only check each operation reaches the right Kysely call.
 describe("mirrorRemoteAssets", () => {
   it("applies an upsert, a delete and a rename against remote_assets", async () => {
     const mockDb = createMockDb();

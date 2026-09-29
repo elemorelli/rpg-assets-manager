@@ -79,9 +79,7 @@ describe("buildFinishSyncRunUpdate", () => {
   });
 });
 
-// The update payload's content (counts, JSON encoding) is covered above by
-// buildFinishSyncRunUpdate's own tests. These only exercise the wiring: does
-// each function write to the right row via the right Kysely call.
+// buildFinishSyncRunUpdate's tests cover the payload; these only check each function writes the right row via the right Kysely call.
 
 describe("startSyncRun", () => {
   it("inserts a new sync_runs row and returns its numeric id", async () => {

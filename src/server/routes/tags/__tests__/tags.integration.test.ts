@@ -13,10 +13,7 @@ describe("listDistinctTags (requires DATABASE_URL pointing at a running Postgres
   destroyDbAfterAll();
 
   it("returns the distinct tags in use, alphabetically", async () => {
-    // listDistinctTags() reads across the whole table by design, so scope the
-    // assertion to the tags this test introduces rather than the full result:
-    // any tag already in the table (another suite's leftover row, real dev
-    // data) must not make this test flaky.
+    // listDistinctTags() reads the whole table, so assert only on this test's tags to stay immune to leftover rows.
     const tagsBeforeInsert = await listDistinctTags();
 
     await db

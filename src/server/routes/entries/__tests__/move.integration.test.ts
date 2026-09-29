@@ -151,9 +151,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       })
       .execute();
 
-    // Moving between two sibling branches (both directly under "move-entry-test")
-    // keeps the shared ancestor's net change at zero, so the old/new parent
-    // checks below stay isolated to the branch that actually changed.
+    // Moving between sibling branches keeps the shared ancestor's net change at zero, isolating the checks below to the changed branch.
     await moveEntry(tempDir.path, `${PREFIX}oldloc/forest.png`, `${PREFIX}newloc/forest.png`);
 
     const oldParent = await db
@@ -224,8 +222,7 @@ describe("moveEntry (requires DATABASE_URL pointing at a running Postgres)", () 
       ])
       .execute();
 
-    // "from" and "to" are disjoint siblings under "move-entry-test", so this
-    // move transfers the subtree's aggregate between two unrelated branches.
+    // "from" and "to" are disjoint siblings, so this move transfers the subtree's aggregate between unrelated branches.
     await moveEntry(tempDir.path, `${PREFIX}from/tiles`, `${PREFIX}to/sprites`);
 
     const remainingUnderFrom = await db

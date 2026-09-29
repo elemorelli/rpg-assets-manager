@@ -16,11 +16,7 @@ const PREFIX = "upload-keep-alive-test/";
 const LARGE_UNREAD_BODY_BYTES = 2_000_000;
 const HANG_TIMEOUT_MS = 10_000;
 
-// Real sockets only: app.inject() (light-my-request) dispatches directly into
-// Fastify's router without going through Node's HTTP parser or a reused
-// keep-alive TCP connection, so it cannot reproduce a bug that only shows up
-// when a later request reuses a connection left in a bad state by an earlier
-// one.
+// Real sockets only: app.inject() skips Node's HTTP parser and keep-alive reuse, so it cannot reproduce a mis-framed reused connection.
 describe("upload keep-alive connection handling (requires DATABASE_URL and a real socket)", () => {
   const tempDir = useTempDir("upload-keep-alive-");
 
@@ -64,16 +60,12 @@ describe("upload keep-alive connection handling (requires DATABASE_URL and a rea
       };
 
       try {
-        // Conflicts with the pre-existing file. The request body carries far
-        // more bytes than the server needs to read to know it's a conflict,
-        // so a handler that responds without draining the rest of this
-        // request's body leaves the connection mis-framed for reuse.
+        // Conflicts with the existing file while sending far more bytes than needed, so a handler that skips draining the body corrupts the connection.
         const conflictResponse = await upload("existing.ogg", "x".repeat(LARGE_UNREAD_BODY_BYTES));
 
         expect(conflictResponse.status).toBe(HTTP_STATUS.conflict);
 
-        // A brand new file, sent right after: on a corrupted connection this
-        // hangs instead of ever resolving.
+        // A new file right after: on a corrupted connection this hangs instead of resolving.
         const nextResponse = await upload("brand-new.ogg", "new-bytes");
 
         expect(nextResponse.status).toBe(HTTP_STATUS.ok);

@@ -53,10 +53,7 @@ describe("FileBrowser", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     window.localStorage.clear();
-    // Path-conditional so navigating into a subdirectory (root -> "tiles" ->
-    // ...) gets sensible data at each level; any path a test doesn't
-    // override resolves to empty. The sidebar tree is a separate fetch (see
-    // getDirectoryTreeMock below), not driven by this mock at all.
+    // Path-conditional so each navigated level gets its own data (unset paths are empty); the sidebar tree uses getDirectoryTreeMock instead.
     listDirectoryMock.mockImplementation((path: string) =>
       Promise.resolve(
         path === ""
@@ -101,9 +98,7 @@ describe("FileBrowser", () => {
   it("lists the root directory on mount", async () => {
     renderFileBrowser();
 
-    // "tiles" now renders twice (once in the tree, once in the table), so
-    // this waits on both appearing rather than a role query that would throw
-    // on finding more than one match.
+    // "tiles" renders in both the tree and the table, so wait on all matches instead of a single-match role query.
     await screen.findAllByText("tiles");
 
     expect(listDirectoryMock).toHaveBeenCalledWith("");
@@ -206,8 +201,7 @@ describe("FileBrowser", () => {
     await waitFor(() => {
       expect(createDirectoryMock).toHaveBeenCalledWith("new-folder");
     });
-    // FileBrowser's own listing and the sidebar tree keep separate caches, so
-    // both must refetch on their own after the mutation.
+    // The listing and the sidebar tree keep separate caches, so both must refetch after the mutation.
     await waitFor(() => {
       expect(listDirectoryMock).toHaveBeenCalledWith("");
     });
@@ -527,8 +521,7 @@ describe("FileBrowser", () => {
 
   it("moves an entry when dropped onto a breadcrumb", async () => {
     const user = userEvent.setup();
-    // Path-conditional since the test navigates root -> tiles -> legacy-pack
-    // via real clicks, and each level needs its own listing.
+    // Path-conditional since the test clicks root -> tiles -> legacy-pack and each level needs its own listing.
     listDirectoryMock.mockImplementation((path: string) => {
       if (path === "") {
         return Promise.resolve([

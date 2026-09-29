@@ -253,8 +253,7 @@ describe("EntryContextMenu", () => {
     const writeTextMock = vi.fn().mockResolvedValue(undefined);
     fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: "https://assets.example.com" });
     const user = userEvent.setup();
-    // userEvent.setup() installs its own clipboard stub, so ours must be
-    // defined after setup() or it gets immediately overwritten.
+    // userEvent.setup() installs its own clipboard stub, so ours must be defined after it.
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText: writeTextMock },
       configurable: true,

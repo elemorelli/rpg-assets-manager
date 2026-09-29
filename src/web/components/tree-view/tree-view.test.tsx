@@ -16,9 +16,7 @@ const fetchAppConfigMock = vi.mocked(api.fetchAppConfig);
 
 const DRAG_EXPAND_DELAY_MS = 600;
 
-// The tree loads whole, in one request, so a test's fixture is the full
-// children-by-path map the server would return: every directory already
-// known up front, not fetched lazily per path.
+// The tree loads whole in one request, so the fixture is the full children-by-path map the server returns.
 const mockTree = (childrenByPath: Record<string, DirectoryEntry[]>): void => {
   getDirectoryTreeMock.mockResolvedValue(childrenByPath);
 };
@@ -187,8 +185,7 @@ describe("TreeView", () => {
 
     render(<TreeView {...baseProps} />);
 
-    // contextmenu bubbles up from the name button through the row div (the
-    // handler's owner), not down from the <li> ancestor, so fire it there.
+    // contextmenu bubbles up from the name button to the row div that owns the handler, so fire it on the button.
     fireEvent.contextMenu(await screen.findByRole("button", { name: "tiles" }));
 
     expect(screen.getByRole("button", { name: "Rename" })).toBeInTheDocument();

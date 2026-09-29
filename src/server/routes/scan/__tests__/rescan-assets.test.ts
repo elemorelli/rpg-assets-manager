@@ -40,9 +40,7 @@ describe("rescanAssets", () => {
       id: String(nextDirectoryId++),
     }));
     mock.deleteFrom("directories").execute.mockResolvedValue(undefined);
-    // recomputeAllDirectoryAggregates's own build step always issues one more
-    // selectFrom("assets").execute() after rescanAssets' own previousRows query;
-    // tests that don't care about aggregate output stage an empty batch for it.
+    // recomputeAllDirectoryAggregates issues one more assets select after rescanAssets' own query, so stage an empty batch for it.
     mock.selectFrom("assets").execute.mockResolvedValue([]);
   });
 

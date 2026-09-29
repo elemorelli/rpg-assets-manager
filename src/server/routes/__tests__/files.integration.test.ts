@@ -17,9 +17,7 @@ describe("file routes", () => {
   destroyDbAfterAll();
 
   afterEach(async () => {
-    // uploadFile() upserts into the assets table as a side effect, so the upload
-    // test below leaves a real row behind even though the rest of this file is
-    // filesystem-only.
+    // uploadFile() also upserts into assets, so the upload test leaves a real row behind in this otherwise filesystem-only file.
     await db.deleteFrom("assets").where("path", "=", "tiles/forest.png").execute();
   });
 

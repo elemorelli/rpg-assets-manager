@@ -270,9 +270,7 @@ describe("convertAssets (requires DATABASE_URL pointing at a running Postgres)",
           processedPaths.push(progress.detail);
         }
 
-        // Abort right after the first candidate is reported, before it (or
-        // any other candidate) is actually converted, so exactly one file
-        // finishes converting before the loop notices the abort.
+        // Abort once the first candidate is reported, so exactly one file finishes converting before the loop notices.
         if (processedPaths.length === 1) {
           controller.abort();
         }
