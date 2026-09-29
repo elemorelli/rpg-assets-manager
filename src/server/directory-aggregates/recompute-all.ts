@@ -1,6 +1,6 @@
 import { db } from "#server/db/index.ts";
 import { walkDirectory } from "#server/utils/walk-directory.ts";
-import { getAncestorPaths, getParentPath } from "#utils/directory-path.ts";
+import { getAncestorPaths, getParentPath, getPathDepth } from "#utils/directory-path.ts";
 
 interface DirectoryAggregate {
   size: number;
@@ -60,9 +60,7 @@ const buildAggregates = async (rootDir: string): Promise<Map<string, DirectoryAg
 
 export const recomputeAllDirectoryAggregates = async (rootDir: string): Promise<void> => {
   const aggregates = await buildAggregates(rootDir);
-  const sortedPaths = [...aggregates.keys()].sort(
-    (a, b) => a.split("/").length - b.split("/").length,
-  );
+  const sortedPaths = [...aggregates.keys()].sort((a, b) => getPathDepth(a) - getPathDepth(b));
 
   await db.transaction().execute(async (trx) => {
     await trx.deleteFrom("directories").execute();

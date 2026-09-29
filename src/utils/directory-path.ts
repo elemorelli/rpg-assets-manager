@@ -17,3 +17,5 @@ export const getAncestorPaths = (relativePath: string): string[] => {
 
   return ancestors;
 };
+
+export const getPathDepth = (relativePath: string): number => relativePath.split("/").length;

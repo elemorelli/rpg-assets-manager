@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { getAncestorPaths, getParentPath } from "../directory-path.ts";
+import { getAncestorPaths, getParentPath, getPathDepth } from "../directory-path.ts";
 
 describe("getParentPath", () => {
   it("returns the empty string for a top-level file", () => {
@@ -35,5 +35,17 @@ describe("getAncestorPaths", () => {
 
   it("treats a directory path the same as a file path", () => {
     expect(getAncestorPaths("tiles/forest")).toEqual(["tiles", ""]);
+  });
+});
+
+describe("getPathDepth", () => {
+  it("counts a top-level entry as depth 1", () => {
+    expect(getPathDepth("tiles")).toBe(1);
+  });
+
+  it("counts one level per path segment", () => {
+    const threeSegmentDepth = 3;
+
+    expect(getPathDepth("tiles/forest/a.png")).toBe(threeSegmentDepth);
   });
 });

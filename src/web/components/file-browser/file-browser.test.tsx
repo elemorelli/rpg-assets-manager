@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "#web/requests/http-client.ts";
 import * as api from "#web/requests/index.ts";
-import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+import { FakeEventSource, stubEventSource } from "#web/test-utils/fake-event-source.ts";
 
 import { FileBrowser } from "./file-browser.tsx";
 
@@ -90,15 +90,11 @@ describe("FileBrowser", () => {
     setAssetTagsMock.mockResolvedValue([]);
     fetchFilesByTagMock.mockResolvedValue([]);
     fetchAppConfigMock.mockResolvedValue({ assetsPublicBaseUrl: null });
-    FakeEventSource.reset();
-    // @ts-expect-error test double
-    globalThis.EventSource = FakeEventSource;
+    stubEventSource();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    // @ts-expect-error test double
-    delete globalThis.EventSource;
   });
 
   it("lists the root directory on mount", async () => {

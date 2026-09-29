@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as api from "#web/requests/index.ts";
-import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+import { stubEventSource } from "#web/test-utils/fake-event-source.ts";
 
 import { App } from "./app.tsx";
 
@@ -33,15 +33,11 @@ describe("App", () => {
     });
     fetchTagsMock.mockResolvedValue([]);
     logoutMock.mockResolvedValue(undefined);
-    FakeEventSource.reset();
-    // @ts-expect-error test double
-    globalThis.EventSource = FakeEventSource;
+    stubEventSource();
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-    // @ts-expect-error test double
-    delete globalThis.EventSource;
   });
 
   it("renders the login form when there is no active session", async () => {

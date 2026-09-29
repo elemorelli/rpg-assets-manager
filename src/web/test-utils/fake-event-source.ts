@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 export class FakeEventSource {
   static instances: FakeEventSource[] = [];
 
@@ -22,3 +24,9 @@ export class FakeEventSource {
     FakeEventSource.instances = [];
   }
 }
+
+// The shared web setup runs vi.unstubAllGlobals() after each test, which removes the stub again.
+export const stubEventSource = (): void => {
+  FakeEventSource.reset();
+  vi.stubGlobal("EventSource", FakeEventSource);
+};

@@ -3,7 +3,8 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { FakeEventSource } from "#web/test-utils/fake-event-source.ts";
+import type { CurrentJob, JobState } from "#utils/job.ts";
+import { FakeEventSource, stubEventSource } from "#web/test-utils/fake-event-source.ts";
 import { stubFetch } from "#web/test-utils/stub-fetch.ts";
 
 import { JobProgress } from "./job-progress.tsx";
@@ -11,42 +12,41 @@ import { JobProgress } from "./job-progress.tsx";
 const SUCCESS_AUTO_DISMISS_MS = 4000;
 const TEN_SECONDS_MS = 10_000;
 
+const runningJob = (overrides: Partial<JobState> = {}): JobState => ({
+  type: "rescan",
+  stage: "hashing",
+  done: 3,
+  total: 10,
+  startedAt: Date.now(),
+  error: null,
+  ...overrides,
+});
+
+const emitJob = (job: CurrentJob): void => {
+  const source = FakeEventSource.instances[0];
+
+  act(() => source?.emitMessage(JSON.stringify(job)));
+};
+
 describe("JobProgress", () => {
   beforeEach(() => {
-    FakeEventSource.reset();
-    // @ts-expect-error test double
-    globalThis.EventSource = FakeEventSource;
+    stubEventSource();
   });
 
   afterEach(() => {
-    // @ts-expect-error test double
-    delete globalThis.EventSource;
     vi.useRealTimers();
   });
 
   it("renders nothing while there is no current job", () => {
     const { container } = render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() => source?.emitMessage("null"));
+    emitJob(null);
 
     expect(container).toBeEmptyDOMElement();
   });
 
   it("renders a blocking dialog with progress for the current job", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob());
 
     expect(screen.getByRole("dialog", { name: "rescan: hashing" })).toBeInTheDocument();
     expect(screen.getByText("3 / 10")).toBeInTheDocument();
@@ -54,57 +54,21 @@ describe("JobProgress", () => {
 
   it("offers a cancel button while a rescan is running", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob());
 
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
   it("offers a cancel button while a convert is running", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "convert",
-          stage: "converting",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "convert", stage: "converting" }));
 
     expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
   });
 
   it("does not offer a cancel button for job types that can't be cancelled", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "sync",
-          stage: "applying",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "sync", stage: "applying" }));
 
     expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
@@ -114,19 +78,7 @@ describe("JobProgress", () => {
     const user = userEvent.setup();
 
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob());
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(fetchMock).toHaveBeenCalledWith("/api/jobs/cancel", { method: "POST" });
@@ -137,19 +89,7 @@ describe("JobProgress", () => {
     const user = userEvent.setup();
 
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob());
     await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     expect(await screen.findByRole("button", { name: "Cancel" })).toBeEnabled();
@@ -157,59 +97,21 @@ describe("JobProgress", () => {
 
   it("shows a cancelled confirmation when the server reports the job as cancelled", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-          cancelled: true,
-        }),
-      ),
-    );
+    emitJob(runningJob({ cancelled: true }));
 
     expect(screen.getByRole("dialog", { name: "rescan: cancelled" })).toBeInTheDocument();
   });
 
   it("does not allow dismissing the dialog while the job is running", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob());
 
     expect(screen.queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
   });
 
   it("shows the current file/step detail when the server reports one", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          detail: "assets/goblin.png",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ detail: "assets/goblin.png" }));
 
     expect(screen.getByText("assets/goblin.png")).toBeInTheDocument();
   });
@@ -217,21 +119,9 @@ describe("JobProgress", () => {
   it("shows an ETA once some progress and time have passed", () => {
     vi.useFakeTimers();
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
     const startedAt = Date.now();
 
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 2,
-          total: 10,
-          startedAt,
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ done: 2, startedAt }));
     act(() => vi.advanceTimersByTime(TEN_SECONDS_MS));
 
     expect(screen.getByText("ETA: 40s")).toBeInTheDocument();
@@ -239,38 +129,14 @@ describe("JobProgress", () => {
 
   it("renders an indeterminate spinner when the total is unknown", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "sync",
-          stage: "applying",
-          done: 0,
-          total: 0,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "sync", stage: "applying", done: 0, total: 0 }));
 
     expect(screen.getByTestId("progress-modal-spinner")).toBeInTheDocument();
   });
 
   it("renders nothing for a job type with its own dedicated modal", () => {
     const { container } = render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "reconcile",
-          stage: "checking",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "reconcile", stage: "checking" }));
 
     expect(container).toBeEmptyDOMElement();
   });
@@ -279,40 +145,15 @@ describe("JobProgress", () => {
     const onJobSucceeded = vi.fn();
 
     render(<JobProgress onJobSucceeded={onJobSucceeded} />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "reconcile",
-          stage: "checking",
-          done: 10,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
-    act(() => source?.emitMessage("null"));
+    emitJob(runningJob({ type: "reconcile", stage: "checking", done: 10 }));
+    emitJob(null);
 
     expect(onJobSucceeded).toHaveBeenCalledWith("reconcile");
   });
 
   it("renders an error message and the failing file when the job fails", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          detail: "assets/goblin.png",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: "disk full",
-        }),
-      ),
-    );
+    emitJob(runningJob({ detail: "assets/goblin.png", error: "disk full" }));
 
     expect(screen.getByRole("dialog", { name: "rescan: failed" })).toBeInTheDocument();
     expect(screen.getByText("disk full")).toBeInTheDocument();
@@ -322,19 +163,7 @@ describe("JobProgress", () => {
   it("dismisses the error when the dismiss button is clicked", async () => {
     const user = userEvent.setup();
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: "disk full",
-        }),
-      ),
-    );
+    emitJob(runningJob({ error: "disk full" }));
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
 
     expect(screen.queryByText("disk full")).not.toBeInTheDocument();
@@ -342,20 +171,8 @@ describe("JobProgress", () => {
 
   it("shows a success confirmation when a running job clears without an error", () => {
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 10,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
-    act(() => source?.emitMessage("null"));
+    emitJob(runningJob({ done: 10 }));
+    emitJob(null);
 
     expect(screen.getByRole("dialog", { name: "rescan: completed" })).toBeInTheDocument();
   });
@@ -363,20 +180,8 @@ describe("JobProgress", () => {
   it("auto-dismisses the success confirmation after a few seconds", () => {
     vi.useFakeTimers();
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 10,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
-    act(() => source?.emitMessage("null"));
+    emitJob(runningJob({ done: 10 }));
+    emitJob(null);
 
     expect(screen.getByRole("dialog", { name: "rescan: completed" })).toBeInTheDocument();
 
@@ -388,20 +193,8 @@ describe("JobProgress", () => {
   it("dismisses the success confirmation when the dismiss button is clicked", async () => {
     const user = userEvent.setup();
     render(<JobProgress />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "rescan",
-          stage: "hashing",
-          done: 10,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
-    act(() => source?.emitMessage("null"));
+    emitJob(runningJob({ done: 10 }));
+    emitJob(null);
     await user.click(screen.getByRole("button", { name: "Dismiss" }));
 
     expect(screen.queryByRole("dialog", { name: "rescan: completed" })).not.toBeInTheDocument();
@@ -417,23 +210,11 @@ describe("JobProgress", () => {
     const onJobSucceeded = vi.fn();
 
     render(<JobProgress onJobSucceeded={onJobSucceeded} />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "sync",
-          stage: "applying",
-          done: 10,
-          total: 10,
-          startedAt: Date.now(),
-          error: null,
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "sync", stage: "applying", done: 10 }));
 
     expect(onJobSucceeded).not.toHaveBeenCalled();
 
-    act(() => source?.emitMessage("null"));
+    emitJob(null);
 
     expect(onJobSucceeded).toHaveBeenCalledTimes(1);
     expect(onJobSucceeded).toHaveBeenCalledWith("sync");
@@ -443,19 +224,7 @@ describe("JobProgress", () => {
     const onJobSucceeded = vi.fn();
 
     render(<JobProgress onJobSucceeded={onJobSucceeded} />);
-    const source = FakeEventSource.instances[0];
-    act(() =>
-      source?.emitMessage(
-        JSON.stringify({
-          type: "sync",
-          stage: "applying",
-          done: 3,
-          total: 10,
-          startedAt: Date.now(),
-          error: "disk full",
-        }),
-      ),
-    );
+    emitJob(runningJob({ type: "sync", stage: "applying", error: "disk full" }));
 
     expect(onJobSucceeded).not.toHaveBeenCalled();
   });
