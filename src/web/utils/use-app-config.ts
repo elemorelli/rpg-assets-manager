@@ -8,7 +8,12 @@ let cachedConfigPromise: Promise<PublicAppConfig> | null = null;
 
 const loadAppConfig = (): Promise<PublicAppConfig> => {
   if (!cachedConfigPromise) {
-    cachedConfigPromise = api.fetchAppConfig();
+    // Dropping a rejected promise lets the next mount retry instead of hiding the link until reload.
+    cachedConfigPromise = api.fetchAppConfig().catch((error: unknown) => {
+      cachedConfigPromise = null;
+
+      throw error;
+    });
   }
 
   return cachedConfigPromise;

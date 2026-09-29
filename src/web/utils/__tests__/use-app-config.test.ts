@@ -39,4 +39,21 @@ describe("useAppConfig", () => {
 
     expect(fetchAppConfigMock).toHaveBeenCalledTimes(1);
   });
+
+  it("retries the request on the next mount after a failed fetch", async () => {
+    fetchAppConfigMock.mockRejectedValueOnce(new Error("network down"));
+    fetchAppConfigMock.mockResolvedValueOnce({ assetsPublicBaseUrl: "https://assets.example.com" });
+
+    renderHook(() => useAppConfig());
+
+    await waitFor(() => expect(fetchAppConfigMock).toHaveBeenCalledTimes(1));
+
+    const { result } = renderHook(() => useAppConfig());
+
+    await waitFor(() =>
+      expect(result.current).toEqual({ assetsPublicBaseUrl: "https://assets.example.com" }),
+    );
+
+    expect(fetchAppConfigMock).toHaveBeenCalledTimes(2);
+  });
 });
