@@ -17,13 +17,19 @@ const writeRelativePathsListFile = async (relativePaths: string[]): Promise<stri
   return listFilePath;
 };
 
+const removeListFile = async (listFilePath: string): Promise<void> => {
+  await fs.rm(path.dirname(listFilePath), { recursive: true, force: true });
+};
+
 interface RunRcloneCommandOptions {
   acceptableExitCodes?: number[];
   onLine?: (line: string) => void;
   signal?: AbortSignal;
 }
 
-const DEFAULT_ACCEPTABLE_EXIT_CODES = [0];
+const SUCCESS_EXIT_CODE = 0;
+const DEFAULT_ACCEPTABLE_EXIT_CODES = [SUCCESS_EXIT_CODE];
+const NO_CHECK_BUCKET_FLAG = "--s3-no-check-bucket";
 
 const runRcloneCommand = (args: string[], options: RunRcloneCommandOptions = {}): Promise<void> =>
   new Promise((resolve, reject) => {
@@ -51,8 +57,7 @@ const runRcloneCommand = (args: string[], options: RunRcloneCommandOptions = {})
     child.on("error", reject);
 
     child.on("close", (code) => {
-      // An aborted signal means we killed the process ourselves, so a
-      // non-zero or null exit code here is expected, not a real failure.
+      // An aborted signal means we killed rclone ourselves, so a failing exit code is expected.
       if (options.signal?.aborted || (code !== null && acceptableExitCodes.includes(code))) {
         resolve();
         return;
@@ -62,6 +67,16 @@ const runRcloneCommand = (args: string[], options: RunRcloneCommandOptions = {})
     });
   });
 
+const reportCompletedFiles =
+  (onFileDone?: (relativePath: string) => void) =>
+  (line: string): void => {
+    const completedPath = parseCompletedFilePath(line);
+
+    if (completedPath !== null) {
+      onFileDone?.(completedPath);
+    }
+  };
+
 export const rcloneCopy = async (
   sourceRoot: string,
   destinationRoot: string,
@@ -70,18 +85,14 @@ export const rcloneCopy = async (
 ): Promise<void> => {
   const listFilePath = await writeRelativePathsListFile(relativePaths);
 
-  await runRcloneCommand(
-    ["copy", sourceRoot, destinationRoot, "--files-from-raw", listFilePath, "--s3-no-check-bucket"],
-    {
-      onLine: (line) => {
-        const completedPath = parseCompletedFilePath(line);
-
-        if (completedPath !== null) {
-          onFileDone?.(completedPath);
-        }
-      },
-    },
-  );
+  try {
+    await runRcloneCommand(
+      ["copy", sourceRoot, destinationRoot, "--files-from-raw", listFilePath, NO_CHECK_BUCKET_FLAG],
+      { onLine: reportCompletedFiles(onFileDone) },
+    );
+  } finally {
+    await removeListFile(listFilePath);
+  }
 };
 
 export const rcloneDelete = async (
@@ -91,18 +102,14 @@ export const rcloneDelete = async (
 ): Promise<void> => {
   const listFilePath = await writeRelativePathsListFile(relativePaths);
 
-  await runRcloneCommand(
-    ["delete", destinationRoot, "--files-from-raw", listFilePath, "--s3-no-check-bucket"],
-    {
-      onLine: (line) => {
-        const completedPath = parseCompletedFilePath(line);
-
-        if (completedPath !== null) {
-          onFileDone?.(completedPath);
-        }
-      },
-    },
-  );
+  try {
+    await runRcloneCommand(
+      ["delete", destinationRoot, "--files-from-raw", listFilePath, NO_CHECK_BUCKET_FLAG],
+      { onLine: reportCompletedFiles(onFileDone) },
+    );
+  } finally {
+    await removeListFile(listFilePath);
+  }
 };
 
 export const rcloneMoveTo = async (
@@ -114,16 +121,14 @@ export const rcloneMoveTo = async (
     "moveto",
     `${destinationRoot}/${oldRelativePath}`,
     `${destinationRoot}/${newRelativePath}`,
-    "--s3-no-check-bucket",
+    NO_CHECK_BUCKET_FLAG,
   ]);
 };
 
 const RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE = 1;
 const CHECK_STATS_INTERVAL = "500ms";
 
-// Returned when the check was killed mid-run: the combined report file on
-// disk at that point is incomplete, so reading it would misreport files that
-// simply hadn't been checked yet as matching or missing.
+// Returned when the check was killed mid-run, since the partial report would misreport unchecked files.
 const CANCELLED_CHECK_RESULT: RcloneCheckResult = {
   matchCount: 0,
   missingOnSource: [],
@@ -153,7 +158,7 @@ export const rcloneCheck = async (
         CHECK_STATS_INTERVAL,
       ],
       {
-        acceptableExitCodes: [0, RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE],
+        acceptableExitCodes: [SUCCESS_EXIT_CODE, RCLONE_CHECK_DIFFERENCES_FOUND_EXIT_CODE],
         onLine: (line) => {
           const stats = parseCheckStats(line);
 

@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { describeScopedTitle } from "../scope-title.ts";
+import { describeDirectoryLabel, describeScopedTitle } from "../scope-title.ts";
+
+describe("describeDirectoryLabel", () => {
+  it("names the tree root as root", () => {
+    expect(describeDirectoryLabel("")).toBe("root");
+  });
+
+  it("keeps any other directory path as is", () => {
+    expect(describeDirectoryLabel("maps/tiles")).toBe("maps/tiles");
+  });
+});
 
 describe("describeScopedTitle", () => {
   it("names the folder when the scope is folder or subtree", () => {

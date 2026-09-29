@@ -48,7 +48,8 @@ export const buildConversionDiffRows = (candidates: ConversionCandidate[]): Diff
 
 export const filterRowsByKind = (
   rows: DiffRow[],
-  hiddenKinds: ReadonlySet<DiffRowKind>,
+  // Wider than DiffRowKind so reconcile's extra "error" chip id fits; it simply never matches a row.
+  hiddenKinds: ReadonlySet<string>,
 ): DiffRow[] => rows.filter((row) => !hiddenKinds.has(row.kind));
 
 export const buildReconcileDiffRows = (result: RcloneCheckResult): DiffRow[] => [

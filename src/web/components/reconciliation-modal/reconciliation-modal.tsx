@@ -1,6 +1,7 @@
 import { type JSX, useMemo, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
+import { CancelJobButton } from "#components/cancel-job-button/cancel-job-button.tsx";
 import {
   type DiffFilterChipItem,
   DiffFilterChips,
@@ -17,6 +18,7 @@ import {
   filterRowsByKind,
 } from "#web/utils/diff-rows.ts";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
+import { toggleSetMember } from "#web/utils/toggle-set-member.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 import { useJobStream } from "#web/utils/use-job-stream.ts";
 
@@ -33,26 +35,15 @@ export interface ReconciliationModalProps {
 export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.Element => {
   const { data: result, message } = useFetchOnMount<RcloneCheckResult>(() => api.reconcile(), []);
   const [jobState] = useJobStream();
-  const [isCancelling, setIsCancelling] = useState<boolean>(false);
   const [hiddenIds, setHiddenIds] = useState<ReadonlySet<ReconcileFilterId>>(new Set());
 
   const toggleId = (id: ReconcileFilterId): void => {
-    setHiddenIds((current) => {
-      const next = new Set(current);
-
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-
-      return next;
-    });
+    setHiddenIds((current) => toggleSetMember(current, id));
   };
 
   const resultRows = useMemo(() => (result ? buildReconcileDiffRows(result) : []), [result]);
   const visibleResultRows = useMemo(
-    () => filterRowsByKind(resultRows, hiddenIds as ReadonlySet<DiffRowKind>),
+    () => filterRowsByKind(resultRows, hiddenIds),
     [resultRows, hiddenIds],
   );
   const areErrorsHidden = hiddenIds.has("error");
@@ -67,18 +58,8 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
     result.differs.length === 0 &&
     result.errors.length === 0;
 
-  const handleCancel = (): void => {
-    setIsCancelling(true);
-    api
-      .cancelJob()
-      .catch(() => {})
-      .finally(() => setIsCancelling(false));
-  };
-
   const footer = isRunning ? (
-    <Button variant="secondary" onClick={handleCancel} disabled={isCancelling}>
-      {isCancelling ? "Cancelling…" : "Cancel"}
-    </Button>
+    <CancelJobButton />
   ) : (
     <Button variant="secondary" onClick={onClose}>
       Close
@@ -92,11 +73,12 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
           done={jobState.done}
           total={jobState.total}
           detail={jobState.detail}
-          etaSeconds={
-            jobState.indeterminate
-              ? null
-              : computeEtaSeconds(jobState.done, jobState.total, jobState.startedAt, Date.now())
-          }
+          etaSeconds={computeEtaSeconds(
+            jobState.done,
+            jobState.total,
+            jobState.startedAt,
+            Date.now(),
+          )}
         />
       )}
       {!isRunning && isCancelled && <p>Reconcile cancelled.</p>}

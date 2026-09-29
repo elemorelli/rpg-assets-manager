@@ -12,9 +12,7 @@ export interface WalkDirectoryOptions {
   recursive?: boolean;
 }
 
-// Iterative BFS, not recursive: a recursive Promise.all version of this
-// crashed in production with "Maximum call stack size exceeded" on the real
-// asset tree.
+// Iterative BFS: a recursive Promise.all version overflowed the call stack on the real asset tree.
 export const walkDirectory = async (
   rootDir: string,
   options: WalkDirectoryOptions = {},

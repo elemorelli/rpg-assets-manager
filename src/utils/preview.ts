@@ -100,9 +100,7 @@ export interface ParsedBrowserPath {
   deepLinkedFileName: string | null;
 }
 
-// The browser URL doesn't distinguish a folder segment from a deep-linked
-// file, so we infer it from the last segment's extension: a folder can't be
-// opened in the lightbox, so anything else must be treated as one.
+// The URL can't tell a folder from a deep-linked file, so a previewable extension marks a file.
 export const parseBrowserPath = (rawPath: string): ParsedBrowserPath => {
   if (rawPath === "") {
     return { directoryPath: "", deepLinkedFileName: null };

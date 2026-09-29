@@ -10,6 +10,7 @@ import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import type { SearchResultEntry } from "#web/requests/entries/search.ts";
 import type { EntryGroup } from "#web/utils/entry-grouping.ts";
 import type { SelectionClickModifier } from "#web/utils/row-selection.ts";
+import { describeDirectoryLabel } from "#web/utils/scope-title.ts";
 import type { SortCriterion, SortDirection } from "#web/utils/sort-entries.ts";
 import type { ContextMenuPosition, ContextMenuTriggerEvent } from "#web/utils/use-context-menu.ts";
 import type { ViewMode } from "#web/utils/use-view-preferences.ts";
@@ -114,7 +115,7 @@ export const FileBrowserContent = ({
       />
       {isDropzoneActive && (
         <div className={styles.dropzoneOverlay}>
-          {`Drop files to upload to ${currentPath === "" ? "root" : currentPath}`}
+          {`Drop files to upload to ${describeDirectoryLabel(currentPath)}`}
         </div>
       )}
       {searchResults !== null ? (

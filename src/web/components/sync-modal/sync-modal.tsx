@@ -13,7 +13,8 @@ import type { OperationScope } from "#utils/operation-scope.ts";
 import type { BatchDiff } from "#web/requests/diff/fetch.ts";
 import * as api from "#web/requests/index.ts";
 import { buildSyncDiffRows, type DiffRowKind, filterRowsByKind } from "#web/utils/diff-rows.ts";
-import { describeScopedTitle } from "#web/utils/scope-title.ts";
+import { describeDirectoryLabel, describeScopedTitle } from "#web/utils/scope-title.ts";
+import { toggleSetMember } from "#web/utils/toggle-set-member.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
@@ -27,7 +28,7 @@ export interface SyncModalProps {
 
 export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): JSX.Element => {
   const [scope, setScope] = useState<OperationScope>("folder");
-  const directoryLabel = currentPath === "" ? "root" : currentPath;
+  const directoryLabel = describeDirectoryLabel(currentPath);
 
   const {
     data: diff,
@@ -38,17 +39,7 @@ export const SyncModal = ({ currentPath, onClose, onApplied }: SyncModalProps): 
   const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<DiffRowKind>>(new Set());
 
   const toggleKind = (kind: DiffRowKind): void => {
-    setHiddenKinds((current) => {
-      const next = new Set(current);
-
-      if (next.has(kind)) {
-        next.delete(kind);
-      } else {
-        next.add(kind);
-      }
-
-      return next;
-    });
+    setHiddenKinds((current) => toggleSetMember(current, kind));
   };
 
   const changeRows = useMemo(() => (diff ? buildSyncDiffRows(diff) : []), [diff]);

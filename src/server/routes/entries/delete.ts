@@ -23,8 +23,7 @@ export const deleteEntry = async (rootDir: string, requestedPath: string): Promi
 
   await fs.rm(absolutePath, { recursive: true, force: false });
 
-  // "relativePath" may be a file or a directory: remove the exact match and
-  // every path nested under it in one statement.
+  // The path may be a file or a directory, so the exact match and every nested path go in one statement.
   const descendantLikePattern = `${relativePath}/%`;
 
   await db

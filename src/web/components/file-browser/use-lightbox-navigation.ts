@@ -21,10 +21,7 @@ export interface UseLightboxNavigationResult {
   handleLightboxDelete: (entry: DirectoryEntry) => void;
 }
 
-// The URL is the single source of truth for "which file is open": the
-// lightbox entry is derived fresh every render from deepLinkedFileName
-// (parsed from the route) instead of being tracked as separate React state
-// that then needs to be kept in sync with the address bar.
+// The URL is the single source of truth for the open file, so the entry is derived, not stored in state.
 export const useLightboxNavigation = ({
   directoryPath,
   deepLinkedFileName,

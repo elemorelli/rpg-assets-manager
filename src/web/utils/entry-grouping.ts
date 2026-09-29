@@ -1,5 +1,5 @@
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
-import { classifyPreviewKind } from "#utils/preview.ts";
+import { classifyPreviewKind, type PreviewKind } from "#utils/preview.ts";
 
 export type GroupCriterion = "none" | "tag" | "type";
 
@@ -11,17 +11,13 @@ export interface EntryGroup {
 const DIRECTORIES_LABEL = "Directories";
 const UNTAGGED_LABEL = "Untagged";
 
-const TYPE_GROUP_LABELS: Record<ReturnType<typeof classifyPreviewKind>, string> = {
+const TYPE_GROUP_LABELS: Record<PreviewKind, string> = {
   image: "Images",
   audio: "Audio",
   unsupported: "Other",
 };
 
-const TYPE_GROUP_ORDER: ReturnType<typeof classifyPreviewKind>[] = [
-  "image",
-  "audio",
-  "unsupported",
-];
+const TYPE_GROUP_ORDER: PreviewKind[] = ["image", "audio", "unsupported"];
 
 const groupFilesByTag = (files: DirectoryEntry[]): EntryGroup[] => {
   const entriesByTag = new Map<string, DirectoryEntry[]>();
@@ -53,7 +49,7 @@ const groupFilesByTag = (files: DirectoryEntry[]): EntryGroup[] => {
 };
 
 const groupFilesByType = (files: DirectoryEntry[]): EntryGroup[] => {
-  const entriesByKind = new Map<ReturnType<typeof classifyPreviewKind>, DirectoryEntry[]>();
+  const entriesByKind = new Map<PreviewKind, DirectoryEntry[]>();
 
   for (const file of files) {
     const kind = classifyPreviewKind(file.name);

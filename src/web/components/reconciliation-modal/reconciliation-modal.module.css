@@ -16,11 +16,12 @@
 }
 
 .missingDestination {
-  color: var(--color-sync-new);
+  color: var(--color-danger);
+  text-decoration: line-through;
 }
 
 .missingSource {
-  color: var(--color-sync-renamed);
+  color: var(--color-sync-new);
 }
 
 .differs {

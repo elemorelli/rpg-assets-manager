@@ -1,9 +1,9 @@
-import { type JSX, useEffect, useState } from "react";
+import { type JSX, type ReactNode, useEffect } from "react";
 
 import { Button } from "#web/components/button/button.tsx";
+import { CancelJobButton } from "#web/components/cancel-job-button/cancel-job-button.tsx";
 import { Modal } from "#web/components/modal/modal.tsx";
 import { ProgressModal } from "#web/components/progress-modal/progress-modal.tsx";
-import { cancelJob } from "#web/requests/index.ts";
 import { computeEtaSeconds } from "#web/utils/job-eta.ts";
 import { type JobDisplayState } from "#web/utils/job-progress-state.ts";
 import { iconForJobType } from "#web/utils/job-type-icon.ts";
@@ -15,22 +15,42 @@ const SUCCESS_AUTO_DISMISS_MS = 4000;
 
 const IDLE: JobDisplayState = { kind: "idle" };
 
-// Only job types whose own operation actually checks the abort signal it's
-// given may offer cancellation; see runTrackedJob's cancellable option.
-// Note: "reconcile" is also cancellable, but it never reaches this component
-// at all (see JOB_TYPES_WITH_DEDICATED_MODAL below) since its own dedicated
-// modal, ReconciliationModal, offers the cancel button instead.
+// Only types whose operation checks the abort signal; reconcile is cancellable but has its own modal.
 const CANCELLABLE_JOB_TYPES = new Set(["rescan", "convert"]);
 
-// These job types render their own dedicated modal (e.g. ReconciliationModal)
-// that already shows live progress and the final result, so this global
-// overlay must stay out of the way rather than stacking a second modal on
-// top of it.
+// These types show progress and results in their own modal, so this overlay must not stack on top.
 const JOB_TYPES_WITH_DEDICATED_MODAL = new Set(["reconcile"]);
 
 type RunningState = Extract<JobDisplayState, { kind: "running" }>;
 
 const runningTitle = (state: RunningState): string => `${state.type}: ${state.stage}`;
+
+interface JobOutcomeModalProps {
+  type: string;
+  outcome: string;
+  onDismiss: () => void;
+  children: ReactNode;
+}
+
+const JobOutcomeModal = ({
+  type,
+  outcome,
+  onDismiss,
+  children,
+}: JobOutcomeModalProps): JSX.Element => (
+  <Modal
+    title={`${type}: ${outcome}`}
+    icon={iconForJobType(type)}
+    onClose={onDismiss}
+    footer={
+      <Button variant="secondary" onClick={onDismiss}>
+        Dismiss
+      </Button>
+    }
+    size="sm">
+    {children}
+  </Modal>
+);
 
 export interface JobProgressProps {
   onJobSucceeded?: (type: string) => void;
@@ -38,7 +58,6 @@ export interface JobProgressProps {
 
 export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Element | null => {
   const [displayState, setDisplayState] = useJobStream(onJobSucceeded);
-  const [isCancelling, setIsCancelling] = useState<boolean>(false);
 
   useEffect(() => {
     if (displayState.kind !== "succeeded") {
@@ -54,13 +73,6 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
     setDisplayState(IDLE);
   };
 
-  const handleCancel = (): void => {
-    setIsCancelling(true);
-    cancelJob()
-      .catch(() => {})
-      .finally(() => setIsCancelling(false));
-  };
-
   if (displayState.kind === "idle") {
     return null;
   }
@@ -70,19 +82,13 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
   }
 
   if (displayState.kind === "running") {
-    const eta = displayState.indeterminate
-      ? null
-      : computeEtaSeconds(
-          displayState.done,
-          displayState.total,
-          displayState.startedAt,
-          Date.now(),
-        );
-    const cancelButton = CANCELLABLE_JOB_TYPES.has(displayState.type) && (
-      <Button variant="secondary" onClick={handleCancel} disabled={isCancelling}>
-        {isCancelling ? "Cancelling…" : "Cancel"}
-      </Button>
+    const eta = computeEtaSeconds(
+      displayState.done,
+      displayState.total,
+      displayState.startedAt,
+      Date.now(),
     );
+    const cancelButton = CANCELLABLE_JOB_TYPES.has(displayState.type) && <CancelJobButton />;
 
     return (
       <ProgressModal
@@ -98,49 +104,28 @@ export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Elem
     );
   }
 
-  const dismissButton = (
-    <Button variant="secondary" onClick={handleDismiss}>
-      Dismiss
-    </Button>
-  );
-
   if (displayState.kind === "succeeded") {
     return (
-      <Modal
-        title={`${displayState.type}: completed`}
-        icon={iconForJobType(displayState.type)}
-        onClose={handleDismiss}
-        footer={dismissButton}
-        size="sm">
+      <JobOutcomeModal type={displayState.type} outcome="completed" onDismiss={handleDismiss}>
         <span>Operation completed successfully.</span>
-      </Modal>
+      </JobOutcomeModal>
     );
   }
 
   if (displayState.kind === "cancelled") {
     return (
-      <Modal
-        title={`${displayState.type}: cancelled`}
-        icon={iconForJobType(displayState.type)}
-        onClose={handleDismiss}
-        footer={dismissButton}
-        size="sm">
+      <JobOutcomeModal type={displayState.type} outcome="cancelled" onDismiss={handleDismiss}>
         <span>Operation cancelled.</span>
-      </Modal>
+      </JobOutcomeModal>
     );
   }
 
   return (
-    <Modal
-      title={`${displayState.type}: failed`}
-      icon={iconForJobType(displayState.type)}
-      onClose={handleDismiss}
-      footer={dismissButton}
-      size="sm">
+    <JobOutcomeModal type={displayState.type} outcome="failed" onDismiss={handleDismiss}>
       <div className={styles.error}>
         <span>{displayState.error}</span>
         {displayState.detail !== undefined && <span>{`File: ${displayState.detail}`}</span>}
       </div>
-    </Modal>
+    </JobOutcomeModal>
   );
 };

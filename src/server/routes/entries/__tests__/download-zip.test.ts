@@ -11,7 +11,7 @@ import { UnsafePathError } from "#server/utils/safe-path.ts";
 import { createZipStream, downloadZipHandler, resolveZipSelections } from "../download-zip.ts";
 
 // Every zip archive starts with a local file header: "PK\x03\x04".
-const ZIP_SIGNATURE = Buffer.from([0x50, 0x4b, 0x03, 0x04]);
+const ZIP_SIGNATURE = Buffer.from("504b0304", "hex");
 
 describe("resolveZipSelections", () => {
   let tempDir = "";

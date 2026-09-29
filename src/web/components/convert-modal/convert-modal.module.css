@@ -4,10 +4,6 @@
   gap: var(--spacing-sm);
 }
 
-.section + .section {
-  margin-top: var(--spacing-md);
-}
-
 .summary {
   margin: 0;
   font-size: var(--font-size-sm);

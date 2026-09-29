@@ -12,10 +12,7 @@ import { pathExists } from "#server/utils/path-exists.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { getParentPath } from "#utils/directory-path.ts";
 
-// Moves "relativeFrom" onto "relativeTo" where "relativeTo" is known not to
-// exist yet: a single rename plus a bulk path rewrite for the subtree. Used
-// both for a plain (non-conflicting) move and, recursively, for each
-// non-conflicting child encountered while merging directories.
+// Moves onto a destination known not to exist: one rename plus a bulk path rewrite for the subtree.
 const moveSubtree = async (
   rootDir: string,
   relativeFrom: string,
@@ -31,9 +28,7 @@ const moveSubtree = async (
   await fs.mkdir(path.dirname(absoluteTo), { recursive: true });
   await fs.rename(absoluteFrom, absoluteTo);
 
-  // "relativeFrom" may be a file or a directory: rewrite the exact match (a
-  // moved file) and every path nested under it (a moved directory's contents)
-  // in one statement, since a rename never touches file content or hash.
+  // Rewrites the exact match and every nested path in one statement; a rename never changes content or hash.
   const descendantPrefix = `${relativeFrom}/`;
   const descendantLikePattern = `${descendantPrefix}%`;
   const descendantSubstringStart = descendantPrefix.length + 1;
@@ -72,11 +67,7 @@ const moveSubtree = async (
   await applyAggregateDelta(getParentPath(relativeTo), contribution);
 };
 
-// Replaces the file at "relativeTo" with the file at "relativeFrom". The
-// destination's own asset row is dropped first so the source row can take
-// over its path, and the destination parent's aggregate only nets the size
-// difference: one file is leaving and one is arriving, so the file count
-// there does not change.
+// Drops the destination row so the source can take its path; the parent aggregate only nets the size delta.
 const overwriteFile = async (
   rootDir: string,
   relativeFrom: string,
@@ -115,11 +106,7 @@ const overwriteFile = async (
   });
 };
 
-// Merges every entry directly under "relativeFrom" into "relativeTo",
-// recursing into "mergeInto" for names that already exist at the
-// destination and taking the fast "moveSubtree" path for names that don't.
-// Once every child has been moved out, "relativeFrom" is an empty directory
-// on disk and a zeroed-out row in the database, both of which are dropped.
+// Merges each child into the destination, recursing on name clashes, then drops the emptied source.
 const mergeDirectories = async (
   rootDir: string,
   relativeFrom: string,
@@ -144,9 +131,7 @@ const mergeDirectories = async (
   await db.deleteFrom("directories").where("path", "=", relativeFrom).execute();
 };
 
-// Dispatches an overwrite onto an existing destination: same-type entries
-// overwrite (a file replaces a file) or merge (a directory merges into a
-// directory), while a type mismatch is always a conflict, overwrite or not.
+// Same-type entries overwrite (file) or merge (directory); a type mismatch is always a conflict.
 const mergeInto = async (
   rootDir: string,
   relativeFrom: string,

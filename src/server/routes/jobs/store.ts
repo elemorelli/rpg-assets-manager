@@ -24,9 +24,7 @@ export const setCurrentJobController = (value: CurrentJobController | null): voi
   currentJobController = value;
 };
 
-// Only aborts jobs that were registered as cancellable: a job whose
-// operation never checks the signal would otherwise still get labeled
-// "cancelled" once aborted, even though it ran to completion unaffected.
+// Only cancellable jobs abort: one that ignores the signal would be labeled cancelled while it ran to completion.
 export const cancelCurrentJob = (): boolean => {
   if (currentJobController === null || !currentJobController.cancellable) {
     return false;

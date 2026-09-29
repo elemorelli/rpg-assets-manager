@@ -9,13 +9,10 @@ export type DirectoryTree = Record<string, DirectoryEntry[]>;
 
 const ROOT_PATH = "";
 
-// The tree only ever needs directory names and a pending-sync flag, so it
-// skips everything `listDirectory` computes per file (fs.stat, tags, sizes):
-// that per-file work is what turned "load the sidebar" into hundreds of slow
-// per-folder requests when the tree used to fetch itself node by node.
+// Skips the per-file work of listDirectory (stat, tags, sizes), which made the sidebar load slowly.
 export const buildDirectoryTree = async (rootDir: string): Promise<DirectoryTree> => {
   const [entries, localIndex, remoteIndex] = await Promise.all([
-    walkDirectory(rootDir, { recursive: true }),
+    walkDirectory(rootDir),
     getLocalHashIndex(),
     getRemoteHashIndex(),
   ]);
@@ -49,4 +46,4 @@ export const buildDirectoryTree = async (rootDir: string): Promise<DirectoryTree
 };
 
 export const directoryTreeHandler = (assetTreeRoot: string) =>
-  withHttpErrorHandling(async () => await buildDirectoryTree(assetTreeRoot));
+  withHttpErrorHandling(() => buildDirectoryTree(assetTreeRoot));

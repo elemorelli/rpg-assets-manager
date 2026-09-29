@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import * as api from "#web/requests/index.ts";
 import { buildBreadcrumbs, ROOT_PATH } from "#web/utils/breadcrumbs.ts";
+import { toggleSetMember } from "#web/utils/toggle-set-member.ts";
 
 import type { TreeChildrenState } from "./tree-view-context.ts";
 
@@ -17,10 +18,7 @@ export const useTreeData = (activePath: string, refreshToken: number): UseTreeDa
   const [childrenByPath, setChildrenByPath] = useState<Record<string, TreeChildrenState>>({});
   const previousRefreshTokenRef = useRef<number>(refreshToken);
 
-  // The tree only needs directory names and pending-sync flags, so it's
-  // fetched whole in one lightweight request instead of one call per node:
-  // fetching per-node used to fan out into thousands of concurrent requests
-  // across the whole asset tree, one per folder.
+  // Fetched whole in one request, since per-node fetching fanned out into thousands of requests.
   const loadTree = useCallback((): void => {
     setChildrenByPath((prev) => ({ ...prev, [ROOT_PATH]: "loading" }));
 
@@ -38,9 +36,7 @@ export const useTreeData = (activePath: string, refreshToken: number): UseTreeDa
     loadTree();
   }, [loadTree]);
 
-  // A change elsewhere (sync, rescan, reconcile, convert) can flip a node's
-  // hasPendingSync flag or add/remove entries, but the tree is only fetched
-  // once, so it goes stale until told otherwise via this token.
+  // The tree is fetched once, so changes elsewhere (sync, rescan, convert) refresh it through this token.
   useEffect(() => {
     if (refreshToken === previousRefreshTokenRef.current) {
       return;
@@ -65,17 +61,7 @@ export const useTreeData = (activePath: string, refreshToken: number): UseTreeDa
   }, [activePath]);
 
   const handleToggle = (path: string): void => {
-    setExpandedPaths((prev) => {
-      const next = new Set(prev);
-
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-
-      return next;
-    });
+    setExpandedPaths((prev) => toggleSetMember(prev, path));
   };
 
   const handleRetry = (): void => {

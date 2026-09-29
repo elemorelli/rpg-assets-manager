@@ -8,6 +8,7 @@ import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { JobProgress } from "#utils/job.ts";
 import type { OperationScope } from "#utils/operation-scope.ts";
 
 import { getConversionPlan } from "./plan.ts";
@@ -19,22 +20,14 @@ export interface ConversionSummary {
   overwritten: number;
 }
 
-export interface ConversionProgress {
-  done: number;
-  total: number;
-  detail?: string;
-}
-
-// Candidate paths are relative to the (possibly folder-scoped) rootDir used for
-// I/O, but the assets table always keys rows by path from the asset tree root,
-// so callers pass dbPathPrefix to translate between the two.
+// Candidates are relative to the possibly folder-scoped rootDir, but asset rows key by tree-root path.
 const toDbPath = (dbPathPrefix: string, relativePath: string): string =>
   path.posix.join(dbPathPrefix, relativePath);
 
 export const convertAssets = async (
   rootDir: string,
   dbPathPrefix: string,
-  onProgress?: (progress: ConversionProgress) => void,
+  onProgress?: (progress: JobProgress) => void,
   recursive = true,
   signal?: AbortSignal,
 ): Promise<ConversionSummary> => {
@@ -44,10 +37,7 @@ export const convertAssets = async (
   let overwritten = 0;
 
   for (const [index, candidate] of plan.candidates.entries()) {
-    // Each candidate is fully converted, including its DB write, before the
-    // next one starts, so stopping here always leaves a consistent state:
-    // whatever ran to this point stays done, and the rest is picked up by
-    // the next convert pass.
+    // Each candidate finishes its DB write before the next starts, so stopping here leaves a consistent state.
     if (signal?.aborted) {
       break;
     }

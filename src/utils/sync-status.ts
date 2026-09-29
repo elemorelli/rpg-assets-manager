@@ -7,8 +7,7 @@ export interface RemoteIndexRecord {
 
 export interface LocalIndexRecord {
   hash: string;
-  // Set when the file was converted to a new format: the hash it had before
-  // conversion, so it can still be matched against its old remote entry.
+  // Hash before a format conversion, so the file still matches its old remote entry.
   previousHash?: string;
 }
 
@@ -221,11 +220,7 @@ export const computeDirectorySyncStatus = ({
   };
 };
 
-// Marks every ancestor of a changed path as pending in a single pass over the
-// changed paths, rather than the per-directory approach above (one scan of
-// every changed path per directory listed). That's cheap enough for a single
-// directory's listing, but too slow to repeat for every directory in the
-// whole tree at once.
+// One pass over changed paths marks every ancestor, since a per-directory scan is too slow tree-wide.
 export const computeTreeWidePendingDirectoryPaths = (
   localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,

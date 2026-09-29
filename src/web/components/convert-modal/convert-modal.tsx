@@ -9,7 +9,7 @@ import type { OperationScope } from "#utils/operation-scope.ts";
 import type { ConversionPlan } from "#web/requests/convert/plan/conversion.ts";
 import * as api from "#web/requests/index.ts";
 import { buildConversionDiffRows } from "#web/utils/diff-rows.ts";
-import { describeScopedTitle } from "#web/utils/scope-title.ts";
+import { describeDirectoryLabel, describeScopedTitle } from "#web/utils/scope-title.ts";
 import { useBusyAction } from "#web/utils/use-busy-action.ts";
 import { useFetchOnMount } from "#web/utils/use-fetch-on-mount.ts";
 
@@ -27,7 +27,7 @@ export const ConvertModal = ({
   onConverted,
 }: ConvertModalProps): JSX.Element => {
   const [scope, setScope] = useState<OperationScope>("folder");
-  const directoryLabel = currentPath === "" ? "root" : currentPath;
+  const directoryLabel = describeDirectoryLabel(currentPath);
 
   const {
     data: plan,

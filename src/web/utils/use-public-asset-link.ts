@@ -34,17 +34,22 @@ export const usePublicAssetLink = (relativePath: string): UsePublicAssetLinkResu
       return;
     }
 
-    void navigator.clipboard.writeText(publicAssetUrl).then(() => {
-      setCopied(true);
+    void navigator.clipboard
+      .writeText(publicAssetUrl)
+      .then(() => {
+        setCopied(true);
 
-      if (copyResetTimeoutRef.current) {
-        clearTimeout(copyResetTimeoutRef.current);
-      }
+        if (copyResetTimeoutRef.current) {
+          clearTimeout(copyResetTimeoutRef.current);
+        }
 
-      copyResetTimeoutRef.current = setTimeout(() => {
-        setCopied(false);
-      }, COPY_FEEDBACK_DURATION_MS);
-    });
+        copyResetTimeoutRef.current = setTimeout(() => {
+          setCopied(false);
+        }, COPY_FEEDBACK_DURATION_MS);
+      })
+      .catch(() => {
+        // A denied clipboard permission only skips the "Copied" feedback, nothing else depends on it.
+      });
   };
 
   return { publicAssetUrl, copied, handleCopyLink };

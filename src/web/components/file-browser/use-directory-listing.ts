@@ -41,15 +41,12 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
     }
   }, []);
 
-  // Track the path our own navigation last loaded, distinct from same-path
-  // refreshes triggered elsewhere (rename, upload, rescan...), which should
-  // keep showing stale entries while they reload to avoid a skeleton flash.
+  // Tracks our own last navigation, so same-path refreshes keep stale entries instead of flashing a skeleton.
   const lastNavigatedPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (lastNavigatedPathRef.current !== currentPath) {
-      // Entries belong to the previous path; combining them with the new
-      // one produces broken preview URLs until the fresh listing arrives.
+      // Entries from the previous path would build broken preview URLs until the new listing arrives.
       setEntries([]);
     }
 
@@ -57,9 +54,7 @@ export const useDirectoryListing = (currentPath: string): UseDirectoryListingRes
     loadDirectory(currentPath);
   }, [currentPath, loadDirectory]);
 
-  // The table's own listing and the sidebar tree keep separate caches (see
-  // use-tree-data.ts), so every mutation that can change what a directory
-  // contains needs to refresh both, not just the one the user is looking at.
+  // The listing and the sidebar tree cache separately, so every mutation must refresh both.
   const refreshAfterMutation = useCallback(
     async (path: string): Promise<void> => {
       await loadDirectory(path);

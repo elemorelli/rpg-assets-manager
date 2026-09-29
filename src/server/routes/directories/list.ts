@@ -7,6 +7,7 @@ import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesPathQuery } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 import { computeDirectorySyncStatus } from "#utils/sync-status.ts";
 
 const fetchTagsForPaths = async (paths: string[]): Promise<Map<string, string[]>> => {
@@ -58,7 +59,7 @@ export const listDirectory = async (
   const fileEntries = await Promise.all(
     fileDirents.map(async (dirent) => {
       const stat = await fs.stat(path.join(absoluteDir, dirent.name));
-      const relativePath = relativeDir ? `${relativeDir}/${dirent.name}` : dirent.name;
+      const relativePath = joinRelativePath(relativeDir, dirent.name);
 
       const entry: DirectoryEntry = {
         name: dirent.name,
@@ -76,14 +77,12 @@ export const listDirectory = async (
     getLocalHashIndex(),
     getRemoteHashIndex(),
     fetchDirectorySizesForPaths(
-      directoryEntries.map((directory) =>
-        relativeDir ? `${relativeDir}/${directory.name}` : directory.name,
-      ),
+      directoryEntries.map((directory) => joinRelativePath(relativeDir, directory.name)),
     ),
   ]);
 
   for (const directory of directoryEntries) {
-    const directoryPath = relativeDir ? `${relativeDir}/${directory.name}` : directory.name;
+    const directoryPath = joinRelativePath(relativeDir, directory.name);
     const size = sizeByDirectoryPath.get(directoryPath);
 
     if (size !== undefined) {

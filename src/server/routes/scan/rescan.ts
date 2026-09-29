@@ -7,6 +7,7 @@ import { db } from "#server/db/index.ts";
 import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/recompute-all.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
+import type { JobProgress } from "#utils/job.ts";
 
 import { classifyHashedCandidates, type HashedCandidate } from "./classify.ts";
 import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
@@ -19,16 +20,12 @@ export interface RescanSummary {
   renamed: number;
 }
 
-export interface RescanProgress {
-  done: number;
-  total: number;
-  detail?: string;
-}
+const EMPTY_RESCAN_SUMMARY: RescanSummary = { hashed: 0, unchanged: 0, removed: 0, renamed: 0 };
 
 export const rescanAssets = async (
   rootDir: string,
   options: RescanPlanOptions = {},
-  onProgress?: (progress: RescanProgress) => void,
+  onProgress?: (progress: JobProgress) => void,
   signal?: AbortSignal,
 ): Promise<RescanSummary> => {
   const previousRows = await db
@@ -44,12 +41,9 @@ export const rescanAssets = async (
 
   const current = await walkAssetTree(rootDir, {}, signal);
 
-  // The walk above can stop early once cancelled, leaving `current` missing
-  // files that are actually still on disk. Bailing out here, before that
-  // truncated list ever reaches computeRescanPlan, avoids misreading those
-  // files as removed.
+  // A cancelled walk returns a truncated list, which would otherwise misreport files still on disk as removed.
   if (signal?.aborted) {
-    return { hashed: 0, unchanged: 0, removed: 0, renamed: 0 };
+    return EMPTY_RESCAN_SUMMARY;
   }
 
   const plan = computeRescanPlan(previous, current, options);
@@ -58,11 +52,9 @@ export const rescanAssets = async (
   const hashedCandidates: HashedCandidate[] = [];
 
   for (const [index, file] of plan.toHash.entries()) {
-    // Cancellation only ever lands here, before any DB write happens below,
-    // so stopping mid-loop is always a clean no-op: nothing to roll back,
-    // and the next rescan will pick these files back up from scratch.
+    // Cancellation lands before any DB write, so stopping here needs no rollback.
     if (signal?.aborted) {
-      return { hashed: 0, unchanged: 0, removed: 0, renamed: 0 };
+      return EMPTY_RESCAN_SUMMARY;
     }
 
     onProgress?.({ done: index, total, detail: file.relativePath });

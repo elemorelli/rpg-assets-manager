@@ -11,6 +11,12 @@ export interface JobState {
 
 export type CurrentJob = JobState | null;
 
+export interface JobProgress {
+  done: number;
+  total: number;
+  detail?: string;
+}
+
 export const startJob = (type: string, stage: string, total: number): JobState => ({
   type,
   stage,

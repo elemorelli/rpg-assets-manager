@@ -42,9 +42,7 @@ export const FileBrowser = (): JSX.Element => {
   const navigate = useNavigate();
 
   const rawPath = params["*"] ?? "";
-  // The route doesn't distinguish a folder from a deep-linked file; a
-  // previewable last segment (e.g. .../map.webp) is treated as one, which
-  // splits it into the directory to list and the entry to open.
+  // A previewable last segment in the route is a deep-linked file, split into its directory and entry.
   const { directoryPath: currentPath, deepLinkedFileName } = parseBrowserPath(rawPath);
 
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
@@ -86,9 +84,7 @@ export const FileBrowser = (): JSX.Element => {
     navigate(`/${path}`);
   };
 
-  // The lightbox reflects itself in the URL on every open/prev/next/rename,
-  // so paging through a folder with `push` would flood browser history;
-  // `replace` keeps each step from adding a new entry.
+  // The lightbox updates the URL on every step, so replace keeps paging from flooding browser history.
   const navigateReplacingLightboxPath = (path: string): void => {
     navigate(`/${path}`, { replace: true });
   };
