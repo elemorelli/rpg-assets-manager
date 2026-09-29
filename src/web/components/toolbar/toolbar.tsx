@@ -14,16 +14,18 @@ import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
 import { DirectoryActionsMenu } from "#components/directory-actions-menu/directory-actions-menu.tsx";
 import { SegmentedButton } from "#components/segmented-group/segmented-button.tsx";
 import { SegmentedGroup } from "#components/segmented-group/segmented-group.tsx";
+import type { RescanRequest } from "#utils/rescan.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
 
 import { PendingBadge } from "./pending-badge.tsx";
+import { RescanConfirmDialog } from "./rescan-confirm-dialog.tsx";
 import styles from "./toolbar.module.css";
 
 export interface ToolbarProps {
   busy: boolean;
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
-  onRescan: (forceRehash: boolean) => void;
+  onRescan: (request: RescanRequest) => void;
   onConvert: () => void;
   onSync: () => void;
   onReconcile: () => void;
@@ -48,14 +50,14 @@ export const Toolbar = ({
   const [confirmingRehash, setConfirmingRehash] = useState<boolean>(false);
   const directoryActionsMenu = useContextMenu();
 
-  const handleConfirmRescan = (): void => {
+  const handleConfirmRescan = (request: RescanRequest): void => {
     setConfirmingRescan(false);
-    onRescan(false);
+    onRescan(request);
   };
 
   const handleConfirmRehash = (): void => {
     setConfirmingRehash(false);
-    onRescan(true);
+    onRescan({ forceRehash: true });
   };
 
   return (
@@ -96,11 +98,7 @@ export const Toolbar = ({
         />
       </SegmentedGroup>
       {confirmingRescan && (
-        <ConfirmDialog
-          title="Rescan"
-          icon={faArrowsRotate}
-          message="Rescan the collection for new, changed, or removed files. This can take a while for large collections. Continue?"
-          confirmLabel="Rescan now"
+        <RescanConfirmDialog
           onConfirm={handleConfirmRescan}
           onCancel={() => setConfirmingRescan(false)}
         />

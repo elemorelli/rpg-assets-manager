@@ -30,7 +30,32 @@ describe("Toolbar", () => {
 
     await user.click(screen.getByRole("button", { name: "Rescan now" }));
 
-    expect(onRescan).toHaveBeenCalledWith(false);
+    expect(onRescan).toHaveBeenCalledWith({ removeEmptyFolders: false });
+  });
+
+  it("asks the rescan to remove empty folders when the checkbox is ticked", async () => {
+    const user = userEvent.setup();
+    const onRescan = vi.fn();
+
+    render(
+      <Toolbar
+        busy={false}
+        onCreateDirectory={vi.fn()}
+        onUploadFile={vi.fn()}
+        onRescan={onRescan}
+        onConvert={vi.fn()}
+        onSync={vi.fn()}
+        onReconcile={vi.fn()}
+        onFoundry={vi.fn()}
+        hasPendingFoundryMacro={false}
+        hasPendingSyncChanges={false}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Rescan" }));
+    await user.click(screen.getByRole("checkbox", { name: "Also remove empty folders" }));
+    await user.click(screen.getByRole("button", { name: "Rescan now" }));
+
+    expect(onRescan).toHaveBeenCalledWith({ removeEmptyFolders: true });
   });
 
   it("does not trigger a rescan when the confirmation is cancelled", async () => {
@@ -83,7 +108,7 @@ describe("Toolbar", () => {
 
     await user.click(screen.getByRole("button", { name: "Rehash" }));
 
-    expect(onRescan).toHaveBeenCalledWith(true);
+    expect(onRescan).toHaveBeenCalledWith({ forceRehash: true });
   });
 
   it("does not trigger a full rehash when the warning is cancelled", async () => {

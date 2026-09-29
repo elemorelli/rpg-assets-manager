@@ -4,6 +4,7 @@ import { SearchBox } from "#components/search-box/search-box.tsx";
 import { TagFilter } from "#components/tag-filter/tag-filter.tsx";
 import { Toolbar } from "#components/toolbar/toolbar.tsx";
 import { ViewControls } from "#components/view-controls/view-controls.tsx";
+import type { RescanRequest } from "#utils/rescan.ts";
 import type { GroupCriterion } from "#web/utils/entry-grouping.ts";
 import type { SortCriterion, SortDirection } from "#web/utils/sort-entries.ts";
 import type { ViewMode } from "#web/utils/use-view-preferences.ts";
@@ -14,7 +15,7 @@ export interface FileBrowserControlsProps {
   busy: boolean;
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
-  onRescan: (forceRehash: boolean) => void;
+  onRescan: (request: RescanRequest) => void;
   onConvert: () => void;
   onSync: () => void;
   onReconcile: () => void;

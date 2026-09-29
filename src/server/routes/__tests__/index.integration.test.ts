@@ -60,7 +60,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
     });
 
     expect(firstRun.statusCode).toBe(HTTP_STATUS.ok);
-    expect(firstRun.json()).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0 });
+    expect(firstRun.json()).toEqual({
+      hashed: 1,
+      unchanged: 0,
+      removed: 0,
+      renamed: 0,
+      removedFolders: 0,
+    });
 
     const secondRun = await app.inject({
       method: "POST",
@@ -68,7 +74,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       headers: { cookie: sessionCookie },
     });
 
-    expect(secondRun.json()).toEqual({ hashed: 0, unchanged: 1, removed: 0, renamed: 0 });
+    expect(secondRun.json()).toEqual({
+      hashed: 0,
+      unchanged: 1,
+      removed: 0,
+      renamed: 0,
+      removedFolders: 0,
+    });
   });
 
   it("re-hashes every file via POST /api/rescan when forceRehash is true", async () => {
@@ -90,7 +102,13 @@ describe("core routes (requires DATABASE_URL pointing at a running Postgres)", (
       headers: { cookie: sessionCookie },
     });
 
-    expect(forced.json()).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0 });
+    expect(forced.json()).toEqual({
+      hashed: 1,
+      unchanged: 0,
+      removed: 0,
+      renamed: 0,
+      removedFolders: 0,
+    });
   });
 
   it("publishes rescan progress to the job store and clears it on completion via POST /api/rescan", async () => {

@@ -71,7 +71,13 @@ describe("FileBrowser", () => {
     moveEntryMock.mockResolvedValue(undefined);
     uploadFileMock.mockResolvedValue(undefined);
     searchEntriesMock.mockResolvedValue([]);
-    rescanMock.mockResolvedValue({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
+    rescanMock.mockResolvedValue({
+      hashed: 0,
+      unchanged: 0,
+      removed: 0,
+      renamed: 0,
+      removedFolders: 0,
+    });
     fetchFoundryWorldsMock.mockResolvedValue([]);
     fetchDiffMock.mockResolvedValue({
       added: [],
@@ -286,7 +292,7 @@ describe("FileBrowser", () => {
     await user.click(screen.getByRole("button", { name: "Rescan now" }));
 
     await waitFor(() => {
-      expect(rescanMock).toHaveBeenCalledWith(false);
+      expect(rescanMock).toHaveBeenCalledWith({ removeEmptyFolders: false });
     });
   });
 
@@ -300,7 +306,7 @@ describe("FileBrowser", () => {
     await user.click(screen.getByRole("button", { name: "Rehash" }));
 
     await waitFor(() => {
-      expect(rescanMock).toHaveBeenCalledWith(true);
+      expect(rescanMock).toHaveBeenCalledWith({ forceRehash: true });
     });
   });
 

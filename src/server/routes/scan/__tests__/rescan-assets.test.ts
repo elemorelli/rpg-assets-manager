@@ -54,7 +54,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir);
 
-    expect(summary).toEqual({ hashed: 2, unchanged: 0, removed: 0, renamed: 0 });
+    expect(summary).toEqual({ hashed: 2, unchanged: 0, removed: 0, renamed: 0, removedFolders: 0 });
   });
 
   it("leaves a file alone when its size and mtime still match the previous snapshot", async () => {
@@ -73,7 +73,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir);
 
-    expect(summary).toEqual({ hashed: 0, unchanged: 1, removed: 0, renamed: 0 });
+    expect(summary).toEqual({ hashed: 0, unchanged: 1, removed: 0, renamed: 0, removedFolders: 0 });
   });
 
   it("re-hashes every file when forceRehash is set, even if size and mtime match", async () => {
@@ -92,7 +92,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir, { forceRehash: true });
 
-    expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0 });
+    expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 0, removedFolders: 0 });
   });
 
   it("removes a previous snapshot whose path no longer exists on disk", async () => {
@@ -104,7 +104,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir);
 
-    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 1, renamed: 0 });
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 1, renamed: 0, removedFolders: 0 });
     expect(mock.deleteFrom).toHaveBeenCalledWith("assets");
   });
 
@@ -122,7 +122,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir);
 
-    expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 1 });
+    expect(summary).toEqual({ hashed: 1, unchanged: 0, removed: 0, renamed: 1, removedFolders: 0 });
     expect(mock.updateTable("assets").set).toHaveBeenCalledWith(
       expect.objectContaining({ path: `${PREFIX}after.png` }),
     );
@@ -166,7 +166,7 @@ describe("rescanAssets", () => {
       controller.signal,
     );
 
-    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0, removedFolders: 0 });
     expect(progressUpdates).toHaveLength(0);
     expect(mock.insertInto).not.toHaveBeenCalledWith("assets");
   });
@@ -191,7 +191,7 @@ describe("rescanAssets", () => {
 
     const summary = await rescanAssets(tempDir, {}, undefined, controller.signal);
 
-    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0 });
+    expect(summary).toEqual({ hashed: 0, unchanged: 0, removed: 0, renamed: 0, removedFolders: 0 });
     expect(mock.deleteFrom).not.toHaveBeenCalledWith("assets");
     expect(mock.updateTable).not.toHaveBeenCalledWith("assets");
   });
@@ -207,6 +207,34 @@ describe("rescanAssets", () => {
     expect(progressUpdates[0]).toMatchObject({ done: 0, total: 2 });
     expect(progressUpdates[0]?.detail).toMatch(/\.png$/);
     expect(progressUpdates.at(-1)).toEqual({ done: 2, total: 2 });
+  });
+
+  it("removes empty folders, nested ones included, when removeEmptyFolders is set", async () => {
+    await fs.writeFile(path.join(tempDir, "rescan-test", "stays.png"), "stays");
+    await fs.mkdir(path.join(tempDir, "rescan-test", "old", "nested"), { recursive: true });
+
+    const summary = await rescanAssets(tempDir, { removeEmptyFolders: true });
+
+    expect(summary.removedFolders).toBe(2);
+    await expect(fs.readdir(path.join(tempDir, "rescan-test"))).resolves.toEqual(["stays.png"]);
+  });
+
+  it("leaves empty folders alone when removeEmptyFolders is not set", async () => {
+    await fs.mkdir(path.join(tempDir, "rescan-test", "old"));
+
+    const summary = await rescanAssets(tempDir);
+
+    expect(summary.removedFolders).toBe(0);
+    await expect(fs.readdir(path.join(tempDir, "rescan-test"))).resolves.toEqual(["old"]);
+  });
+
+  it("never removes the tree root, even when the whole tree is empty", async () => {
+    await fs.rm(path.join(tempDir, "rescan-test"), { recursive: true });
+
+    const summary = await rescanAssets(tempDir, { removeEmptyFolders: true });
+
+    expect(summary.removedFolders).toBe(0);
+    await expect(fs.readdir(tempDir)).resolves.toEqual([]);
   });
 
   it("invalidates the cached local hash index after a rescan removes a deleted file", async () => {

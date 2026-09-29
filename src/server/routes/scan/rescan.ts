@@ -8,17 +8,24 @@ import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/re
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import type { JobProgress } from "#utils/job.ts";
-import type { RescanSummary } from "#utils/rescan.ts";
+import type { RescanRequest, RescanSummary } from "#utils/rescan.ts";
 
 import { classifyHashedCandidates, type HashedCandidate } from "./classify.ts";
-import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
+import { computeRescanPlan } from "./plan.ts";
+import { removeEmptyDirectories } from "./remove-empty-directories.ts";
 import { walkAssetTree } from "./walk-asset-tree.ts";
 
-const EMPTY_RESCAN_SUMMARY: RescanSummary = { hashed: 0, unchanged: 0, removed: 0, renamed: 0 };
+const EMPTY_RESCAN_SUMMARY: RescanSummary = {
+  hashed: 0,
+  unchanged: 0,
+  removed: 0,
+  renamed: 0,
+  removedFolders: 0,
+};
 
 export const rescanAssets = async (
   rootDir: string,
-  options: RescanPlanOptions = {},
+  options: RescanRequest = {},
   onProgress?: (progress: JobProgress) => void,
   signal?: AbortSignal,
 ): Promise<RescanSummary> => {
@@ -108,6 +115,8 @@ export const rescanAssets = async (
     await db.deleteFrom("assets").where("path", "=", removedPath).execute();
   }
 
+  const removedFolders = options.removeEmptyFolders ? await removeEmptyDirectories(rootDir) : 0;
+
   await recomputeAllDirectoryAggregates(rootDir);
 
   invalidateLocalHashIndex();
@@ -117,23 +126,22 @@ export const rescanAssets = async (
     unchanged: plan.unchanged.length,
     removed: removedPaths.length,
     renamed: renamePairs.length,
+    removedFolders,
   };
 };
 
-interface RescanRequestBody {
-  forceRehash?: boolean;
-}
-
 export const rescanHandler = (assetTreeRoot: string) => async (request: FastifyRequest) => {
-  const body = request.body as RescanRequestBody | undefined;
+  const body = request.body as RescanRequest | undefined;
   const forceRehash = body?.forceRehash ?? false;
+  const removeEmptyFolders = body?.removeEmptyFolders ?? false;
   const stage = forceRehash ? "full rehash" : "hashing";
 
   return runTrackedJob(
     "rescan",
     stage,
     "rescan failed",
-    (onProgress, signal) => rescanAssets(assetTreeRoot, { forceRehash }, onProgress, signal),
+    (onProgress, signal) =>
+      rescanAssets(assetTreeRoot, { forceRehash, removeEmptyFolders }, onProgress, signal),
     { cancellable: true },
   );
 };

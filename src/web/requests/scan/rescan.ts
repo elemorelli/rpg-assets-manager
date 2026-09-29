@@ -1,6 +1,12 @@
-import type { RescanSummary } from "#utils/rescan.ts";
+import type { RescanRequest, RescanSummary } from "#utils/rescan.ts";
 
 import { jsonInit, requestJson } from "../http-client.ts";
 
-export const rescan = (forceRehash = false): Promise<RescanSummary> =>
-  requestJson<RescanSummary>("/api/rescan", jsonInit("POST", { forceRehash }));
+export const rescan = (request: RescanRequest = {}): Promise<RescanSummary> => {
+  const body = {
+    forceRehash: request.forceRehash ?? false,
+    removeEmptyFolders: request.removeEmptyFolders ?? false,
+  };
+
+  return requestJson<RescanSummary>("/api/rescan", jsonInit("POST", body));
+};

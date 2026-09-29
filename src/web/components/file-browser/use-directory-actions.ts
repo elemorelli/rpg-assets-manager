@@ -1,5 +1,6 @@
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
+import type { RescanRequest } from "#utils/rescan.ts";
 import * as api from "#web/requests/index.ts";
 
 export interface UseDirectoryActionsParams {
@@ -10,7 +11,7 @@ export interface UseDirectoryActionsParams {
 
 export interface UseDirectoryActionsResult {
   handleCreateDirectory: (name: string) => void;
-  handleRescan: (forceRehash: boolean) => void;
+  handleRescan: (request: RescanRequest) => void;
   handleRename: (entry: DirectoryEntry, newName: string) => void;
   handleDelete: (entry: DirectoryEntry) => void;
   handleTreeRename: (path: string, newName: string) => void;
@@ -28,8 +29,8 @@ export const useDirectoryActions = ({
     runAction(() => api.createDirectory(joinRelativePath(currentPath, name)));
   };
 
-  const handleRescan = (forceRehash: boolean): void => {
-    runAction(() => api.rescan(forceRehash).then(() => undefined));
+  const handleRescan = (request: RescanRequest): void => {
+    runAction(() => api.rescan(request).then(() => undefined));
   };
 
   const handleRename = (entry: DirectoryEntry, newName: string): void => {
