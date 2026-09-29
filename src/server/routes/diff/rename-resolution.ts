@@ -1,8 +1,9 @@
+import type { AmbiguousRenameWarning, RenamePair } from "#utils/diff.ts";
+
 export interface OrphanCandidate {
   path: string;
   hash: string;
-  // Set on a local candidate whose content was converted to a new format: the
-  // hash it had before conversion, so it still groups with its old remote row.
+  // Pre-conversion hash of a converted local file, so it still groups with its old remote row.
   previousHash?: string;
 }
 
@@ -10,17 +11,6 @@ interface HashGroup {
   hash: string;
   local: OrphanCandidate[];
   remote: OrphanCandidate[];
-}
-
-export interface RenamePair {
-  oldPath: string;
-  newPath: string;
-}
-
-interface AmbiguousRenameWarning {
-  hash: string;
-  localPaths: string[];
-  remotePaths: string[];
 }
 
 interface RenameResolution {

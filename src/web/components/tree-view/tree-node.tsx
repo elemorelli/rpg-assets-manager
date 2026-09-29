@@ -5,6 +5,7 @@ import type { JSX } from "react";
 
 import { Button } from "#components/button/button.tsx";
 import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
+import { InlineRenameInput } from "#components/inline-rename-input/inline-rename-input.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { useContextMenu } from "#web/utils/use-context-menu.ts";
@@ -94,15 +95,14 @@ export const TreeNode = ({ path, name, depth, hasPendingSync }: TreeNodeProps): 
           <span className={styles.toggle} aria-hidden="true" />
         )}
         {isRenaming ? (
-          <input
-            ref={renameInputRef}
-            type="text"
+          <InlineRenameInput
+            name={name}
             className={styles.renameInput}
-            aria-label={`Rename ${name}`}
-            value={renameDraft}
-            onChange={handleRenameDraftChange}
-            onKeyDown={handleRenameKeyDown}
-            onBlur={commitRename}
+            renameDraft={renameDraft}
+            renameInputRef={renameInputRef}
+            commitRename={commitRename}
+            handleRenameKeyDown={handleRenameKeyDown}
+            handleRenameDraftChange={handleRenameDraftChange}
           />
         ) : (
           <button

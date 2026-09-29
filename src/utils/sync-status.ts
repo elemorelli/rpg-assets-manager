@@ -1,4 +1,6 @@
 import { getParentPath } from "./directory-path.ts";
+import { pathMatchesScope } from "./operation-scope.ts";
+import { toDirectoryPrefix } from "./paths.ts";
 
 export interface RemoteIndexRecord {
   hash: string;
@@ -37,10 +39,7 @@ interface RenameMatches {
   consumedRemotePaths: Set<string>;
 }
 
-const buildDirectoryPrefix = (relativeDir: string): string =>
-  relativeDir === "" ? "" : `${relativeDir}/`;
-
-export const findChangedPaths = (
+const findChangedPaths = (
   localIndex: Map<string, LocalIndexRecord>,
   remoteIndex: Map<string, RemoteIndexRecord>,
 ): Set<string> => {
@@ -145,23 +144,25 @@ const findFileSyncStatuses = (
 
 const findDeletedFiles = (
   fileNames: string[],
-  directoryPrefix: string,
+  relativeDir: string,
   remoteIndex: Map<string, RemoteIndexRecord>,
   consumedRemotePaths: Set<string>,
 ): DeletedFileEntry[] => {
   const fileNamesOnDisk = new Set(fileNames);
+  const directoryPrefix = toDirectoryPrefix(relativeDir);
   const deletedFiles: DeletedFileEntry[] = [];
 
   for (const [remotePath, remoteRecord] of remoteIndex) {
-    if (!remotePath.startsWith(directoryPrefix) || consumedRemotePaths.has(remotePath)) {
+    const isDirectChildFile = pathMatchesScope(remotePath, "folder", relativeDir);
+
+    if (!isDirectChildFile || consumedRemotePaths.has(remotePath)) {
       continue;
     }
 
-    const remainder = remotePath.slice(directoryPrefix.length);
-    const isDirectChildFile = remainder !== "" && !remainder.includes("/");
+    const fileName = remotePath.slice(directoryPrefix.length);
 
-    if (isDirectChildFile && !fileNamesOnDisk.has(remainder)) {
-      deletedFiles.push({ name: remainder, size: remoteRecord.size });
+    if (!fileNamesOnDisk.has(fileName)) {
+      deletedFiles.push({ name: fileName, size: remoteRecord.size });
     }
   }
 
@@ -196,7 +197,7 @@ export const computeDirectorySyncStatus = ({
   localIndex,
   remoteIndex,
 }: ComputeDirectorySyncStatusInput): DirectorySyncStatus => {
-  const directoryPrefix = buildDirectoryPrefix(relativeDir);
+  const directoryPrefix = toDirectoryPrefix(relativeDir);
   const changedPaths = findChangedPaths(localIndex, remoteIndex);
   const { renamedLocalPaths, consumedRemotePaths } = findRenameMatches(
     changedPaths,
@@ -215,7 +216,7 @@ export const computeDirectorySyncStatus = ({
     pendingFileNames,
     newFileNames,
     renamedFileNames,
-    deletedFiles: findDeletedFiles(fileNames, directoryPrefix, remoteIndex, consumedRemotePaths),
+    deletedFiles: findDeletedFiles(fileNames, relativeDir, remoteIndex, consumedRemotePaths),
     pendingDirectoryNames: findPendingDirectoryNames(directoryNames, directoryPrefix, changedPaths),
   };
 };

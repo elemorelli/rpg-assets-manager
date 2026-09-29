@@ -4,9 +4,10 @@ import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesScopedPathQuery } from "#server/routes/files/path-body.ts";
 import { walkAssetTree } from "#server/routes/scan/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { ConversionPlan } from "#utils/conversion.ts";
 import type { OperationScope } from "#utils/operation-scope.ts";
 
-import { type ConversionPlan, computeConversionPlan } from "./conversion.ts";
+import { computeConversionPlan } from "./conversion.ts";
 
 export const getConversionPlan = async (
   rootDir: string,

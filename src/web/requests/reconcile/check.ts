@@ -1,12 +1,6 @@
-import { requestJson } from "../http-client.ts";
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 
-export interface RcloneCheckResult {
-  matchCount: number;
-  missingOnSource: string[];
-  missingOnDestination: string[];
-  differs: string[];
-  errors: string[];
-}
+import { requestJson } from "../http-client.ts";
 
 export const reconcile = (): Promise<RcloneCheckResult> =>
   requestJson<RcloneCheckResult>("/api/reconcile", { method: "POST" });

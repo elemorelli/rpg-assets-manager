@@ -5,9 +5,7 @@ export const uploadFile = async (
   file: File,
   overwrite = false,
 ): Promise<void> => {
-  // @fastify/multipart only has non-file fields available once it reaches the
-  // file part, so path/overwrite must be appended before file or the server
-  // reads them as unset.
+  // @fastify/multipart only sees fields sent before the file part, so path and overwrite go first.
   const form = new FormData();
   form.set("path", targetDirPath);
   form.set("overwrite", String(overwrite));

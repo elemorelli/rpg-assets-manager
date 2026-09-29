@@ -3,13 +3,10 @@ import { vi } from "vitest";
 
 import type { DB } from "#server/db/index.ts";
 
-// Kysely's query builder is a fluent chain (selectFrom().select().where().execute()).
-// Every non-terminal chain method below returns the same leaf proxy by default, so a
-// test only has to configure the terminal execute-family call it actually cares about.
+// Non-terminal chain methods return the same leaf proxy, so a test only configures the execute call it cares about.
 const TERMINAL_METHODS = new Set(["execute", "executeTakeFirst", "executeTakeFirstOrThrow"]);
 
-// `any` here is deliberate: this stub trades away static chain-shape checking so every
-// fluent call resolves at runtime without per-link wiring in every test.
+// Deliberate `any`: trading chain-shape checking for fluent calls that resolve without per-link wiring.
 type MockFn = ReturnType<typeof vi.fn<(...args: any[]) => any>>;
 
 const createLeafProxy = (): unknown => {
@@ -89,8 +86,7 @@ const createRootProxy = (): unknown => {
   return rootProxy;
 };
 
-// where() predicate callbacks (the eb.or(...) pattern in delete-entry.ts / move-entry.ts)
-// are intentionally not evaluated here; that's covered by *.integration.test.ts instead.
+// where() predicate callbacks (eb.or in entries/delete.ts) are not evaluated here; integration tests cover them.
 
 export type MockDb = Record<string, MockFn>;
 

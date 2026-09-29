@@ -4,14 +4,10 @@ import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import type { FilesScopedPathQuery } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 import { type OperationScope, pathMatchesScope } from "#utils/operation-scope.ts";
 
-import {
-  buildHashGroups,
-  type OrphanCandidate,
-  type RenamePair,
-  resolveRenames,
-} from "./rename-resolution.ts";
+import { buildHashGroups, type OrphanCandidate, resolveRenames } from "./rename-resolution.ts";
 
 interface PairedRow {
   local_path: string | null;
@@ -21,18 +17,10 @@ interface PairedRow {
   remote_hash: string | null;
 }
 
-export interface BatchDiffResult {
-  added: string[];
-  deleted: string[];
-  modified: string[];
-  renamed: RenamePair[];
-  ambiguousWarnings: { hash: string; localPaths: string[]; remotePaths: string[] }[];
-}
-
 export const computeBatchDiff = async (
   scope: OperationScope = "all",
   relativeDir = "",
-): Promise<BatchDiffResult> => {
+): Promise<BatchDiff> => {
   const { rows } = await sql<PairedRow>`
     SELECT
       a.path AS local_path,

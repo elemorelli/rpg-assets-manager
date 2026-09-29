@@ -1,17 +1,5 @@
+import type { ConversionCandidate, ConversionKind, ConversionPlan } from "#utils/conversion.ts";
 import { getParentPath } from "#utils/directory-path.ts";
-
-export type ConversionKind = "image" | "audio";
-
-export interface ConversionCandidate {
-  relativePath: string;
-  kind: ConversionKind;
-  destinationPath: string;
-  willOverwrite: boolean;
-}
-
-export interface ConversionPlan {
-  candidates: ConversionCandidate[];
-}
 
 const IMAGE_SOURCE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png"]);
 const AUDIO_SOURCE_EXTENSIONS = new Set([".mp3", ".wav", ".flac", ".aif", ".aiff", ".m4a"]);

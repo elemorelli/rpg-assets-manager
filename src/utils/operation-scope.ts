@@ -1,7 +1,6 @@
-export type OperationScope = "folder" | "subtree" | "all";
+import { toDirectoryPrefix } from "./paths.ts";
 
-const buildScopePrefix = (relativeDir: string): string =>
-  relativeDir === "" ? "" : `${relativeDir}/`;
+export type OperationScope = "folder" | "subtree" | "all";
 
 export const pathMatchesScope = (
   path: string,
@@ -12,7 +11,7 @@ export const pathMatchesScope = (
     return true;
   }
 
-  const prefix = buildScopePrefix(relativeDir);
+  const prefix = toDirectoryPrefix(relativeDir);
 
   if (!path.startsWith(prefix)) {
     return false;

@@ -1,8 +1,10 @@
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import * as api from "#web/requests/index.ts";
-import { describeError } from "#web/utils/describe-error.ts";
 import type { Message } from "#web/utils/message.ts";
+import { runBatchOperation } from "#web/utils/run-batch-operation.ts";
+
+const describeEntry = (entry: DirectoryEntry): string => entry.name;
 
 export interface UseMassEntryActionsParams {
   currentPath: string;
@@ -29,27 +31,13 @@ export const useMassEntryActions = ({
     verb: string,
     action: (entry: DirectoryEntry) => Promise<void>,
   ): Promise<void> => {
-    let successCount = 0;
-    let resultMessage: Message | null = null;
+    const { errorMessage } = await runBatchOperation(entries, action, describeEntry, verb);
 
-    for (const entry of entries) {
-      try {
-        await action(entry);
-        successCount += 1;
-      } catch (error) {
-        resultMessage = {
-          severity: "error",
-          summary: `${verb} ${successCount} of ${entries.length} before failing on "${entry.name}": ${describeError(error)}`,
-        };
-        break;
-      }
-    }
-
-    // refreshDirectory clears the message on entry, so refresh before surfacing resultMessage or the refresh wipes it.
+    // refreshDirectory clears the message on entry, so refresh before surfacing the error or the refresh wipes it.
     await refreshDirectory(currentPath);
 
-    if (resultMessage) {
-      setMessage(resultMessage);
+    if (errorMessage) {
+      setMessage({ severity: "error", summary: errorMessage });
     }
   };
 

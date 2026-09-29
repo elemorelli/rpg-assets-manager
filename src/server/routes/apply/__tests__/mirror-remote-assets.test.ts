@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 
-import type { BatchDiffResult } from "../../diff/index.ts";
 import { mirrorRemoteAssets, planRemoteAssetChanges } from "../mirror-remote-assets.ts";
 
-const emptyDiff: BatchDiffResult = {
+const emptyDiff: BatchDiff = {
   added: [],
   modified: [],
   deleted: [],
@@ -126,7 +126,7 @@ describe("mirrorRemoteAssets", () => {
       { path: "renamed-to.png", size: 2, hash: "hash-renamed" },
     ]);
 
-    const diff: BatchDiffResult = {
+    const diff: BatchDiff = {
       added: ["added.png"],
       modified: [],
       deleted: ["deleted.png"],
@@ -156,7 +156,7 @@ describe("mirrorRemoteAssets", () => {
     const mockDb = createMockDb();
     const mock = mockDb as unknown as MockDb;
 
-    const diff: BatchDiffResult = {
+    const diff: BatchDiff = {
       added: [],
       modified: [],
       deleted: ["deleted.png"],

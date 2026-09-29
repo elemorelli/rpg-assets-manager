@@ -1,11 +1,13 @@
 import { getLocalHashIndex, getRemoteHashIndex } from "#server/asset-index-cache/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { walkDirectory } from "#server/utils/walk-directory.ts";
-import { type DirectoryEntry, sortDirectoryEntries } from "#utils/directory-listing.ts";
+import {
+  type DirectoryEntry,
+  type DirectoryTree,
+  sortDirectoryEntries,
+} from "#utils/directory-listing.ts";
 import { getParentPath } from "#utils/directory-path.ts";
 import { computeTreeWidePendingDirectoryPaths } from "#utils/sync-status.ts";
-
-export type DirectoryTree = Record<string, DirectoryEntry[]>;
 
 const ROOT_PATH = "";
 

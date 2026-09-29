@@ -1,8 +1,7 @@
 import type { Kysely, Selectable } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
-
-import type { BatchDiffResult } from "../diff/index.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 
 type AssetLookup = Pick<Selectable<DB["assets"]>, "size" | "hash">;
 type AssetSize = AssetLookup["size"];
@@ -23,7 +22,7 @@ const lookupAssetOrThrow = (assetsByPath: Map<string, AssetLookup>, path: string
 };
 
 export const planRemoteAssetChanges = (
-  diff: BatchDiffResult,
+  diff: BatchDiff,
   assetsByPath: Map<string, AssetLookup>,
 ): RemoteAssetOperation[] => {
   const operations: RemoteAssetOperation[] = [];
@@ -53,7 +52,7 @@ export const planRemoteAssetChanges = (
   return operations;
 };
 
-export const mirrorRemoteAssets = async (trx: Kysely<DB>, diff: BatchDiffResult): Promise<void> => {
+export const mirrorRemoteAssets = async (trx: Kysely<DB>, diff: BatchDiff): Promise<void> => {
   const pathsNeedingAssetLookup = [
     ...diff.added,
     ...diff.modified,

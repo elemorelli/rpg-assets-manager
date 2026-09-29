@@ -3,9 +3,7 @@ export interface FixtureFile {
   content: Buffer;
 }
 
-// A minimal valid 1x1 PNG. Real decoders stop reading at the IEND chunk, so
-// appending a few unique trailing bytes (see uniqueContent) keeps each file
-// byte-distinguishable for hashing without corrupting the image.
+// Decoders stop at the IEND chunk, so uniqueContent's trailing bytes make each file hash distinct without corrupting it.
 const TINY_PNG = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
   "base64",
@@ -41,8 +39,7 @@ export const buildFixtureTreeManifest = (): FixtureFile[] => {
     content: uniqueContent(relativePath.endsWith(".wav") ? SILENT_WAV : TINY_PNG, relativePath),
   }));
 
-  // Deliberate duplicate: identical bytes at two different paths, the way
-  // the real tree has the same card art reused across directories.
+  // Deliberate duplicate at two paths, like card art reused across directories in the real tree.
   const duplicateContent = uniqueContent(TINY_PNG, "duplicate-pair");
 
   files.push(

@@ -8,6 +8,7 @@ export const CancelJobButton = (): JSX.Element => {
 
   const handleCancel = (): void => {
     setIsCancelling(true);
+
     api
       .cancelJob()
       .catch(() => {

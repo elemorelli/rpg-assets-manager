@@ -1,5 +1,7 @@
+export type JobType = "sync" | "rescan" | "reconcile" | "convert";
+
 export interface JobState {
-  type: string;
+  type: JobType;
   stage: string;
   detail?: string;
   done: number;
@@ -17,7 +19,7 @@ export interface JobProgress {
   detail?: string;
 }
 
-export const startJob = (type: string, stage: string, total: number): JobState => ({
+export const startJob = (type: JobType, stage: string, total: number): JobState => ({
   type,
   stage,
   detail: undefined,

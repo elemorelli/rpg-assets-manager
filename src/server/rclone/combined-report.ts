@@ -1,10 +1,4 @@
-export interface RcloneCheckResult {
-  matchCount: number;
-  missingOnSource: string[];
-  missingOnDestination: string[];
-  differs: string[];
-  errors: string[];
-}
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 
 const COMBINED_REPORT_LINE_PATTERN = /^([=\-+*!]) (.*)$/;
 

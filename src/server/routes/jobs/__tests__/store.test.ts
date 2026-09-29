@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import type { JobState } from "#utils/job.ts";
+
 import {
   cancelCurrentJob,
   getCurrentJob,
@@ -19,7 +21,14 @@ describe("jobStore", () => {
   });
 
   it("returns the job that was set", () => {
-    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, startedAt: 0, error: null };
+    const job: JobState = {
+      type: "rescan",
+      stage: "hashing",
+      done: 0,
+      total: 10,
+      startedAt: 0,
+      error: null,
+    };
 
     setCurrentJob(job);
 
@@ -29,7 +38,14 @@ describe("jobStore", () => {
   it("notifies subscribers when the job changes", () => {
     const listener = vi.fn();
     subscribeToJobChanges(listener);
-    const job = { type: "rescan", stage: "hashing", done: 0, total: 10, startedAt: 0, error: null };
+    const job: JobState = {
+      type: "rescan",
+      stage: "hashing",
+      done: 0,
+      total: 10,
+      startedAt: 0,
+      error: null,
+    };
 
     setCurrentJob(job);
 

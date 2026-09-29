@@ -10,6 +10,7 @@ import { Lightbox } from "#components/lightbox/lightbox.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { ProgressModal } from "#components/progress-modal/progress-modal.tsx";
 import { TreeView } from "#components/tree-view/tree-view.tsx";
+import type { JobType } from "#utils/job.ts";
 import { joinRelativePath } from "#utils/paths.ts";
 import { isPreviewableEntry, parseBrowserPath } from "#utils/preview.ts";
 import { groupEntries } from "#web/utils/entry-grouping.ts";
@@ -35,7 +36,12 @@ import { useMassEntryActions } from "./use-mass-entry-actions.ts";
 import { useSearchAndTagFilter } from "./use-search-and-tag-filter.ts";
 import { useSyncPendingStatus } from "./use-sync-pending-status.ts";
 
-const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY = new Set(["sync", "rescan", "reconcile", "convert"]);
+const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY: ReadonlySet<JobType> = new Set([
+  "sync",
+  "rescan",
+  "reconcile",
+  "convert",
+]);
 
 export const FileBrowser = (): JSX.Element => {
   const params = useParams();
@@ -89,7 +95,7 @@ export const FileBrowser = (): JSX.Element => {
     navigate(`/${path}`, { replace: true });
   };
 
-  const handleJobSucceeded = (type: string): void => {
+  const handleJobSucceeded = (type: JobType): void => {
     if (!JOB_TYPES_THAT_REFRESH_THE_DIRECTORY.has(type)) {
       return;
     }

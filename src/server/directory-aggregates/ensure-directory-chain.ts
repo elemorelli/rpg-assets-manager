@@ -1,4 +1,5 @@
 import { db } from "#server/db/index.ts";
+import { joinRelativePath } from "#utils/paths.ts";
 
 const findDirectoryId = async (directoryPath: string): Promise<number | undefined> => {
   const row = await db
@@ -50,7 +51,7 @@ export const ensureDirectoryChain = async (directoryPath: string): Promise<numbe
   let currentPath = "";
 
   for (const segment of segments) {
-    currentPath = currentPath === "" ? segment : `${currentPath}/${segment}`;
+    currentPath = joinRelativePath(currentPath, segment);
     directoryId = await ensureDirectoryRow(currentPath, directoryId);
   }
 

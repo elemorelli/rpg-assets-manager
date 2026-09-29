@@ -1,7 +1,7 @@
 import { assetsPublicBaseUrl } from "#server/cloudflare/index.ts";
 import { db } from "#server/db/index.ts";
 import { generateMacro } from "#server/routes/apply/macro/generate.ts";
-import type { RenamePair } from "#server/routes/diff/index.ts";
+import type { RenamePair } from "#utils/diff.ts";
 
 import { collapseRenameChain } from "./collapse-rename-chain.ts";
 

@@ -1,5 +1,6 @@
 import { type JSX, type ReactNode, useEffect } from "react";
 
+import type { JobType } from "#utils/job.ts";
 import { Button } from "#web/components/button/button.tsx";
 import { CancelJobButton } from "#web/components/cancel-job-button/cancel-job-button.tsx";
 import { Modal } from "#web/components/modal/modal.tsx";
@@ -16,17 +17,17 @@ const SUCCESS_AUTO_DISMISS_MS = 4000;
 const IDLE: JobDisplayState = { kind: "idle" };
 
 // Only types whose operation checks the abort signal; reconcile is cancellable but has its own modal.
-const CANCELLABLE_JOB_TYPES = new Set(["rescan", "convert"]);
+const CANCELLABLE_JOB_TYPES: ReadonlySet<JobType> = new Set(["rescan", "convert"]);
 
 // These types show progress and results in their own modal, so this overlay must not stack on top.
-const JOB_TYPES_WITH_DEDICATED_MODAL = new Set(["reconcile"]);
+const JOB_TYPES_WITH_DEDICATED_MODAL: ReadonlySet<JobType> = new Set(["reconcile"]);
 
 type RunningState = Extract<JobDisplayState, { kind: "running" }>;
 
 const runningTitle = (state: RunningState): string => `${state.type}: ${state.stage}`;
 
 interface JobOutcomeModalProps {
-  type: string;
+  type: JobType;
   outcome: string;
   onDismiss: () => void;
   children: ReactNode;
@@ -53,7 +54,7 @@ const JobOutcomeModal = ({
 );
 
 export interface JobProgressProps {
-  onJobSucceeded?: (type: string) => void;
+  onJobSucceeded?: (type: JobType) => void;
 }
 
 export const JobProgress = ({ onJobSucceeded }: JobProgressProps = {}): JSX.Element | null => {

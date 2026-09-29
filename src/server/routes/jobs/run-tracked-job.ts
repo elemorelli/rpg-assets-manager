@@ -3,6 +3,7 @@ import {
   cancelJob,
   failJob,
   type JobProgress,
+  type JobType,
   startJob,
   toErrorMessage,
 } from "#utils/job.ts";
@@ -15,7 +16,7 @@ interface RunTrackedJobOptions {
 }
 
 export const runTrackedJob = async <T>(
-  type: string,
+  type: JobType,
   stage: string,
   failureMessage: string,
   operation: (onProgress: (progress: JobProgress) => void, signal: AbortSignal) => Promise<T>,

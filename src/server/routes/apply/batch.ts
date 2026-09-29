@@ -9,9 +9,11 @@ import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
 import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { ApplyBatchSummary, ApplyOutcome } from "#utils/apply.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 import type { OperationScope } from "#utils/operation-scope.ts";
 
-import { type BatchDiffResult, computeBatchDiff } from "../diff/index.ts";
+import { computeBatchDiff } from "../diff/index.ts";
 import { runTrackedJob } from "../jobs/index.ts";
 import { dryRun } from "./config.ts";
 import { mirrorRemoteAssets } from "./mirror-remote-assets.ts";
@@ -26,17 +28,6 @@ export interface ApplyProgress {
   detail?: string;
 }
 
-export type ApplyOutcome = Exclude<SyncRunOutcome, "in_progress" | "failed">;
-
-export interface ApplyBatchSummary {
-  added: number;
-  modified: number;
-  deleted: number;
-  renamed: number;
-  outcome: ApplyOutcome;
-  syncRunId: number;
-}
-
 export interface ApplyBatchDependencies {
   rootDir: string;
   destinationRoot: string;
@@ -48,7 +39,7 @@ export interface ApplyBatchDependencies {
 }
 
 const summaryFor = (
-  diff: BatchDiffResult,
+  diff: BatchDiff,
   outcome: ApplyOutcome,
   syncRunId: number,
 ): ApplyBatchSummary => ({

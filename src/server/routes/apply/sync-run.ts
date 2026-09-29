@@ -1,12 +1,11 @@
 import { db } from "#server/db/index.ts";
-
-import type { BatchDiffResult } from "../diff/index.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 
 export type SyncRunOutcome = "in_progress" | "applied" | "dry_run" | "failed";
 
 export const buildFinishSyncRunUpdate = (
   outcome: Exclude<SyncRunOutcome, "in_progress" | "failed">,
-  diff: BatchDiffResult,
+  diff: BatchDiff,
   purgeUrls: string[],
   finishedAt: Date,
 ) => ({
@@ -32,7 +31,7 @@ export const startSyncRun = async (): Promise<number> => {
 export const finishSyncRun = async (
   syncRunId: number,
   outcome: Exclude<SyncRunOutcome, "in_progress" | "failed">,
-  diff: BatchDiffResult,
+  diff: BatchDiff,
   purgeUrls: string[],
 ): Promise<void> => {
   const update = buildFinishSyncRunUpdate(outcome, diff, purgeUrls, new Date());

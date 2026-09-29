@@ -1,6 +1,5 @@
 import { rcloneCopy, rcloneDelete, rcloneMoveTo } from "#server/rclone/index.ts";
-
-import type { BatchDiffResult } from "../diff/index.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 
 interface RcloneOperationsProgress {
   done: number;
@@ -8,13 +7,13 @@ interface RcloneOperationsProgress {
   detail?: string;
 }
 
-export const countRcloneSteps = (diff: BatchDiffResult): number =>
+export const countRcloneSteps = (diff: BatchDiff): number =>
   diff.added.length + diff.modified.length + diff.deleted.length + diff.renamed.length;
 
 export const runRcloneOperations = async (
   rootDir: string,
   destinationRoot: string,
-  diff: BatchDiffResult,
+  diff: BatchDiff,
   onProgress?: (progress: RcloneOperationsProgress) => void,
 ): Promise<void> => {
   const toCopy = [...diff.added, ...diff.modified];

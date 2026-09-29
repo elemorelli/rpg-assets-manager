@@ -4,7 +4,8 @@ import clsx from "clsx";
 import type { JSX } from "react";
 
 import { AssetPreview } from "#components/asset-preview/asset-preview.tsx";
-import { EntryContextMenu } from "#components/entry-context-menu/entry-context-menu.tsx";
+import { DirectoryEntryContextMenu } from "#components/entry-context-menu/directory-entry-context-menu.tsx";
+import { InlineRenameInput } from "#components/inline-rename-input/inline-rename-input.tsx";
 import { TagBadgeList } from "#components/tag-badge-list/tag-badge-list.tsx";
 import { joinRelativePath } from "#utils/paths.ts";
 import type { DirectoryEntryItemProps } from "#web/utils/directory-entry-item-props.ts";
@@ -66,9 +67,6 @@ export const DirectoryGridTile = ({
     onOpenLightbox,
   });
 
-  const entriesForContextMenu =
-    isSelected && selectedEntries.length > 1 ? selectedEntries : [entry];
-
   return (
     <div
       draggable={!isDeleted}
@@ -104,15 +102,14 @@ export const DirectoryGridTile = ({
         )}
       </div>
       {isRenaming ? (
-        <input
-          ref={renameInputRef}
-          type="text"
+        <InlineRenameInput
+          name={entry.name}
           className={styles.renameInput}
-          aria-label={`Rename ${entry.name}`}
-          value={renameDraft}
-          onChange={handleRenameDraftChange}
-          onKeyDown={handleRenameKeyDown}
-          onBlur={commitRename}
+          renameDraft={renameDraft}
+          renameInputRef={renameInputRef}
+          commitRename={commitRename}
+          handleRenameKeyDown={handleRenameKeyDown}
+          handleRenameDraftChange={handleRenameDraftChange}
         />
       ) : entry.type === "directory" ? (
         <button
@@ -136,13 +133,13 @@ export const DirectoryGridTile = ({
       {sizeLabel && <span className={styles.size}>{sizeLabel}</span>}
       {entry.type === "file" && <TagBadgeList tags={entry.tags ?? []} />}
       {!isDeleted && (
-        <EntryContextMenu
+        <DirectoryEntryContextMenu
           entry={entry}
-          relativePath={joinRelativePath(currentPath, entry.name)}
-          selectedEntries={entriesForContextMenu}
-          position={contextMenu.position}
-          onClose={contextMenu.close}
-          onView={onOpenLightbox}
+          currentPath={currentPath}
+          isSelected={isSelected}
+          selectedEntries={selectedEntries}
+          contextMenu={contextMenu}
+          onOpenLightbox={onOpenLightbox}
           onRenameRequested={startRenaming}
           onDelete={onDelete}
           onDeleteMany={onDeleteMany}

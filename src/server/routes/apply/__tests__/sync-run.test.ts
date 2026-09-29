@@ -3,10 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 
 import type { DB } from "#server/db/index.ts";
 import { createMockDb, type MockDb } from "#server/test-utils/mock-db.ts";
+import type { BatchDiff } from "#utils/diff.ts";
 
-import type { BatchDiffResult } from "../../diff/index.ts";
-
-const emptyDiff: BatchDiffResult = {
+const emptyDiff: BatchDiff = {
   added: [],
   modified: [],
   deleted: [],
@@ -36,7 +35,7 @@ const createMock = (): MockDb => {
 
 describe("buildFinishSyncRunUpdate", () => {
   it("counts each kind of change from the diff", () => {
-    const diff: BatchDiffResult = {
+    const diff: BatchDiff = {
       added: ["a.png", "b.png"],
       modified: ["c.png"],
       deleted: [],

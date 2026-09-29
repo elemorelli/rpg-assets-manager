@@ -1,4 +1,5 @@
-import { type RcloneCheckResult, rcloneCheck, rcloneDestination } from "#server/rclone/index.ts";
+import { rcloneCheck, rcloneDestination } from "#server/rclone/index.ts";
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 
 import { runTrackedJob } from "../jobs/index.ts";
 

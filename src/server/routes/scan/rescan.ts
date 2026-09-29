@@ -8,17 +8,11 @@ import { recomputeAllDirectoryAggregates } from "#server/directory-aggregates/re
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import type { JobProgress } from "#utils/job.ts";
+import type { RescanSummary } from "#utils/rescan.ts";
 
 import { classifyHashedCandidates, type HashedCandidate } from "./classify.ts";
 import { computeRescanPlan, type RescanPlanOptions } from "./plan.ts";
 import { walkAssetTree } from "./walk-asset-tree.ts";
-
-export interface RescanSummary {
-  hashed: number;
-  unchanged: number;
-  removed: number;
-  renamed: number;
-}
 
 const EMPTY_RESCAN_SUMMARY: RescanSummary = { hashed: 0, unchanged: 0, removed: 0, renamed: 0 };
 

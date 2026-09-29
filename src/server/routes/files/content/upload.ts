@@ -28,11 +28,7 @@ const createHashingTransform = (hasher: IncrementalHasher): Transform =>
 const isFileAlreadyExistsError = (error: unknown): boolean =>
   error instanceof Error && "code" in error && error.code === "EEXIST";
 
-// Reads and discards whatever is left of the upload stream. A multipart file
-// part sits directly on the incoming HTTP request body: destroying it (which
-// is what an aborted pipeline() does) without first reading it to the end
-// leaves unread bytes on the wire. On a keep-alive connection those bytes get
-// misread as the start of the next request, hanging or breaking it.
+// Unread multipart bytes left on a keep-alive connection get parsed as the next request, so drain before giving up.
 const drainStream = async (stream: UploadableStream): Promise<void> => {
   for await (const _chunk of stream) {
     // discarded
@@ -67,9 +63,7 @@ export const uploadFile = async (
       createWriteStream(absolutePath, { flags: overwrite ? "w" : "wx" }),
     );
   } catch (error) {
-    // Defense in depth for the race where the file is created between the
-    // pathExists() check above and this write: the stream has already been
-    // torn down by pipeline() at this point, so it can't be drained here too.
+    // Covers a file created between the pathExists() check and this write; pipeline() already consumed the stream.
     if (isFileAlreadyExistsError(error)) {
       throw new HttpError("File already exists", HTTP_STATUS.conflict);
     }

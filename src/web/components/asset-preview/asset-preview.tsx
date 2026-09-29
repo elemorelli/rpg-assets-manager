@@ -36,7 +36,7 @@ export const AssetPreview = ({
       <span
         data-size={size}
         aria-label="Directory"
-        className={clsx(styles.directoryIcon, isLarge && styles.directoryIconLarge)}>
+        className={clsx(styles.icon, styles.directoryIcon, isLarge && styles.large)}>
         <FontAwesomeIcon icon={faFolder} />
       </span>
     );
@@ -46,7 +46,7 @@ export const AssetPreview = ({
     return (
       <span
         data-size={size}
-        className={clsx(styles.placeholder, isLarge && styles.placeholderLarge)}
+        className={clsx(styles.placeholder, isLarge && styles.large)}
         aria-label="Deleted file, no preview available"
       />
     );
@@ -60,7 +60,7 @@ export const AssetPreview = ({
         <span
           data-size={size}
           aria-label="Image failed to load"
-          className={clsx(styles.errorIcon, isLarge && styles.errorIconLarge)}>
+          className={clsx(styles.icon, styles.errorIcon, isLarge && styles.large)}>
           <FontAwesomeIcon icon={faFileCircleExclamation} />
         </span>
       );
@@ -85,11 +85,7 @@ export const AssetPreview = ({
         alt={entry.name}
         loading="lazy"
         data-size={size}
-        className={clsx(
-          styles.image,
-          isLarge && styles.imageLarge,
-          isOpenable && styles.imageOpenable,
-        )}
+        className={clsx(styles.image, isLarge && styles.large, isOpenable && styles.imageOpenable)}
         role={isOpenable ? "button" : undefined}
         tabIndex={isOpenable ? 0 : undefined}
         onClick={isOpenable ? handleOpenClick : undefined}
@@ -127,7 +123,12 @@ export const AssetPreview = ({
           aria-label={entry.name}
           role={isOpenable ? "button" : undefined}
           tabIndex={isOpenable ? 0 : undefined}
-          className={clsx(styles.audioIconLarge, isOpenable && styles.audioIconOpenable)}
+          className={clsx(
+            styles.icon,
+            styles.fileIcon,
+            styles.large,
+            isOpenable && styles.audioIconOpenable,
+          )}
           onClick={isOpenable ? handleOpenClick : undefined}
           onKeyDown={isOpenable ? handleOpenKeyDown : undefined}>
           <FontAwesomeIcon icon={faMusic} />
@@ -143,7 +144,7 @@ export const AssetPreview = ({
     <span
       data-size={size}
       aria-label="No preview available"
-      className={clsx(styles.fileIcon, isLarge && styles.fileIconLarge)}>
+      className={clsx(styles.icon, styles.fileIcon, isLarge && styles.large)}>
       <FontAwesomeIcon icon={faFile} />
     </span>
   );

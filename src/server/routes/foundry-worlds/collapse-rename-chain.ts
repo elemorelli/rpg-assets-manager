@@ -1,11 +1,6 @@
-import type { RenamePair } from "#server/routes/diff/index.ts";
+import type { RenamePair } from "#utils/diff.ts";
 
-// A→B followed by B→C must reach the macro as A→C: a document still holding A would
-// otherwise get rewritten to the now-dead B instead of the file's real current path.
-// A path that starts a chain (its old path never appears as anyone's new path) is a
-// root; walking forward from each root and marking every hop "consumed" lets a rare
-// cyclical swap (A→B, B→A, no root at all) fall through untouched instead of being
-// silently dropped.
+// A→B then B→C becomes A→C so documents skip the dead B; walking only from chain roots leaves cyclic swaps untouched.
 export const collapseRenameChain = (pairs: RenamePair[]): RenamePair[] => {
   const newPathByOldPath = new Map(pairs.map((pair) => [pair.oldPath, pair.newPath]));
   const newPaths = new Set(pairs.map((pair) => pair.newPath));

@@ -1,6 +1,6 @@
 import { type Dispatch, type SetStateAction, useEffect, useReducer, useRef, useState } from "react";
 
-import { parseJobEvent } from "#utils/job.ts";
+import { type JobType, parseJobEvent } from "#utils/job.ts";
 import { type JobDisplayState, nextJobDisplayState } from "#web/utils/job-progress-state.ts";
 
 const IDLE: JobDisplayState = { kind: "idle" };
@@ -9,7 +9,7 @@ const ETA_TICK_MS = 1000;
 export type SetJobDisplayState = Dispatch<SetStateAction<JobDisplayState>>;
 
 export const useJobStream = (
-  onSucceeded?: (type: string) => void,
+  onSucceeded?: (type: JobType) => void,
 ): [JobDisplayState, SetJobDisplayState] => {
   const [displayState, setDisplayState] = useState<JobDisplayState>(IDLE);
   const [, tick] = useReducer((count: number) => count + 1, 0);

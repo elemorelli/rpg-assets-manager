@@ -10,6 +10,7 @@ import { type JSX, useState } from "react";
 
 import { Button } from "#components/button/button.tsx";
 import { ConfirmDialog } from "#components/confirm-dialog/confirm-dialog.tsx";
+import { InlineRenameInput } from "#components/inline-rename-input/inline-rename-input.tsx";
 import { TagEditor } from "#components/tag-editor/tag-editor.tsx";
 import type { DirectoryEntry } from "#utils/directory-listing.ts";
 import { formatFileSize } from "#web/utils/format-file-size.ts";
@@ -56,15 +57,14 @@ export const LightboxDetails = ({
     <div className={styles.details}>
       <div className={styles.header}>
         {isRenaming ? (
-          <input
-            ref={renameInputRef}
-            type="text"
+          <InlineRenameInput
+            name={entry.name}
             className={styles.renameInput}
-            aria-label={`Rename ${entry.name}`}
-            value={renameDraft}
-            onChange={handleRenameDraftChange}
-            onKeyDown={handleRenameKeyDown}
-            onBlur={commitRename}
+            renameDraft={renameDraft}
+            renameInputRef={renameInputRef}
+            commitRename={commitRename}
+            handleRenameKeyDown={handleRenameKeyDown}
+            handleRenameDraftChange={handleRenameDraftChange}
           />
         ) : (
           <>

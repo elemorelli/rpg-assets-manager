@@ -1,6 +1,6 @@
-import type { ConversionCandidate } from "#web/requests/convert/plan/conversion.ts";
-import type { BatchDiff } from "#web/requests/diff/fetch.ts";
-import type { RcloneCheckResult } from "#web/requests/reconcile/check.ts";
+import type { ConversionCandidate } from "#utils/conversion.ts";
+import type { BatchDiff } from "#utils/diff.ts";
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 
 export type DiffRowKind = "added" | "removed" | "modified" | "renamed";
 

@@ -8,17 +8,13 @@ import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
 import { runTrackedJob } from "#server/routes/jobs/index.ts";
 import { hashBuffer } from "#server/utils/hash.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
+import type { ConversionSummary } from "#utils/conversion.ts";
 import type { JobProgress } from "#utils/job.ts";
 import type { OperationScope } from "#utils/operation-scope.ts";
 
 import { getConversionPlan } from "./plan.ts";
 import { convertToOgg } from "./to-ogg.ts";
 import { convertToWebp } from "./to-webp.ts";
-
-export interface ConversionSummary {
-  converted: number;
-  overwritten: number;
-}
 
 // Candidates are relative to the possibly folder-scoped rootDir, but asset rows key by tree-root path.
 const toDbPath = (dbPathPrefix: string, relativePath: string): string =>

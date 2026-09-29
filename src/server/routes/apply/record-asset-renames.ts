@@ -1,8 +1,7 @@
 import type { Kysely } from "kysely";
 
 import type { DB } from "#server/db/index.ts";
-
-import type { RenamePair } from "../diff/index.ts";
+import type { RenamePair } from "#utils/diff.ts";
 
 export const recordAssetRenames = async (trx: Kysely<DB>, renamed: RenamePair[]): Promise<void> => {
   for (const pair of renamed) {
@@ -12,8 +11,7 @@ export const recordAssetRenames = async (trx: Kysely<DB>, renamed: RenamePair[])
       .execute();
   }
 
-  // A renamed row's new path may still carry a pre-conversion previous_hash;
-  // once the rename is recorded it has served its purpose for matching.
+  // Once the rename is recorded, a leftover pre-conversion previous_hash has served its matching purpose.
   for (const pair of renamed) {
     await trx
       .updateTable("assets")

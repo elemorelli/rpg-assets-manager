@@ -1,10 +1,10 @@
-import type { CurrentJob } from "#utils/job.ts";
+import type { CurrentJob, JobType } from "#utils/job.ts";
 
 export type JobDisplayState =
   | { kind: "idle" }
   | {
       kind: "running";
-      type: string;
+      type: JobType;
       stage: string;
       detail?: string;
       done: number;
@@ -12,9 +12,9 @@ export type JobDisplayState =
       startedAt: number;
       indeterminate: boolean;
     }
-  | { kind: "succeeded"; type: string }
-  | { kind: "cancelled"; type: string }
-  | { kind: "failed"; type: string; detail?: string; error: string };
+  | { kind: "succeeded"; type: JobType }
+  | { kind: "cancelled"; type: JobType }
+  | { kind: "failed"; type: JobType; detail?: string; error: string };
 
 export const nextJobDisplayState = (
   previous: JobDisplayState,

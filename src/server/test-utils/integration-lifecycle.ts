@@ -5,14 +5,7 @@ import { afterAll, afterEach, beforeEach } from "vitest";
 
 import { db } from "#server/db/index.ts";
 
-// Shared setup/teardown for *.integration.test.ts files, which all run against
-// one real Postgres test database (recreated per run by the global setup) and
-// (for filesystem-touching ones) real temp directories: no per-test
-// transaction rollback, so every file is responsible for cleaning up exactly
-// what it created, since files in the same run share that database. See
-// the memory on the integration/unit test boundary for which files this
-// applies to and which stay fully custom (raw SQL assertions, full-app
-// wiring, external binaries).
+// Integration files share one test database with no per-test rollback, so each cleans up exactly what it created.
 
 export interface TempDirHandle {
   path: string;
@@ -42,9 +35,7 @@ export const cleanupAssetsByPrefix = (
     for (const table of tables) {
       await db.deleteFrom(table).where("path", "like", `${pathPrefix}%`).execute();
 
-      // "directories" rows can also carry the bare prefix itself (the
-      // directory the other rows live under), which the "%" match above
-      // does not catch since it requires content after the prefix.
+      // The "%" match needs content after the prefix, so it misses the directory row for the prefix itself.
       if (table === "directories" && pathPrefix.endsWith("/")) {
         await db.deleteFrom("directories").where("path", "=", pathPrefix.slice(0, -1)).execute();
       }

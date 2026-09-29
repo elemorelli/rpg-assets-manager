@@ -34,52 +34,25 @@
   display: block;
 }
 
-.directoryIcon {
+.icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
   font-size: 16px;
+}
+
+.directoryIcon {
   color: var(--color-directory);
 }
 
-.directoryIconLarge {
-  width: 128px;
-  height: 128px;
-  font-size: 64px;
-}
-
 .fileIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  font-size: 16px;
   color: var(--color-text-muted);
 }
 
-.fileIconLarge {
-  width: 128px;
-  height: 128px;
-  font-size: 64px;
-}
-
 .errorIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  font-size: 16px;
   color: var(--color-danger);
-}
-
-.errorIconLarge {
-  width: 128px;
-  height: 128px;
-  font-size: 64px;
 }
 
 .audio {
@@ -121,16 +94,6 @@
   display: inline-flex;
 }
 
-.audioIconLarge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 128px;
-  height: 128px;
-  font-size: 64px;
-  color: var(--color-text-muted);
-}
-
 .audioIconOpenable {
   cursor: pointer;
 }
@@ -149,12 +112,9 @@
   background: var(--color-border);
 }
 
-.imageLarge {
+/* Last so it overrides the small size set by .icon, .image and .placeholder. */
+.large {
   width: 128px;
   height: 128px;
-}
-
-.placeholderLarge {
-  width: 128px;
-  height: 128px;
+  font-size: 64px;
 }

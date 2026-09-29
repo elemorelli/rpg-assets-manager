@@ -8,6 +8,9 @@ export interface DirectoryEntry {
   hasPendingSync?: boolean;
 }
 
+// Every directory's children keyed by its relative path, as served whole to the sidebar.
+export type DirectoryTree = Record<string, DirectoryEntry[]>;
+
 export interface EntrySyncFlags {
   isDeleted: boolean;
   isNew: boolean;

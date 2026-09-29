@@ -10,8 +10,9 @@ import { DiffTable } from "#components/diff-table/diff-table.tsx";
 import { JobProgressBar } from "#components/job-progress-bar/job-progress-bar.tsx";
 import { MessageBanner } from "#components/message-banner/message-banner.tsx";
 import { Modal } from "#components/modal/modal.tsx";
+import type { JobType } from "#utils/job.ts";
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 import * as api from "#web/requests/index.ts";
-import type { RcloneCheckResult } from "#web/requests/reconcile/check.ts";
 import {
   buildReconcileDiffRows,
   type DiffRowKind,
@@ -24,7 +25,7 @@ import { useJobStream } from "#web/utils/use-job-stream.ts";
 
 import styles from "./reconciliation-modal.module.css";
 
-const RECONCILE_JOB_TYPE = "reconcile";
+const RECONCILE_JOB_TYPE: JobType = "reconcile";
 
 type ReconcileFilterId = DiffRowKind | "error";
 
@@ -50,6 +51,7 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
 
   const isRunning = jobState.kind === "running" && jobState.type === RECONCILE_JOB_TYPE;
   const isCancelled = jobState.kind === "cancelled" && jobState.type === RECONCILE_JOB_TYPE;
+  const showsCheckResult = !isRunning && !isCancelled;
 
   const hasNoDifferences =
     result !== null &&
@@ -82,12 +84,12 @@ export const ReconciliationModal = ({ onClose }: ReconciliationModalProps): JSX.
         />
       )}
       {!isRunning && isCancelled && <p>Reconcile cancelled.</p>}
-      {!isRunning && !isCancelled && message && <MessageBanner message={message} />}
-      {!isRunning && !isCancelled && !result && !message && <p>Checking for differences...</p>}
-      {!isRunning && !isCancelled && hasNoDifferences && (
+      {showsCheckResult && message && <MessageBanner message={message} />}
+      {showsCheckResult && !result && !message && <p>Checking for differences...</p>}
+      {showsCheckResult && hasNoDifferences && (
         <p>{`${result.matchCount} file(s) match. No differences found.`}</p>
       )}
-      {!isRunning && !isCancelled && result && !hasNoDifferences && (
+      {showsCheckResult && result && !hasNoDifferences && (
         <div className={styles.section}>
           <p className={styles.summary}>{`${result.matchCount} file(s) match.`}</p>
           <DiffFilterChips<ReconcileFilterId>

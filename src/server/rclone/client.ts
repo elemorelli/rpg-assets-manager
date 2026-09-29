@@ -4,8 +4,9 @@ import os from "node:os";
 import path from "node:path";
 
 import { execFileAsync } from "#server/utils/exec.ts";
+import type { RcloneCheckResult } from "#utils/reconcile.ts";
 
-import { parseCombinedReport, type RcloneCheckResult } from "./combined-report.ts";
+import { parseCombinedReport } from "./combined-report.ts";
 import { parseCheckStats, parseCompletedFilePath } from "./json-log.ts";
 
 const writeRelativePathsListFile = async (relativePaths: string[]): Promise<string> => {
