@@ -6,7 +6,9 @@ import { classifyPreviewKind, extensionOf } from "#utils/preview.ts";
 import { joinUrl } from "#utils/url.ts";
 
 const PLAYLIST_MODE_SHUFFLE = 1; // CONST.PLAYLIST_MODES.SHUFFLE; confirmed against a real Foundry v14 import
-const DEFAULT_SOUND_VOLUME = 0.5;
+const DEFAULT_SOUND_SLIDER_POSITION = 0.5;
+const FOUNDRY_VOLUME_CURVE_ORDER = 1.5; // Foundry's slider shows gain^(1/1.5), so gain = slider^1.5
+const DEFAULT_SOUND_VOLUME = DEFAULT_SOUND_SLIDER_POSITION ** FOUNDRY_VOLUME_CURVE_ORDER;
 const DEFAULT_SOUND_CHANNEL = "music";
 
 export interface FoundryPlaylistSoundExport {
