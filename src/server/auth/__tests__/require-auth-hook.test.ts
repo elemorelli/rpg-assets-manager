@@ -39,7 +39,7 @@ const createFakeReply = (): FastifyReply & { code: ReturnType<typeof vi.fn> } =>
 
 describe("requireAuthHook", () => {
   it("allows a route marked public without a session cookie", async () => {
-    const request = createFakeRequest({ url: "/api/health", isPublic: true });
+    const request = createFakeRequest({ url: "/api/status", isPublic: true });
     const reply = createFakeReply();
 
     await requireAuthHook(request, reply);
@@ -48,7 +48,7 @@ describe("requireAuthHook", () => {
   });
 
   it("rejects an api route that is not marked public, whatever its path looks like", async () => {
-    const request = createFakeRequest({ url: "/api/health" });
+    const request = createFakeRequest({ url: "/api/status" });
     const reply = createFakeReply();
 
     await requireAuthHook(request, reply);

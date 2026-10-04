@@ -34,10 +34,10 @@ import {
   listFoundryWorldsHandler,
   markFoundryWorldAppliedHandler,
 } from "./foundry-worlds/index.ts";
-import { healthHandler } from "./health/index.ts";
 import { cancelJobHandler, jobsStreamHandler } from "./jobs/index.ts";
 import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
+import { statusHandler } from "./status/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
 
 const BYTES_PER_KILOBYTE = 1024;
@@ -52,7 +52,7 @@ export const registerRoutes = (
 ): void => {
   app.register(fastifyMultipart, { limits: { fileSize: MAX_UPLOAD_FILE_SIZE_BYTES } });
 
-  app.get("/api/health", PUBLIC_ROUTE_OPTIONS, healthHandler);
+  app.get("/api/status", PUBLIC_ROUTE_OPTIONS, statusHandler);
 
   app.post("/api/login", PUBLIC_ROUTE_OPTIONS, loginHandler);
   app.post("/api/logout", logoutHandler);

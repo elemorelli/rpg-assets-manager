@@ -44,13 +44,13 @@ describe("registerRoutes public routes", () => {
     await app.close();
   });
 
-  it("only exposes health and login without a session", () => {
+  it("only exposes status and login without a session", () => {
     const publicRouteKeys = registeredRoutes
       .filter((route) => route.isPublic)
       .map((route) => route.key)
       .sort();
 
-    expect(publicRouteKeys).toEqual(["GET /api/health", "POST /api/login"]);
+    expect(publicRouteKeys).toEqual(["GET /api/status", "POST /api/login"]);
   });
 
   it("registers every api route under /api/ so the auth hook guards it", () => {

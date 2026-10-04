@@ -1,6 +1,7 @@
 import { runner } from "node-pg-migrate";
 
 import { rescanAssets } from "#server/routes/scan/index.ts";
+import { startSyncStatusTracking } from "#server/sync-status/index.ts";
 
 import { buildApp } from "./app.ts";
 
@@ -35,6 +36,7 @@ const start = async (): Promise<void> => {
   });
 
   await rescanAssets(ASSET_TREE_ROOT);
+  await startSyncStatusTracking();
 
   const app = buildApp({
     webDistDir: WEB_DIST_DIR,

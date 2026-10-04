@@ -8,6 +8,7 @@ import { db } from "#server/db/index.ts";
 import { withHttpErrorHandling } from "#server/errors/index.ts";
 import { rcloneDestination } from "#server/rclone/index.ts";
 import type { FilesScopedPathBody } from "#server/routes/files/path-body.ts";
+import { refreshSyncStatus } from "#server/sync-status/index.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
 import type { ApplyBatchSummary, ApplyOutcome } from "#utils/apply.ts";
 import type { BatchDiff } from "#utils/diff.ts";
@@ -79,6 +80,8 @@ export const applyBatch = async (
     await deps.purge(purgeUrls);
 
     await finishSyncRun(syncRunId, "applied", diff, purgeUrls);
+    // The invalidation above ran before this run was marked applied, so lastSyncAt needs another pass.
+    refreshSyncStatus();
 
     return summaryFor(diff, "applied", syncRunId);
   } catch (error) {

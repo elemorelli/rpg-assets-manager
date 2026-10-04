@@ -1,6 +1,7 @@
 import type { Kysely } from "kysely";
 
 import { type DB, db } from "#server/db/index.ts";
+import { refreshSyncStatus } from "#server/sync-status/index.ts";
 import { createTtlCache, type TtlCache } from "#server/utils/ttl-cache.ts";
 import type { LocalIndexRecord, RemoteIndexRecord } from "#utils/sync-status.ts";
 
@@ -49,6 +50,7 @@ export const getLocalHashIndex = (): Promise<Map<string, LocalIndexRecord>> =>
 
 export const invalidateLocalHashIndex = (): void => {
   entriesByDb.get(db)?.local.invalidate();
+  refreshSyncStatus();
 };
 
 export const getRemoteHashIndex = (): Promise<Map<string, RemoteIndexRecord>> =>
@@ -56,4 +58,5 @@ export const getRemoteHashIndex = (): Promise<Map<string, RemoteIndexRecord>> =>
 
 export const invalidateRemoteHashIndex = (): void => {
   entriesByDb.get(db)?.remote.invalidate();
+  refreshSyncStatus();
 };

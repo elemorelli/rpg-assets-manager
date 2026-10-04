@@ -12,10 +12,10 @@ const buildTestApp = () =>
   });
 
 describe("authentication", () => {
-  it("allows GET /api/health without a session cookie", async () => {
+  it("allows GET /api/status without a session cookie", async () => {
     const app = buildTestApp();
 
-    const response = await app.inject({ method: "GET", url: "/api/health" });
+    const response = await app.inject({ method: "GET", url: "/api/status" });
 
     expect(response.statusCode).toBe(HTTP_STATUS.ok);
   });
