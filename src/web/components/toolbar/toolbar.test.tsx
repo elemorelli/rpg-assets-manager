@@ -11,6 +11,7 @@ const baseProps = {
   onUploadFile: vi.fn(),
   onRescan: vi.fn(),
   onConvert: vi.fn(),
+  onImportFromYoutube: vi.fn(),
   onSync: vi.fn(),
   onReconcile: vi.fn(),
   onFoundry: vi.fn(),

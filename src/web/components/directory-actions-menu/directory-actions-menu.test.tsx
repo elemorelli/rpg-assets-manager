@@ -148,4 +148,28 @@ describe("DirectoryActionsMenu", () => {
 
     expect(screen.queryByRole("button", { name: "Reconcile" })).not.toBeInTheDocument();
   });
+
+  it("opens the YouTube import and closes the menu", async () => {
+    const user = userEvent.setup();
+    const onImportFromYoutube = vi.fn();
+    const onClose = vi.fn();
+
+    render(
+      <DirectoryActionsMenu
+        {...baseProps}
+        onImportFromYoutube={onImportFromYoutube}
+        onClose={onClose}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: "Import from YouTube" }));
+
+    expect(onImportFromYoutube).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it("hides the YouTube import when no handler is given", () => {
+    render(<DirectoryActionsMenu {...baseProps} />);
+
+    expect(screen.queryByRole("button", { name: "Import from YouTube" })).not.toBeInTheDocument();
+  });
 });

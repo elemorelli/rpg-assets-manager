@@ -27,6 +27,7 @@ export interface ToolbarProps {
   onUploadFile: (file: File) => void;
   onRescan: (request: RescanRequest) => void;
   onConvert: () => void;
+  onImportFromYoutube: () => void;
   onSync: () => void;
   onReconcile: () => void;
   onFoundry: () => void;
@@ -40,6 +41,7 @@ export const Toolbar = ({
   onUploadFile,
   onRescan,
   onConvert,
+  onImportFromYoutube,
   onSync,
   onReconcile,
   onFoundry,
@@ -95,6 +97,7 @@ export const Toolbar = ({
           onUploadFile={onUploadFile}
           onRehashRequested={() => setConfirmingRehash(true)}
           onReconcile={onReconcile}
+          onImportFromYoutube={onImportFromYoutube}
         />
       </SegmentedGroup>
       {confirmingRescan && (

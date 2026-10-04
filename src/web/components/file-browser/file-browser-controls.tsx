@@ -17,6 +17,7 @@ export interface FileBrowserControlsProps {
   onUploadFile: (file: File) => void;
   onRescan: (request: RescanRequest) => void;
   onConvert: () => void;
+  onImportFromYoutube: () => void;
   onSync: () => void;
   onReconcile: () => void;
   onFoundry: () => void;
@@ -42,6 +43,7 @@ export const FileBrowserControls = ({
   onUploadFile,
   onRescan,
   onConvert,
+  onImportFromYoutube,
   onSync,
   onReconcile,
   onFoundry,
@@ -68,6 +70,7 @@ export const FileBrowserControls = ({
         onUploadFile={onUploadFile}
         onRescan={onRescan}
         onConvert={onConvert}
+        onImportFromYoutube={onImportFromYoutube}
         onSync={onSync}
         onReconcile={onReconcile}
         onFoundry={onFoundry}

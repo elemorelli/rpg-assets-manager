@@ -1,4 +1,5 @@
 import {
+  faCirclePlay,
   faFileExport,
   faFolderPlus,
   faHashtag,
@@ -22,6 +23,7 @@ export interface DirectoryActionsMenuProps {
   onConvert?: () => void;
   onRehashRequested?: () => void;
   onReconcile?: () => void;
+  onImportFromYoutube?: () => void;
 }
 
 export const DirectoryActionsMenu = ({
@@ -32,6 +34,7 @@ export const DirectoryActionsMenu = ({
   onConvert,
   onRehashRequested,
   onReconcile,
+  onImportFromYoutube,
 }: DirectoryActionsMenuProps): JSX.Element => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +73,11 @@ export const DirectoryActionsMenu = ({
     onClose();
   };
 
+  const handleImportFromYoutubeClick = (): void => {
+    onImportFromYoutube?.();
+    onClose();
+  };
+
   const handleReconcileClick = (): void => {
     onReconcile?.();
     onClose();
@@ -86,6 +94,12 @@ export const DirectoryActionsMenu = ({
           <FontAwesomeIcon icon={faUpload} fixedWidth />
           Upload file
         </MenuItem>
+        {onImportFromYoutube && (
+          <MenuItem onClick={handleImportFromYoutubeClick}>
+            <FontAwesomeIcon icon={faCirclePlay} fixedWidth />
+            Import from YouTube
+          </MenuItem>
+        )}
         {onConvert && (
           <MenuItem onClick={handleConvertClick}>
             <FontAwesomeIcon icon={faFileExport} fixedWidth />

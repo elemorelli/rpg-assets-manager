@@ -30,7 +30,9 @@ export const runTrackedJob = async <T>(
 
   try {
     const result = await operation((progress) => {
-      job = advanceJob({ ...job, total: progress.total }, progress.done, progress.detail);
+      const stage = progress.stage ?? job.stage;
+
+      job = advanceJob({ ...job, total: progress.total, stage }, progress.done, progress.detail);
       setCurrentJob(job);
     }, controller.signal);
 

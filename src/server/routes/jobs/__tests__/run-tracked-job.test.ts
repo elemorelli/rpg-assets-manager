@@ -71,4 +71,20 @@ describe("runTrackedJob", () => {
     expect(signalDuringRun?.aborted).toBe(true);
     expect(getCurrentJob()).toMatchObject({ type: "rescan", cancelled: true });
   });
+
+  it("switches the job stage when a progress update carries one", async () => {
+    const stagesSeen: string[] = [];
+
+    await runTrackedJob("youtube-import", "downloading", "import failed", async (onProgress) => {
+      onProgress({ done: 1, total: 2 });
+      stagesSeen.push(getCurrentJob()?.stage ?? "");
+
+      onProgress({ done: 0, total: 0, stage: "converting" });
+      stagesSeen.push(getCurrentJob()?.stage ?? "");
+
+      return "imported";
+    });
+
+    expect(stagesSeen).toEqual(["downloading", "converting"]);
+  });
 });

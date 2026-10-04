@@ -41,6 +41,7 @@ const JOB_TYPES_THAT_REFRESH_THE_DIRECTORY: ReadonlySet<JobType> = new Set([
   "rescan",
   "reconcile",
   "convert",
+  "youtube-import",
 ]);
 
 export const FileBrowser = (): JSX.Element => {
@@ -52,6 +53,7 @@ export const FileBrowser = (): JSX.Element => {
   const { directoryPath: currentPath, deepLinkedFileName } = parseBrowserPath(rawPath);
 
   const [isConvertModalOpen, setConvertModalOpen] = useState<boolean>(false);
+  const [isYoutubeImportModalOpen, setYoutubeImportModalOpen] = useState<boolean>(false);
   const [isSyncModalOpen, setSyncModalOpen] = useState<boolean>(false);
   const [isReconciliationModalOpen, setReconciliationModalOpen] = useState<boolean>(false);
   const [isFoundryModalOpen, setFoundryModalOpen] = useState<boolean>(false);
@@ -106,6 +108,15 @@ export const FileBrowser = (): JSX.Element => {
     if (type === "sync") {
       setFoundryStatusRefreshTrigger((trigger) => trigger + 1);
     }
+  };
+
+  const openYoutubeImportModal = (): void => {
+    setYoutubeImportModalOpen(true);
+  };
+
+  const handleYoutubeImported = (): void => {
+    refreshAfterMutation(currentPath);
+    refreshTags();
   };
 
   const handleOpenDirectory = (name: string): void => {
@@ -249,6 +260,7 @@ export const FileBrowser = (): JSX.Element => {
               onUploadFile={handleUploadFile}
               onRescan={handleRescan}
               onConvert={() => setConvertModalOpen(true)}
+              onImportFromYoutube={openYoutubeImportModal}
               onSync={() => setSyncModalOpen(true)}
               onReconcile={() => setReconciliationModalOpen(true)}
               onFoundry={() => setFoundryModalOpen(true)}
@@ -291,6 +303,7 @@ export const FileBrowser = (): JSX.Element => {
               onCreateDirectory={handleCreateDirectory}
               onUploadFile={handleUploadFile}
               onConvert={() => setConvertModalOpen(true)}
+              onImportFromYoutube={openYoutubeImportModal}
               searchResults={searchResults}
               tagFilterResults={tagFilterResults}
               onOpenSearchResult={handleOpenSearchResult}
@@ -335,6 +348,10 @@ export const FileBrowser = (): JSX.Element => {
               isConvertModalOpen={isConvertModalOpen}
               onCloseConvertModal={() => setConvertModalOpen(false)}
               onConverted={() => refreshAfterMutation(currentPath)}
+              isYoutubeImportModalOpen={isYoutubeImportModalOpen}
+              onCloseYoutubeImportModal={() => setYoutubeImportModalOpen(false)}
+              onYoutubeImported={handleYoutubeImported}
+              availableTags={availableTags}
               isSyncModalOpen={isSyncModalOpen}
               onCloseSyncModal={() => setSyncModalOpen(false)}
               onSyncApplied={() => {

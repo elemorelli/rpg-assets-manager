@@ -5,15 +5,11 @@ import type { Readable } from "node:stream";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
-import { invalidateLocalHashIndex } from "#server/asset-index-cache/index.ts";
-import { db } from "#server/db/index.ts";
-import { applyAggregateDelta } from "#server/directory-aggregates/apply-aggregate-delta.ts";
-import { ensureDirectoryChain } from "#server/directory-aggregates/ensure-directory-chain.ts";
 import { HTTP_STATUS, HttpError, withHttpErrorHandling } from "#server/errors/index.ts";
 import { createIncrementalHasher, type IncrementalHasher } from "#server/utils/hash.ts";
 import { pathExists } from "#server/utils/path-exists.ts";
+import { registerAssetFile } from "#server/utils/register-asset-file.ts";
 import { resolveSafeRelativePath } from "#server/utils/safe-path.ts";
-import { getParentPath } from "#utils/directory-path.ts";
 
 export type UploadableStream = Readable & { truncated: boolean };
 
@@ -83,36 +79,7 @@ export const uploadFile = async (
   const stat = await fs.stat(absolutePath);
   const hash = hasher.digest();
 
-  const previousRow = await db
-    .selectFrom("assets")
-    .select("size")
-    .where("path", "=", relativeFile)
-    .executeTakeFirst();
-  const previousSize = previousRow ? Number(previousRow.size) : undefined;
-
-  await db
-    .insertInto("assets")
-    .values({ path: relativeFile, size: stat.size, mtime: stat.mtime, hash })
-    .onConflict((oc) =>
-      oc.column("path").doUpdateSet({
-        size: stat.size,
-        mtime: stat.mtime,
-        hash,
-        scanned_at: new Date(),
-      }),
-    )
-    .execute();
-
-  const parentDir = getParentPath(relativeFile);
-
-  await ensureDirectoryChain(parentDir);
-  await applyAggregateDelta(parentDir, {
-    size: stat.size - (previousSize ?? 0),
-    fileCount: previousSize === undefined ? 1 : 0,
-    folderCount: 0,
-  });
-
-  invalidateLocalHashIndex();
+  await registerAssetFile(relativeFile, { size: stat.size, mtime: stat.mtime, hash });
 };
 
 interface UploadField {

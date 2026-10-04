@@ -1,4 +1,4 @@
-export type JobType = "sync" | "rescan" | "reconcile" | "convert";
+export type JobType = "sync" | "rescan" | "reconcile" | "convert" | "youtube-import";
 
 export interface JobState {
   type: JobType;
@@ -17,6 +17,7 @@ export interface JobProgress {
   done: number;
   total: number;
   detail?: string;
+  stage?: string;
 }
 
 export const startJob = (type: JobType, stage: string, total: number): JobState => ({

@@ -17,7 +17,11 @@ const SUCCESS_AUTO_DISMISS_MS = 4000;
 const IDLE: JobDisplayState = { kind: "idle" };
 
 // Only types whose operation checks the abort signal; reconcile is cancellable but has its own modal.
-const CANCELLABLE_JOB_TYPES: ReadonlySet<JobType> = new Set(["rescan", "convert"]);
+const CANCELLABLE_JOB_TYPES: ReadonlySet<JobType> = new Set([
+  "rescan",
+  "convert",
+  "youtube-import",
+]);
 
 // These types show progress and results in their own modal, so this overlay must not stack on top.
 const JOB_TYPES_WITH_DEDICATED_MODAL: ReadonlySet<JobType> = new Set(["reconcile"]);

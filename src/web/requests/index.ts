@@ -29,3 +29,5 @@ export { cancelJob } from "./jobs/cancel.ts";
 export { reconcile } from "./reconcile/check.ts";
 export { rescan } from "./scan/rescan.ts";
 export { fetchTags } from "./tags/list.ts";
+export { importFromYoutube } from "./youtube/import.ts";
+export { fetchYoutubeMetadata } from "./youtube/metadata.ts";

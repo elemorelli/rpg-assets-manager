@@ -5,12 +5,17 @@ import { FoundryModal } from "#components/foundry-modal/foundry-modal.tsx";
 import { OverwriteConfirmModal } from "#components/overwrite-confirm-modal/overwrite-confirm-modal.tsx";
 import { ReconciliationModal } from "#components/reconciliation-modal/reconciliation-modal.tsx";
 import { SyncModal } from "#components/sync-modal/sync-modal.tsx";
+import { YoutubeImportModal } from "#components/youtube-import-modal/youtube-import-modal.tsx";
 
 export interface FileBrowserModalsProps {
   currentPath: string;
   isConvertModalOpen: boolean;
   onCloseConvertModal: () => void;
   onConverted: () => void;
+  isYoutubeImportModalOpen: boolean;
+  onCloseYoutubeImportModal: () => void;
+  onYoutubeImported: () => void;
+  availableTags: string[];
   isSyncModalOpen: boolean;
   onCloseSyncModal: () => void;
   onSyncApplied: () => void;
@@ -29,6 +34,10 @@ export const FileBrowserModals = ({
   isConvertModalOpen,
   onCloseConvertModal,
   onConverted,
+  isYoutubeImportModalOpen,
+  onCloseYoutubeImportModal,
+  onYoutubeImported,
+  availableTags,
   isSyncModalOpen,
   onCloseSyncModal,
   onSyncApplied,
@@ -47,6 +56,14 @@ export const FileBrowserModals = ({
         currentPath={currentPath}
         onClose={onCloseConvertModal}
         onConverted={onConverted}
+      />
+    )}
+    {isYoutubeImportModalOpen && (
+      <YoutubeImportModal
+        currentPath={currentPath}
+        availableTags={availableTags}
+        onClose={onCloseYoutubeImportModal}
+        onImported={onYoutubeImported}
       />
     )}
     {isSyncModalOpen && (

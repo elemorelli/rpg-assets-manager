@@ -39,6 +39,7 @@ import { reconcileHandler } from "./reconcile/index.ts";
 import { bootstrapHandler, rescanHandler } from "./scan/index.ts";
 import { statusHandler } from "./status/index.ts";
 import { listTagsHandler } from "./tags/index.ts";
+import { youtubeImportHandler, youtubeMetadataHandler } from "./youtube/index.ts";
 
 const BYTES_PER_KILOBYTE = 1024;
 const BYTES_PER_MEGABYTE = BYTES_PER_KILOBYTE * BYTES_PER_KILOBYTE;
@@ -97,4 +98,7 @@ export const registerRoutes = (
   app.post("/api/rescan", rescanHandler(assetTreeRoot));
 
   app.get("/api/tags", listTagsHandler);
+
+  app.get("/api/youtube/metadata", youtubeMetadataHandler);
+  app.post("/api/youtube/import", youtubeImportHandler(assetTreeRoot));
 };

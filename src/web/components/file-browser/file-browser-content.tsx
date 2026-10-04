@@ -31,6 +31,7 @@ export interface FileBrowserContentProps {
   onCreateDirectory: (name: string) => void;
   onUploadFile: (file: File) => void;
   onConvert: () => void;
+  onImportFromYoutube: () => void;
   searchResults: SearchResultEntry[] | null;
   tagFilterResults: SearchResultEntry[] | null;
   onOpenSearchResult: (entry: SearchResultEntry) => void;
@@ -70,6 +71,7 @@ export const FileBrowserContent = ({
   onCreateDirectory,
   onUploadFile,
   onConvert,
+  onImportFromYoutube,
   searchResults,
   tagFilterResults,
   onOpenSearchResult,
@@ -112,6 +114,7 @@ export const FileBrowserContent = ({
         onCreateDirectory={onCreateDirectory}
         onUploadFile={onUploadFile}
         onConvert={onConvert}
+        onImportFromYoutube={onImportFromYoutube}
       />
       {isDropzoneActive && (
         <div className={styles.dropzoneOverlay}>

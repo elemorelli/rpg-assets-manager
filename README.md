@@ -16,6 +16,8 @@ See `docs/asset-manager-v1-handoff.md` for the full design.
   unsynced file can be reviewed before deciding whether to sync it.
 - WebP/Ogg conversion, explicit and user-triggered, honouring `.skip`
   directories.
+- Audio import from a YouTube URL: title lookup, editable file name and
+  tags, downloaded with yt-dlp and stored as Ogg.
 - Free-form tags per asset, with a tag editor, filtering, and badges shown
   in the browser views.
 - Sync flow: rescan the local tree, diff it against the last known R2 state,
@@ -38,12 +40,15 @@ See `docs/asset-manager-v1-handoff.md` for the full design.
   through `RCLONE_CONFIG_R2_*` environment variables (no `rclone.conf`).
 - **Conversion**: `cwebp` and `ffmpeg`, called directly rather than shelling
   out to the old scripts.
+- **YouTube import**: yt-dlp (pinned release, Python 3), using Node as its
+  JavaScript runtime.
 
 ## Local development
 
-Requirements: Node 24, Docker (for Postgres), and the `rclone`, `cwebp` and
-`ffmpeg` binaries on `PATH` if you want to exercise conversion or sync
-against a real remote.
+Requirements: Node 24, Docker (for Postgres), and the `rclone`, `cwebp`,
+`ffmpeg` and `yt-dlp` binaries on `PATH` if you want to exercise conversion,
+YouTube import or sync against a real remote. Set `YTDLP_PATH` to point at a
+specific yt-dlp binary.
 
 1. Install dependencies:
 
