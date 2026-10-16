@@ -4,7 +4,7 @@ import { BrowserRouter, Link, Route, Routes } from "react-router";
 import { describeError } from "#web/utils/describe-error.ts";
 
 import styles from "./app.module.css";
-import logoUrl from "./assets/logo.png";
+import logoUrl from "./assets/logo.svg";
 import { FileBrowser } from "./components/file-browser/file-browser.tsx";
 import { LoginForm } from "./components/login-form/login-form.tsx";
 import * as api from "./requests/index.ts";
